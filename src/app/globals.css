@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=JetBrains+Mono:wght@400;500;700&display=swap");
+
+@layer base {
+  body {
+    @apply bg-club-dark text-gray-100 font-body antialiased;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-pitch-500 hover:bg-pitch-600 text-white font-semibold px-5 py-2.5 rounded-lg
+      transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply bg-club-navy hover:bg-club-navy/80 text-gray-200 font-medium px-5 py-2.5 rounded-lg
+      border border-gray-700 transition-all duration-200 active:scale-95;
+  }
+
+  .btn-danger {
+    @apply bg-club-accent/10 hover:bg-club-accent/20 text-club-accent font-medium px-5 py-2.5 rounded-lg
+      border border-club-accent/30 transition-all duration-200 active:scale-95;
+  }
+
+  .card {
+    @apply bg-club-navy/60 backdrop-blur-sm border border-gray-800 rounded-xl p-6;
+  }
+
+  .input {
+    @apply bg-club-dark border border-gray-700 rounded-lg px-4 py-2.5 text-gray-100
+      placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-pitch-500/50
+      focus:border-pitch-500 transition-colors w-full;
+  }
+
+  .label {
+    @apply block text-sm font-medium text-gray-400 mb-1.5;
+  }
+
+  .pick-btn {
+    @apply px-4 py-2 rounded-lg font-mono font-bold text-sm transition-all duration-200
+      border-2 cursor-pointer select-none;
+  }
+
+  .pick-btn-unselected {
+    @apply pick-btn border-gray-700 bg-club-dark text-gray-500 hover:border-gray-500 hover:text-gray-300;
+  }
+
+  .pick-btn-home {
+    @apply pick-btn border-pitch-500 bg-pitch-500/15 text-pitch-400;
+  }
+
+  .pick-btn-draw {
+    @apply pick-btn border-club-gold bg-club-gold/15 text-club-gold;
+  }
+
+  .pick-btn-away {
+    @apply pick-btn border-club-accent bg-club-accent/15 text-club-accent;
+  }
+}
