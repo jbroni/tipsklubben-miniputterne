@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { RoundStatusBadge } from "@/components/RoundStatusBadge";
@@ -16,7 +17,7 @@ interface RoundData {
 
 const PICK_LABEL: Record<string, string> = { HOME: "1", DRAW: "X", AWAY: "2" };
 
-export default function AdminRoundsPage() {
+function AdminRoundsContent() {
   const searchParams = useSearchParams();
   const seasonId = searchParams.get("seasonId");
 
@@ -417,5 +418,13 @@ export default function AdminRoundsPage() {
         ))}
       </div>
     </div>
+  );
+}
+
+export default function AdminRoundsPage() {
+  return (
+    <Suspense fallback={<div className="text-center py-20 text-gray-500">Loading...</div>}>
+      <AdminRoundsContent />
+    </Suspense>
   );
 }
