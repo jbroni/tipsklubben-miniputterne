@@ -34,10 +34,10 @@ A web app for a small friend group to play a weekly football prediction game bas
 ### 2. Supabase Setup
 
 1. Create a new Supabase project at https://app.supabase.com
-2. Go to **Settings → API** and copy:
+2. Go to **Settings → API Keys** and copy:
    - Project URL → `NEXT_PUBLIC_SUPABASE_URL`
-   - `anon` public key → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - `service_role` secret key → `SUPABASE_SERVICE_ROLE_KEY`
+   - `publishable` key → `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+   - `secret` key → `SUPABASE_SECRET_KEY`
 3. Go to **Settings → Database** and copy the connection string → `DATABASE_URL`
    - Use the "URI" format with your password
    - Also copy the "Direct connection" string → `DIRECT_URL`
@@ -104,8 +104,8 @@ Visit http://localhost:3000
 
 3. Add environment variables in Vercel:
    - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+   - `SUPABASE_SECRET_KEY`
    - `DATABASE_URL`
    - `DIRECT_URL`
    - `FOOTBALL_DATA_API_KEY`
