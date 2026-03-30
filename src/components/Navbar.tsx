@@ -33,12 +33,16 @@ export function Navbar() {
   }, []);
 
   const handleSignIn = async () => {
-    await supabase.auth.signInWithOAuth({
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
         redirectTo: `${window.location.origin}/api/auth/callback`,
       },
     });
+    if (error) {
+      console.error("Sign in error:", error.message);
+      alert(`Sign in failed: ${error.message}`);
+    }
   };
 
   const handleSignOut = async () => {

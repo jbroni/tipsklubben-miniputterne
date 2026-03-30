@@ -1,6 +1,7 @@
 "use client";
 
-import { Suspense, useState, useEffect } from "react";
+import { Suspense } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { RoundStatusBadge } from "@/components/RoundStatusBadge";
 import type { RoundStatus, Match, Pick as PickType } from "@prisma/client";
@@ -15,14 +16,6 @@ interface RoundData {
 }
 
 const PICK_LABEL: Record<string, string> = { HOME: "1", DRAW: "X", AWAY: "2" };
-
-export default function AdminRoundsPage() {
-  return (
-    <Suspense fallback={<div className="text-center py-20 text-gray-500">Loading...</div>}>
-      <AdminRoundsContent />
-    </Suspense>
-  );
-}
 
 function AdminRoundsContent() {
   const searchParams = useSearchParams();
@@ -425,5 +418,13 @@ function AdminRoundsContent() {
         ))}
       </div>
     </div>
+  );
+}
+
+export default function AdminRoundsPage() {
+  return (
+    <Suspense fallback={<div className="text-center py-20 text-gray-500">Loading...</div>}>
+      <AdminRoundsContent />
+    </Suspense>
   );
 }
