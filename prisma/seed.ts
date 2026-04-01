@@ -3,6 +3,11 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
+  if (process.env.NODE_ENV === "production") {
+    console.error("Seed script cannot run in production. Set NODE_ENV=development to proceed.");
+    process.exit(1);
+  }
+
   // Create (or find) the active season
   const season = await prisma.season.upsert({
     where: { id: "00000000-0000-0000-0000-000000000001" },
