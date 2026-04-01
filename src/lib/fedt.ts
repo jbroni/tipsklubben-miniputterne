@@ -9,45 +9,55 @@ interface MatchOdds {
 type PickType = "HOME" | "DRAW" | "AWAY";
 
 /**
- * Calculate the Fedt score for a single pick on a single match.
- *
- * Fedt = 100 means the safest possible pick (lowest odds / heaviest favorite).
- * Fedt = 0 means the boldest possible pick (highest odds / biggest underdog).
- *
- * Formula:
- *   match_fedt = (1 - (chosen_odds - min_odds) / (max_odds - min_odds)) × 100
+ * Convert match odds to normalized implied probabilities (percentages that sum to 100).
  */
-export function calcMatchFedt(match: MatchOdds, pick: PickType): number {
-  const home = Number(match.oddsHome);
-  const draw = Number(match.oddsDraw);
-  const away = Number(match.oddsAway);
-
-  const chosenOdds =
-    pick === "HOME" ? home : pick === "DRAW" ? draw : away;
-
-  const minOdds = Math.min(home, draw, away);
-  const maxOdds = Math.max(home, draw, away);
-
-  // All odds equal — completely neutral
-  if (maxOdds === minOdds) return 50;
-
-  const normalized = (chosenOdds - minOdds) / (maxOdds - minOdds);
-  return Math.round((1 - normalized) * 100);
+function oddsToProb(match: MatchOdds): { home: number; draw: number; away: number } {
+  const h = 1 / Number(match.oddsHome);
+  const d = 1 / Number(match.oddsDraw);
+  const a = 1 / Number(match.oddsAway);
+  const total = h + d + a;
+  return { home: (h / total) * 100, draw: (d / total) * 100, away: (a / total) * 100 };
 }
 
 /**
- * Calculate the Fedt score for an entire round (average across 13 matches).
+ * Get the implied probability (%) of the chosen outcome for a single match.
+ *
+ * Higher = safer pick (favorite), lower = bolder pick (underdog).
+ */
+export function calcMatchFedt(match: MatchOdds, pick: PickType): number {
+  const probs = oddsToProb(match);
+  return pick === "HOME" ? probs.home : pick === "DRAW" ? probs.draw : probs.away;
+}
+
+/**
+ * Calculate the Fedt score for an entire round.
+ *
+ * Sums the chosen probabilities across all picks, then normalizes between
+ * the theoretical min (all boldest picks) and max (all safest picks):
+ *   fedt = (sumChosen - sumMin) / (sumMax - sumMin) × 100
+ *
+ * Result is 0–100 where 100 = safest possible coupon, 0 = boldest.
  */
 export function calcRoundFedt(
   picks: { match: MatchOdds; pick: PickType }[]
 ): number {
   if (picks.length === 0) return 50;
 
-  const total = picks.reduce((sum, { match, pick }) => {
-    return sum + calcMatchFedt(match, pick);
-  }, 0);
+  let sumChosen = 0;
+  let sumMin = 0;
+  let sumMax = 0;
 
-  return Math.round(total / picks.length);
+  for (const { match, pick } of picks) {
+    const probs = oddsToProb(match);
+    const values = [probs.home, probs.draw, probs.away];
+    sumChosen += pick === "HOME" ? probs.home : pick === "DRAW" ? probs.draw : probs.away;
+    sumMin += Math.min(...values);
+    sumMax += Math.max(...values);
+  }
+
+  if (sumMax === sumMin) return 50;
+
+  return Math.round(((sumChosen - sumMin) / (sumMax - sumMin)) * 10000) / 100;
 }
 
 /**
@@ -56,7 +66,7 @@ export function calcRoundFedt(
 export function calcSeasonFedt(roundFedts: number[]): number {
   if (roundFedts.length === 0) return 50;
   const sum = roundFedts.reduce((a, b) => a + b, 0);
-  return Math.round(sum / roundFedts.length);
+  return Math.round((sum / roundFedts.length) * 100) / 100;
 }
 
 /**
