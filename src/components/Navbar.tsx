@@ -17,6 +17,7 @@ const navLinks = [
 export function Navbar() {
   const pathname = usePathname();
   const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const supabase = createSupabaseBrowserClient();
@@ -26,8 +27,9 @@ export function Navbar() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, _session) => {
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       supabase.auth.getUser().then(({ data }) => setUser(data.user));
+      if (!session?.user) setIsAdmin(false);
     });
 
     return () => subscription.unsubscribe();
@@ -48,6 +50,14 @@ export function Navbar() {
   useEffect(() => {
     setMenuOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    if (!user) return;
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then(({ data }) => setIsAdmin(data?.role === "admin"))
+      .catch(() => {});
+  }, [user]);
 
   const handleSignIn = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
@@ -135,6 +145,18 @@ export function Navbar() {
                         {link.label}
                       </Link>
                     ))}
+                    {isAdmin && (
+                      <Link
+                        href="/admin"
+                        className={`block px-4 py-2.5 text-sm transition-colors ${
+                          pathname === "/admin"
+                            ? "text-coral-600 bg-coral-50 font-medium"
+                            : "text-coral-500 hover:bg-stone-50"
+                        }`}
+                      >
+                        Admin Panel
+                      </Link>
+                    )}
 
                     <div className="border-t border-stone-100 mt-1 pt-1">
                       <button

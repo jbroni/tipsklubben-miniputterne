@@ -476,20 +476,6 @@ export default async function DashboardPage() {
           </div>
         )}
 
-        {/* Admin link */}
-        {user.role === "admin" && (
-          <Link
-            href="/admin"
-            className="card !border-coral-200 hover:!border-coral-300 transition-colors block"
-          >
-            <h3 className="font-display font-semibold text-coral-600">
-              Admin Panel
-            </h3>
-            <p className="text-xs text-stone-400 mt-1">
-              Manage rounds, matches, and members
-            </p>
-          </Link>
-        )}
       </div>
 
       {/* ─── Sidebar 1/3 ─── */}
