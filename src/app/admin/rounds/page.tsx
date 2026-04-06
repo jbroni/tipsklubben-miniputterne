@@ -27,7 +27,6 @@ function AdminRoundsContent() {
   const [newRoundNumber, setNewRoundNumber] = useState(1);
   const [newDeadline, setNewDeadline] = useState("");
 
-  // Match entry state
   const [editingRound, setEditingRound] = useState<string | null>(null);
   const [matchEntries, setMatchEntries] = useState<
     {
@@ -41,7 +40,6 @@ function AdminRoundsContent() {
     }[]
   >([]);
 
-  // Results entry state
   const [resultsRound, setResultsRound] = useState<string | null>(null);
   const [resultEntries, setResultEntries] = useState<
     Record<string, PickType | "">
@@ -56,7 +54,6 @@ function AdminRoundsContent() {
       .then(({ data }) => {
         setRounds(data ?? []);
         setLoading(false);
-        // Auto-set next round number
         const maxRound = Math.max(0, ...(data ?? []).map((r: RoundData) => r.roundNumber));
         setNewRoundNumber(maxRound + 1);
       });
@@ -161,12 +158,12 @@ function AdminRoundsContent() {
   };
 
   if (loading) {
-    return <div className="text-center py-20 text-gray-500">Loading...</div>;
+    return <div className="text-center py-20 text-stone-400">Loading...</div>;
   }
 
   return (
     <div className="space-y-6">
-      <h1 className="font-display text-3xl font-bold">Manage Rounds</h1>
+      <h1 className="font-display text-3xl font-bold text-stone-900">Manage Rounds</h1>
 
       {/* Create round */}
       {!showCreate ? (
@@ -175,7 +172,7 @@ function AdminRoundsContent() {
         </button>
       ) : (
         <div className="card space-y-4">
-          <h2 className="font-display font-semibold">Create Round</h2>
+          <h2 className="font-display font-semibold text-stone-800">Create Round</h2>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="label">Round Number</label>
@@ -206,11 +203,11 @@ function AdminRoundsContent() {
       {/* Match entry form */}
       {editingRound && (
         <div className="card space-y-4">
-          <h2 className="font-display font-semibold">Add 13 Matches</h2>
+          <h2 className="font-display font-semibold text-stone-800">Add 13 Matches</h2>
           <div className="space-y-3">
             {matchEntries.map((m, i) => (
               <div key={i} className="grid grid-cols-12 gap-2 items-center">
-                <span className="col-span-1 text-xs text-gray-500 font-mono">
+                <span className="col-span-1 text-xs text-stone-400 font-mono">
                   {i + 1}
                 </span>
                 <input
@@ -298,12 +295,12 @@ function AdminRoundsContent() {
       {/* Results entry form */}
       {resultsRound && (
         <div className="card space-y-4">
-          <h2 className="font-display font-semibold">Enter Results</h2>
+          <h2 className="font-display font-semibold text-stone-800">Enter Results</h2>
           {rounds
             .find((r) => r.id === resultsRound)
             ?.matches.map((m) => (
               <div key={m.id} className="flex items-center gap-4">
-                <span className="text-sm w-48">
+                <span className="text-sm w-48 text-stone-700">
                   {m.homeTeam} vs {m.awayTeam}
                 </span>
                 <div className="flex gap-2">
@@ -352,12 +349,12 @@ function AdminRoundsContent() {
           <div key={round.id} className="card !p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
-                <span className="font-display font-semibold">
+                <span className="font-display font-semibold text-stone-800">
                   Round {round.roundNumber}
                 </span>
                 <RoundStatusBadge status={round.status} />
               </div>
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-stone-400">
                 {round.matches.length} matches ·{" "}
                 {Math.floor(round._count.predictions / 13)} submitted
               </span>
@@ -423,7 +420,7 @@ function AdminRoundsContent() {
 
 export default function AdminRoundsPage() {
   return (
-    <Suspense fallback={<div className="text-center py-20 text-gray-500">Loading...</div>}>
+    <Suspense fallback={<div className="text-center py-20 text-stone-400">Loading...</div>}>
       <AdminRoundsContent />
     </Suspense>
   );

@@ -67,3 +67,26 @@ export interface ApiResponse<T> {
   data?: T;
   error?: string;
 }
+
+// Serialized types for passing server → client components (Decimal → number, Date → string)
+export interface SerializedMatch {
+  id: string;
+  matchNumber: number;
+  homeTeam: string;
+  awayTeam: string;
+  league: string;
+  oddsHome: number;
+  oddsDraw: number;
+  oddsAway: number;
+  result: Pick | null;
+  predictions: { userId: string; userName: string; pick: Pick }[];
+}
+
+export interface SerializedRound {
+  id: string;
+  roundNumber: number;
+  deadline: string;
+  status: string;
+  seasonName: string;
+  matches: SerializedMatch[];
+}

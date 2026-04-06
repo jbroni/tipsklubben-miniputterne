@@ -60,23 +60,23 @@ export function calcSeasonFedt(roundFedts: number[]): number {
 }
 
 /**
- * Get a label for a Fedt score.
+ * Get an English label for a Fedt score.
  */
 export function getFedtLabel(fedt: number): string {
-  if (fedt >= 85) return "Meget fedt";
-  if (fedt >= 65) return "Fedt";
+  if (fedt >= 85) return "Very safe";
+  if (fedt >= 65) return "Safe";
   if (fedt >= 45) return "Neutral";
-  if (fedt >= 25) return "Modig";
-  return "Vild";
+  if (fedt >= 25) return "Bold";
+  return "Wild";
 }
 
 /**
  * Get a color class for a Fedt score (Tailwind).
  */
 export function getFedtColor(fedt: number): string {
-  if (fedt >= 85) return "text-blue-400";
-  if (fedt >= 65) return "text-sky-400";
-  if (fedt >= 45) return "text-gray-400";
-  if (fedt >= 25) return "text-orange-400";
-  return "text-red-400";
+  if (fedt >= 85) return "text-blue-500";
+  if (fedt >= 65) return "text-sky-500";
+  if (fedt >= 45) return "text-stone-500";
+  if (fedt >= 25) return "text-amber-600";
+  return "text-coral-500";
 }

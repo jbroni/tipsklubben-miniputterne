@@ -18,15 +18,15 @@ export default function LeaderboardPage() {
   }, []);
 
   if (loading) {
-    return <div className="text-center py-20 text-gray-500">Loading...</div>;
+    return <div className="text-center py-20 text-stone-400">Loading...</div>;
   }
 
   return (
     <div className="space-y-6">
-      <h1 className="font-display text-3xl font-bold">Leaderboard</h1>
+      <h1 className="font-display text-3xl font-bold text-stone-900">Leaderboard</h1>
 
       {entries.length === 0 ? (
-        <p className="text-gray-500 text-center py-10">
+        <p className="text-stone-400 text-center py-10">
           No completed rounds yet. Check back after the first round finishes.
         </p>
       ) : (
@@ -38,11 +38,11 @@ export default function LeaderboardPage() {
       {/* Round-by-round breakdown */}
       {entries.length > 0 && entries[0].roundScores.length > 0 && (
         <div className="card">
-          <h2 className="font-display font-semibold mb-4">Round by Round</h2>
+          <h2 className="font-display font-semibold text-stone-800 mb-4">Round by Round</h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-800 text-gray-500 text-xs uppercase tracking-wider">
+                <tr className="border-b border-stone-200 text-stone-400 text-xs uppercase tracking-wider">
                   <th className="py-3 px-2 text-left">Player</th>
                   {entries[0].roundScores.map((r) => (
                     <th key={r.roundNumber} className="py-3 px-2 text-center">
@@ -56,9 +56,9 @@ export default function LeaderboardPage() {
                 {entries.map((entry) => (
                   <tr
                     key={entry.user.id}
-                    className="border-b border-gray-800/50 hover:bg-gray-800/20"
+                    className="border-b border-stone-100 hover:bg-stone-50"
                   >
-                    <td className="py-3 px-2 font-medium">
+                    <td className="py-3 px-2 font-medium text-stone-800">
                       {entry.user.displayName}
                     </td>
                     {entry.roundScores.map((r) => (
@@ -69,17 +69,17 @@ export default function LeaderboardPage() {
                         <span
                           className={
                             r.points >= 10
-                              ? "text-pitch-400 font-bold"
+                              ? "text-pitch-500 font-bold"
                               : r.points >= 7
-                              ? "text-gray-300"
-                              : "text-gray-500"
+                              ? "text-stone-700"
+                              : "text-stone-400"
                           }
                         >
                           {r.points}
                         </span>
                       </td>
                     ))}
-                    <td className="py-3 px-2 text-right font-mono font-bold text-pitch-400">
+                    <td className="py-3 px-2 text-right font-mono font-bold text-pitch-500">
                       {entry.totalPoints}
                     </td>
                   </tr>

@@ -2,11 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=JetBrains+Mono:wght@400;500;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap");
 
 @layer base {
   body {
-    @apply bg-club-dark text-gray-100 font-body antialiased;
+    @apply bg-stone-50 text-stone-900 font-body antialiased;
   }
 }
 
@@ -17,27 +17,27 @@
   }
 
   .btn-secondary {
-    @apply bg-club-navy hover:bg-club-navy/80 text-gray-200 font-medium px-5 py-2.5 rounded-lg
-      border border-gray-700 transition-all duration-200 active:scale-95;
+    @apply bg-white hover:bg-stone-50 text-stone-700 font-medium px-5 py-2.5 rounded-lg
+      border border-stone-200 transition-all duration-200 active:scale-95 shadow-sm;
   }
 
   .btn-danger {
-    @apply bg-club-accent/10 hover:bg-club-accent/20 text-club-accent font-medium px-5 py-2.5 rounded-lg
-      border border-club-accent/30 transition-all duration-200 active:scale-95;
+    @apply bg-coral-50 hover:bg-coral-100 text-coral-600 font-medium px-5 py-2.5 rounded-lg
+      border border-coral-200 transition-all duration-200 active:scale-95;
   }
 
   .card {
-    @apply bg-club-navy/60 backdrop-blur-sm border border-gray-800 rounded-xl p-6;
+    @apply bg-white border border-stone-200 rounded-xl p-6 shadow-sm;
   }
 
   .input {
-    @apply bg-club-dark border border-gray-700 rounded-lg px-4 py-2.5 text-gray-100
-      placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-pitch-500/50
+    @apply bg-white border border-stone-300 rounded-lg px-4 py-2.5 text-stone-900
+      placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-pitch-400/30
       focus:border-pitch-500 transition-colors w-full;
   }
 
   .label {
-    @apply block text-sm font-medium text-gray-400 mb-1.5;
+    @apply block text-sm font-medium text-stone-600 mb-1.5;
   }
 
   .pick-btn {
@@ -46,18 +46,18 @@
   }
 
   .pick-btn-unselected {
-    @apply pick-btn border-gray-700 bg-club-dark text-gray-500 hover:border-gray-500 hover:text-gray-300;
+    @apply pick-btn border-stone-200 bg-white text-stone-400 hover:border-stone-300 hover:text-stone-600;
   }
 
   .pick-btn-home {
-    @apply pick-btn border-pitch-500 bg-pitch-500/15 text-pitch-400;
+    @apply pick-btn border-pitch-500 bg-pitch-50 text-pitch-600;
   }
 
   .pick-btn-draw {
-    @apply pick-btn border-club-gold bg-club-gold/15 text-club-gold;
+    @apply pick-btn border-amber-500 bg-amber-50 text-amber-700;
   }
 
   .pick-btn-away {
-    @apply pick-btn border-club-accent bg-club-accent/15 text-club-accent;
+    @apply pick-btn border-coral-500 bg-coral-50 text-coral-600;
   }
 }

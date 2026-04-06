@@ -32,13 +32,11 @@ export default async function RoundDetailPage({
 
   if (!round) notFound();
 
-  // Get all users who submitted predictions
   const users = await prisma.user.findMany();
   const usersWithPredictions = users.filter((u) =>
     round.matches.some((m) => m.predictions.some((p) => p.userId === u.id))
   );
 
-  // Calculate scores per user
   const userScores = usersWithPredictions.map((u) => {
     const picks = round.matches.map((m) => {
       const pred = m.predictions.find((p) => p.userId === u.id);
@@ -61,7 +59,6 @@ export default async function RoundDetailPage({
     return { user: u, points, fedt };
   });
 
-  // Sort by points desc, then Fedt asc
   userScores.sort((a, b) => {
     if (b.points !== a.points) return b.points - a.points;
     return a.fedt - b.fedt;
@@ -73,40 +70,40 @@ export default async function RoundDetailPage({
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm text-gray-500">{round.season.name}</p>
-          <h1 className="font-display text-3xl font-bold">
+          <p className="text-sm text-stone-400">{round.season.name}</p>
+          <h1 className="font-display text-3xl font-bold text-stone-900">
             Round {round.roundNumber}
           </h1>
         </div>
         <RoundStatusBadge status={round.status} />
       </div>
 
-      {/* Scores summary (only when locked/completed) */}
+      {/* Scores summary */}
       {isRevealed && userScores.length > 0 && (
         <div className="card">
-          <h2 className="font-display font-semibold mb-4">Round Scores</h2>
+          <h2 className="font-display font-semibold text-stone-800 mb-4">Round Scores</h2>
           <div className="space-y-2">
             {userScores.map((us, i) => (
               <div
                 key={us.user.id}
-                className="flex items-center justify-between py-2 border-b border-gray-800/50 last:border-0"
+                className="flex items-center justify-between py-2 border-b border-stone-100 last:border-0"
               >
                 <div className="flex items-center gap-3">
                   <span
                     className={`font-mono font-bold w-6 ${
                       i === 0
-                        ? "text-club-gold"
+                        ? "text-amber-500"
                         : i === 1
-                        ? "text-gray-300"
-                        : "text-gray-600"
+                        ? "text-stone-400"
+                        : "text-stone-300"
                     }`}
                   >
                     {i + 1}
                   </span>
-                  <span className="font-medium">{us.user.displayName}</span>
+                  <span className="font-medium text-stone-800">{us.user.displayName}</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="font-mono font-bold text-pitch-400">
+                  <span className="font-mono font-bold text-pitch-500">
                     {us.points}/13
                   </span>
                   <FedtBadge score={us.fedt} size="sm" showLabel={false} />
@@ -119,30 +116,30 @@ export default async function RoundDetailPage({
 
       {/* Match results grid */}
       <div className="space-y-3">
-        <h2 className="font-display font-semibold">Matches</h2>
+        <h2 className="font-display font-semibold text-stone-800">Matches</h2>
         {round.matches.map((match) => (
           <div key={match.id} className="card !p-4">
             <div className="flex items-center gap-3 mb-3">
-              <span className="font-mono text-xs text-gray-600 w-5">
+              <span className="font-mono text-xs text-stone-400 w-5">
                 {match.matchNumber}
               </span>
               <div className="flex-1">
-                <span className="font-medium">{match.homeTeam}</span>
-                <span className="text-gray-600 mx-2">vs</span>
-                <span className="font-medium">{match.awayTeam}</span>
-                <span className="text-xs text-gray-600 ml-2">
+                <span className="font-medium text-stone-800">{match.homeTeam}</span>
+                <span className="text-stone-300 mx-2">vs</span>
+                <span className="font-medium text-stone-800">{match.awayTeam}</span>
+                <span className="text-xs text-stone-400 ml-2">
                   {match.league}
                 </span>
               </div>
               {match.result && (
-                <span className="font-mono font-bold text-pitch-400">
+                <span className="font-mono font-bold text-pitch-500">
                   {PICK_LABEL[match.result]}
                 </span>
               )}
             </div>
 
             {/* Odds */}
-            <div className="flex gap-4 text-xs text-gray-500 mb-2 ml-8">
+            <div className="flex gap-4 text-xs text-stone-400 mb-2 ml-8">
               <span>1: {Number(match.oddsHome).toFixed(2)}</span>
               <span>X: {Number(match.oddsDraw).toFixed(2)}</span>
               <span>2: {Number(match.oddsAway).toFixed(2)}</span>
@@ -158,8 +155,8 @@ export default async function RoundDetailPage({
                       key={pred.id}
                       className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md ${
                         isCorrect
-                          ? "bg-pitch-500/15 text-pitch-400"
-                          : "bg-gray-800/50 text-gray-500"
+                          ? "bg-pitch-50 text-pitch-500 border border-pitch-200"
+                          : "bg-stone-50 text-stone-400 border border-stone-100"
                       }`}
                     >
                       <span className="font-medium">

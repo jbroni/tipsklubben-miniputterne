@@ -20,7 +20,7 @@ export default function FedtPage() {
   }, []);
 
   if (loading) {
-    return <div className="text-center py-20 text-gray-500">Loading...</div>;
+    return <div className="text-center py-20 text-stone-400">Loading...</div>;
   }
 
   const sorted = [...entries].sort((a, b) =>
@@ -29,7 +29,6 @@ export default function FedtPage() {
       : b.seasonFedt - a.seasonFedt
   );
 
-  // Find extremes
   const boldest = entries.length > 0
     ? entries.reduce((a, b) => (a.seasonFedt < b.seasonFedt ? a : b))
     : null;
@@ -40,16 +39,16 @@ export default function FedtPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="font-display text-3xl font-bold">
-          Fedt <span className="text-club-gold">Stats</span>
+        <h1 className="font-display text-3xl font-bold text-stone-900">
+          Fedt <span className="text-amber-600">Stats</span>
         </h1>
-        <p className="text-gray-500 mt-1">
+        <p className="text-stone-500 mt-1">
           Who plays it safe and who takes the biggest risks?
         </p>
       </div>
 
       {entries.length === 0 ? (
-        <p className="text-gray-500 text-center py-10">
+        <p className="text-stone-400 text-center py-10">
           No data yet. Complete some rounds first.
         </p>
       ) : (
@@ -58,10 +57,10 @@ export default function FedtPage() {
           <div className="grid grid-cols-2 gap-4">
             {boldest && (
               <div className="card text-center">
-                <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
+                <p className="text-xs text-stone-400 uppercase tracking-wider mb-2">
                   Boldest Player
                 </p>
-                <p className="font-display text-lg font-bold text-club-accent">
+                <p className="font-display text-lg font-bold text-coral-500">
                   {boldest.user.displayName}
                 </p>
                 <div className="mt-2">
@@ -71,10 +70,10 @@ export default function FedtPage() {
             )}
             {safest && (
               <div className="card text-center">
-                <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
+                <p className="text-xs text-stone-400 uppercase tracking-wider mb-2">
                   Safest Player
                 </p>
-                <p className="font-display text-lg font-bold text-blue-400">
+                <p className="font-display text-lg font-bold text-blue-500">
                   {safest.user.displayName}
                 </p>
                 <div className="mt-2">
@@ -90,8 +89,8 @@ export default function FedtPage() {
               onClick={() => setSortBy("boldest")}
               className={`text-sm px-3 py-1.5 rounded-lg transition-colors ${
                 sortBy === "boldest"
-                  ? "bg-club-accent/15 text-club-accent"
-                  : "text-gray-500 hover:text-gray-300"
+                  ? "bg-coral-50 text-coral-500 border border-coral-200"
+                  : "text-stone-400 hover:text-stone-600"
               }`}
             >
               Boldest first
@@ -100,8 +99,8 @@ export default function FedtPage() {
               onClick={() => setSortBy("safest")}
               className={`text-sm px-3 py-1.5 rounded-lg transition-colors ${
                 sortBy === "safest"
-                  ? "bg-blue-500/15 text-blue-400"
-                  : "text-gray-500 hover:text-gray-300"
+                  ? "bg-blue-50 text-blue-500 border border-blue-200"
+                  : "text-stone-400 hover:text-stone-600"
               }`}
             >
               Safest first
@@ -114,26 +113,25 @@ export default function FedtPage() {
               {sorted.map((entry, i) => (
                 <div
                   key={entry.user.id}
-                  className="flex items-center justify-between py-3 border-b border-gray-800/50 last:border-0"
+                  className="flex items-center justify-between py-3 border-b border-stone-100 last:border-0"
                 >
                   <div className="flex items-center gap-4">
-                    <span className="font-mono text-gray-600 w-6">{i + 1}</span>
+                    <span className="font-mono text-stone-300 w-6">{i + 1}</span>
                     <div>
-                      <p className="font-medium">{entry.user.displayName}</p>
-                      <p className="text-xs text-gray-500">
+                      <p className="font-medium text-stone-800">{entry.user.displayName}</p>
+                      <p className="text-xs text-stone-400">
                         {getFedtLabel(entry.seasonFedt)} · {entry.roundsPlayed}{" "}
                         rounds
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
-                    {/* Fedt bar visualization */}
-                    <div className="hidden sm:block w-32 bg-gray-800 rounded-full h-2">
+                    <div className="hidden sm:block w-32 bg-stone-100 rounded-full h-2">
                       <div
                         className="h-2 rounded-full transition-all duration-500"
                         style={{
                           width: `${entry.seasonFedt}%`,
-                          background: `linear-gradient(90deg, #e94560, #d4a017 50%, #3b82f6)`,
+                          background: `linear-gradient(90deg, #f43f5e, #f59e0b 50%, #3b82f6)`,
                         }}
                       />
                     </div>
@@ -147,13 +145,13 @@ export default function FedtPage() {
           {/* Round-by-round Fedt */}
           {entries[0]?.roundScores.length > 0 && (
             <div className="card">
-              <h2 className="font-display font-semibold mb-4">
+              <h2 className="font-display font-semibold text-stone-800 mb-4">
                 Fedt per Round
               </h2>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-gray-800 text-gray-500 text-xs uppercase tracking-wider">
+                    <tr className="border-b border-stone-200 text-stone-400 text-xs uppercase tracking-wider">
                       <th className="py-3 px-2 text-left">Player</th>
                       {entries[0].roundScores.map((r) => (
                         <th
@@ -170,9 +168,9 @@ export default function FedtPage() {
                     {sorted.map((entry) => (
                       <tr
                         key={entry.user.id}
-                        className="border-b border-gray-800/50"
+                        className="border-b border-stone-100"
                       >
-                        <td className="py-3 px-2 font-medium">
+                        <td className="py-3 px-2 font-medium text-stone-800">
                           {entry.user.displayName}
                         </td>
                         {entry.roundScores.map((r) => (

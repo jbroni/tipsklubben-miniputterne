@@ -21,7 +21,7 @@ export default async function RoundsPage() {
 
   if (!season) {
     return (
-      <div className="text-center py-20 text-gray-500">
+      <div className="text-center py-20 text-stone-400">
         No active season found.
       </div>
     );
@@ -29,7 +29,7 @@ export default async function RoundsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="font-display text-3xl font-bold">{season.name}</h1>
+      <h1 className="font-display text-3xl font-bold text-stone-900">{season.name}</h1>
 
       <div className="space-y-3">
         {season.rounds.map((round) => (
@@ -40,20 +40,20 @@ export default async function RoundsPage() {
                 ? `/rounds/${round.id}/predict`
                 : `/rounds/${round.id}`
             }
-            className="card !p-4 flex items-center justify-between hover:border-gray-700 transition-colors block"
+            className="card !p-4 flex items-center justify-between hover:border-stone-300 transition-colors block"
           >
             <div>
-              <span className="font-display font-semibold">
+              <span className="font-display font-semibold text-stone-800">
                 Round {round.roundNumber}
               </span>
-              <span className="text-gray-500 text-sm ml-3">
+              <span className="text-stone-400 text-sm ml-3">
                 {round.matches.length > 0
                   ? `${round.matches.length} matches`
                   : "No matches yet"}
               </span>
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-xs text-gray-600">
+              <span className="text-xs text-stone-400">
                 {Math.floor(round._count.predictions / 13)} submitted
               </span>
               <RoundStatusBadge status={round.status} />
@@ -62,7 +62,7 @@ export default async function RoundsPage() {
         ))}
 
         {season.rounds.length === 0 && (
-          <p className="text-gray-500 text-center py-10">
+          <p className="text-stone-400 text-center py-10">
             No rounds created yet.
           </p>
         )}
