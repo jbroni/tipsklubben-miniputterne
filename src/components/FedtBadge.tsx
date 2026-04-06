@@ -11,7 +11,7 @@ export function FedtBadge({ score, size = "md", showLabel = true }: FedtBadgePro
   const colorClass = getFedtColor(score);
 
   const sizeClasses = {
-    sm: "text-xs px-2 py-0.5",
+    sm: "text-xs px-2 py-0.5 min-w-[4rem] justify-center",
     md: "text-sm px-2.5 py-1",
     lg: "text-base px-3 py-1.5",
   };

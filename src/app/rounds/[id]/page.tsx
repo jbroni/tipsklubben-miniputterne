@@ -12,6 +12,12 @@ const PICK_LABEL: Record<PickType, string> = {
   AWAY: "2",
 };
 
+const RESULT_STYLE: Record<PickType, string> = {
+  HOME: "bg-blue-100 text-blue-700",
+  DRAW: "bg-amber-100 text-amber-700",
+  AWAY: "bg-orange-100 text-orange-700",
+};
+
 export default async function RoundDetailPage({
   params,
 }: {
@@ -103,8 +109,9 @@ export default async function RoundDetailPage({
                   <span className="font-medium text-stone-800">{us.user.displayName}</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="font-mono font-bold text-pitch-500">
-                    {us.points}/13
+                  <span className="font-mono font-bold text-pitch-500 inline-flex">
+                    <span className="w-5 text-right tabular-nums">{us.points}</span>
+                    <span>/13</span>
                   </span>
                   <FedtBadge score={us.fedt} size="sm" showLabel={false} />
                 </div>
@@ -123,19 +130,19 @@ export default async function RoundDetailPage({
               <span className="font-mono text-xs text-stone-400 w-5">
                 {match.matchNumber}
               </span>
-              <div className="flex-1">
-                <span className="font-medium text-stone-800">{match.homeTeam}</span>
-                <span className="text-stone-300 mx-2">vs</span>
-                <span className="font-medium text-stone-800">{match.awayTeam}</span>
-                <span className="text-xs text-stone-400 ml-2">
-                  {match.league}
-                </span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-medium text-stone-800">{match.homeTeam}</span>
+                  <span className="text-stone-300">vs</span>
+                  <span className="font-medium text-stone-800">{match.awayTeam}</span>
+                  {match.result && (
+                    <span className={`font-mono font-bold text-sm px-2 py-0.5 rounded ${RESULT_STYLE[match.result]}`}>
+                      {PICK_LABEL[match.result]}
+                    </span>
+                  )}
+                </div>
+                <span className="text-xs text-stone-400 leading-none mt-0.5 block">{match.league}</span>
               </div>
-              {match.result && (
-                <span className="font-mono font-bold text-pitch-500">
-                  {PICK_LABEL[match.result]}
-                </span>
-              )}
             </div>
 
             {/* Odds */}
