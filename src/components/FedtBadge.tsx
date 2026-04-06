@@ -19,11 +19,11 @@ export function FedtBadge({ score, size = "md", showLabel = true }: FedtBadgePro
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-full font-mono font-bold
-        bg-gray-800/80 border border-gray-700 ${sizeClasses[size]} ${colorClass}`}
+        bg-stone-100 border border-stone-200 ${sizeClasses[size]} ${colorClass}`}
     >
       {score}
       {showLabel && (
-        <span className="font-body font-normal text-gray-500 text-xs">
+        <span className="font-body font-normal text-stone-400 text-xs">
           {label}
         </span>
       )}

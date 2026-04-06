@@ -10,7 +10,6 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch leaderboard to find current user's data
     Promise.all([
       fetch("/api/leaderboard").then((r) => r.json()),
       fetch("/api/auth/me").then((r) => r.json()).catch(() => ({ data: null })),
@@ -22,7 +21,7 @@ export default function ProfilePage() {
   }, []);
 
   if (loading) {
-    return <div className="text-center py-20 text-gray-500">Loading...</div>;
+    return <div className="text-center py-20 text-stone-400">Loading...</div>;
   }
 
   const myEntry = entries.find((e) => e.user.id === currentUserId);
@@ -31,8 +30,8 @@ export default function ProfilePage() {
   if (!myEntry) {
     return (
       <div className="space-y-6">
-        <h1 className="font-display text-3xl font-bold">My Profile</h1>
-        <p className="text-gray-500">
+        <h1 className="font-display text-3xl font-bold text-stone-900">My Profile</h1>
+        <p className="text-stone-400">
           No stats yet. Submit predictions in a round to see your profile.
         </p>
       </div>
@@ -46,7 +45,6 @@ export default function ProfilePage() {
     ? myEntry.roundScores.reduce((a, b) => (a.points < b.points ? a : b))
     : null;
 
-  // Bold vs safe rounds
   const boldestRound = myEntry.roundScores.length > 0
     ? myEntry.roundScores.reduce((a, b) => (a.fedt < b.fedt ? a : b))
     : null;
@@ -57,10 +55,10 @@ export default function ProfilePage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="font-display text-3xl font-bold">
+        <h1 className="font-display text-3xl font-bold text-stone-900">
           {myEntry.user.displayName}
         </h1>
-        <p className="text-gray-500 mt-1">
+        <p className="text-stone-400 mt-1">
           Rank #{myRank} of {entries.length}
         </p>
       </div>
@@ -68,31 +66,31 @@ export default function ProfilePage() {
       {/* Stats grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="card text-center">
-          <p className="text-xs text-gray-500 uppercase tracking-wider">
+          <p className="text-xs text-stone-400 uppercase tracking-wider">
             Total Points
           </p>
-          <p className="font-display text-2xl font-bold text-pitch-400 mt-1">
+          <p className="font-display text-2xl font-bold text-pitch-500 mt-1">
             {myEntry.totalPoints}
           </p>
         </div>
         <div className="card text-center">
-          <p className="text-xs text-gray-500 uppercase tracking-wider">
+          <p className="text-xs text-stone-400 uppercase tracking-wider">
             Average
           </p>
-          <p className="font-display text-2xl font-bold mt-1">
+          <p className="font-display text-2xl font-bold text-stone-800 mt-1">
             {myEntry.avgScore.toFixed(1)}
           </p>
         </div>
         <div className="card text-center">
-          <p className="text-xs text-gray-500 uppercase tracking-wider">
+          <p className="text-xs text-stone-400 uppercase tracking-wider">
             Rounds Played
           </p>
-          <p className="font-display text-2xl font-bold mt-1">
+          <p className="font-display text-2xl font-bold text-stone-800 mt-1">
             {myEntry.roundsPlayed}
           </p>
         </div>
         <div className="card text-center">
-          <p className="text-xs text-gray-500 uppercase tracking-wider">
+          <p className="text-xs text-stone-400 uppercase tracking-wider">
             Season Fedt
           </p>
           <div className="mt-2">
@@ -105,46 +103,46 @@ export default function ProfilePage() {
       <div className="grid grid-cols-2 gap-4">
         {bestRound && (
           <div className="card">
-            <p className="text-xs text-gray-500 uppercase tracking-wider">
+            <p className="text-xs text-stone-400 uppercase tracking-wider">
               Best Round
             </p>
-            <p className="font-display text-lg font-bold text-pitch-400 mt-1">
+            <p className="font-display text-lg font-bold text-pitch-500 mt-1">
               {bestRound.points}/13
             </p>
-            <p className="text-xs text-gray-500">Round {bestRound.roundNumber}</p>
+            <p className="text-xs text-stone-400">Round {bestRound.roundNumber}</p>
           </div>
         )}
         {worstRound && (
           <div className="card">
-            <p className="text-xs text-gray-500 uppercase tracking-wider">
+            <p className="text-xs text-stone-400 uppercase tracking-wider">
               Worst Round
             </p>
-            <p className="font-display text-lg font-bold text-club-accent mt-1">
+            <p className="font-display text-lg font-bold text-coral-500 mt-1">
               {worstRound.points}/13
             </p>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-stone-400">
               Round {worstRound.roundNumber}
             </p>
           </div>
         )}
         {boldestRound && (
           <div className="card">
-            <p className="text-xs text-gray-500 uppercase tracking-wider">
+            <p className="text-xs text-stone-400 uppercase tracking-wider">
               Boldest Round
             </p>
             <FedtBadge score={boldestRound.fedt} size="sm" />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-stone-400 mt-1">
               Round {boldestRound.roundNumber}
             </p>
           </div>
         )}
         {safestRound && (
           <div className="card">
-            <p className="text-xs text-gray-500 uppercase tracking-wider">
+            <p className="text-xs text-stone-400 uppercase tracking-wider">
               Safest Round
             </p>
             <FedtBadge score={safestRound.fedt} size="sm" />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-stone-400 mt-1">
               Round {safestRound.roundNumber}
             </p>
           </div>
@@ -153,22 +151,22 @@ export default function ProfilePage() {
 
       {/* Round history */}
       <div className="card">
-        <h2 className="font-display font-semibold mb-4">Round History</h2>
+        <h2 className="font-display font-semibold text-stone-800 mb-4">Round History</h2>
         <div className="space-y-2">
           {myEntry.roundScores.map((r) => (
             <div
               key={r.roundNumber}
-              className="flex items-center justify-between py-2 border-b border-gray-800/50 last:border-0"
+              className="flex items-center justify-between py-2 border-b border-stone-100 last:border-0"
             >
-              <span className="text-gray-400">Round {r.roundNumber}</span>
+              <span className="text-stone-500">Round {r.roundNumber}</span>
               <div className="flex items-center gap-4">
                 <span
                   className={`font-mono font-bold ${
                     r.points >= 10
-                      ? "text-pitch-400"
+                      ? "text-pitch-500"
                       : r.points >= 7
-                      ? "text-gray-300"
-                      : "text-gray-500"
+                      ? "text-stone-700"
+                      : "text-stone-400"
                   }`}
                 >
                   {r.points}/13

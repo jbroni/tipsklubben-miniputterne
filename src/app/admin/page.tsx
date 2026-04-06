@@ -51,13 +51,13 @@ export default function AdminPage() {
   };
 
   if (loading) {
-    return <div className="text-center py-20 text-gray-500">Loading...</div>;
+    return <div className="text-center py-20 text-stone-400">Loading...</div>;
   }
 
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
-        <h1 className="font-display text-3xl font-bold text-club-accent">
+        <h1 className="font-display text-3xl font-bold text-coral-500">
           Admin Panel
         </h1>
         <Link href="/admin/users" className="btn-secondary text-sm">
@@ -72,7 +72,7 @@ export default function AdminPage() {
         </button>
       ) : (
         <div className="card space-y-4">
-          <h2 className="font-display font-semibold">Create Season</h2>
+          <h2 className="font-display font-semibold text-stone-800">Create Season</h2>
           <div>
             <label className="label">Season Name</label>
             <input
@@ -123,14 +123,14 @@ export default function AdminPage() {
           <div key={season.id} className="card">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="font-display text-lg font-semibold">
+                <h3 className="font-display text-lg font-semibold text-stone-800">
                   {season.name}
                 </h3>
-                <p className="text-xs text-gray-500">
-                  {new Date(season.startDate).toLocaleDateString("da-DK")} ·{" "}
+                <p className="text-xs text-stone-400">
+                  {new Date(season.startDate).toLocaleDateString("en-GB")} ·{" "}
                   {season.numRounds} rounds
                   {season.isActive && (
-                    <span className="text-pitch-400 ml-2">● Active</span>
+                    <span className="text-pitch-500 ml-2">Active</span>
                   )}
                 </p>
               </div>
@@ -153,12 +153,12 @@ export default function AdminPage() {
                     key={i}
                     className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-mono ${
                       round?.status === "completed"
-                        ? "bg-pitch-500/20 text-pitch-400"
+                        ? "bg-pitch-50 text-pitch-500 border border-pitch-200"
                         : round?.status === "locked"
-                        ? "bg-club-gold/20 text-club-gold"
+                        ? "bg-amber-50 text-amber-600 border border-amber-200"
                         : round?.status === "open"
-                        ? "bg-blue-500/20 text-blue-400"
-                        : "bg-gray-800 text-gray-600"
+                        ? "bg-blue-50 text-blue-500 border border-blue-200"
+                        : "bg-stone-50 text-stone-300 border border-stone-100"
                     }`}
                   >
                     {i + 1}
