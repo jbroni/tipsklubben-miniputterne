@@ -25,8 +25,8 @@ export function Navbar() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+    } = supabase.auth.onAuthStateChange((_event, _session) => {
+      supabase.auth.getUser().then(({ data }) => setUser(data.user));
     });
 
     return () => subscription.unsubscribe();

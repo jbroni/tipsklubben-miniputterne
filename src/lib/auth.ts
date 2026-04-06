@@ -3,20 +3,15 @@ import { prisma } from "./prisma";
 import { redirect } from "next/navigation";
 import type { User } from "@prisma/client";
 
-export async function getSession() {
+export async function getCurrentUser(): Promise<User | null> {
   const supabase = createSupabaseServerClient();
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  return session;
-}
-
-export async function getCurrentUser(): Promise<User | null> {
-  const session = await getSession();
-  if (!session?.user) return null;
+    data: { user: authUser },
+  } = await supabase.auth.getUser();
+  if (!authUser) return null;
 
   const user = await prisma.user.findUnique({
-    where: { authId: session.user.id },
+    where: { authId: authUser.id },
   });
 
   return user;
