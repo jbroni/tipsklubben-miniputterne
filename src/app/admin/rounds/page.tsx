@@ -45,6 +45,8 @@ function AdminRoundsContent() {
     Record<string, PickType | "">
   >({});
 
+  const [actionError, setActionError] = useState("");
+
   const fetchRounds = () => {
     const url = seasonId
       ? `/api/rounds?seasonId=${seasonId}`
@@ -65,7 +67,8 @@ function AdminRoundsContent() {
 
   const createRound = async () => {
     if (!seasonId || !newDeadline) return;
-    await fetch("/api/rounds", {
+    setActionError("");
+    const res = await fetch("/api/rounds", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -74,16 +77,27 @@ function AdminRoundsContent() {
         deadline: newDeadline,
       }),
     });
+    if (!res.ok) {
+      const { error } = await res.json().catch(() => ({ error: "Failed to create round" }));
+      setActionError(error ?? "Failed to create round");
+      return;
+    }
     setShowCreate(false);
     fetchRounds();
   };
 
   const updateStatus = async (roundId: string, status: RoundStatus) => {
-    await fetch(`/api/rounds/${roundId}`, {
+    setActionError("");
+    const res = await fetch(`/api/rounds/${roundId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status }),
     });
+    if (!res.ok) {
+      const { error } = await res.json().catch(() => ({ error: "Failed to update status" }));
+      setActionError(error ?? "Failed to update status");
+      return;
+    }
     fetchRounds();
   };
 
@@ -109,17 +123,23 @@ function AdminRoundsContent() {
       homeTeam: m.homeTeam,
       awayTeam: m.awayTeam,
       league: m.league,
-      kickoff: m.kickoff || new Date().toISOString(),
+      kickoff: m.kickoff ? new Date(m.kickoff).toISOString() : new Date().toISOString(),
       oddsHome: parseFloat(m.oddsHome) || 1.0,
       oddsDraw: parseFloat(m.oddsDraw) || 1.0,
       oddsAway: parseFloat(m.oddsAway) || 1.0,
     }));
 
-    await fetch(`/api/rounds/${editingRound}/matches`, {
+    setActionError("");
+    const res = await fetch(`/api/rounds/${editingRound}/matches`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ matches }),
     });
+    if (!res.ok) {
+      const { error } = await res.json().catch(() => ({ error: "Failed to save matches" }));
+      setActionError(error ?? "Failed to save matches");
+      return;
+    }
     setEditingRound(null);
     fetchRounds();
   };
@@ -139,21 +159,33 @@ function AdminRoundsContent() {
       .filter(([, v]) => v !== "")
       .map(([matchId, result]) => ({ matchId, result }));
 
-    await fetch(`/api/rounds/${resultsRound}/results`, {
+    setActionError("");
+    const res = await fetch(`/api/rounds/${resultsRound}/results`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ mode: "manual", results }),
     });
+    if (!res.ok) {
+      const { error } = await res.json().catch(() => ({ error: "Failed to save results" }));
+      setActionError(error ?? "Failed to save results");
+      return;
+    }
     setResultsRound(null);
     fetchRounds();
   };
 
   const autoResolve = async (roundId: string) => {
-    await fetch(`/api/rounds/${roundId}/results`, {
+    setActionError("");
+    const res = await fetch(`/api/rounds/${roundId}/results`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ mode: "auto" }),
     });
+    if (!res.ok) {
+      const { error } = await res.json().catch(() => ({ error: "Auto-resolve failed" }));
+      setActionError(error ?? "Auto-resolve failed");
+      return;
+    }
     fetchRounds();
   };
 
@@ -164,6 +196,13 @@ function AdminRoundsContent() {
   return (
     <div className="space-y-6">
       <h1 className="font-display text-3xl font-bold text-stone-900">Manage Rounds</h1>
+
+      {actionError && (
+        <div className="bg-coral-50 border border-coral-200 text-coral-600 rounded-lg px-4 py-3 text-sm flex items-center justify-between">
+          <span>{actionError}</span>
+          <button onClick={() => setActionError("")} className="text-coral-400 hover:text-coral-600 ml-4">✕</button>
+        </div>
+      )}
 
       {/* Create round */}
       {!showCreate ? (
@@ -245,6 +284,16 @@ function AdminRoundsContent() {
                   <option>Serie A</option>
                   <option>La Liga</option>
                 </select>
+                <input
+                  type="datetime-local"
+                  className="col-span-2 input !py-1.5 text-sm"
+                  value={m.kickoff}
+                  onChange={(e) => {
+                    const copy = [...matchEntries];
+                    copy[i].kickoff = e.target.value;
+                    setMatchEntries(copy);
+                  }}
+                />
                 <input
                   className="col-span-1 input !py-1.5 text-sm text-center"
                   placeholder="1"
