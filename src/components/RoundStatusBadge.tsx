@@ -1,17 +1,25 @@
 import type { RoundStatus } from "@prisma/client";
 
-const STATUS_STYLES: Record<RoundStatus, { bg: string; text: string; label: string }> = {
-  open: { bg: "bg-pitch-50", text: "text-pitch-500", label: "Open" },
-  locked: { bg: "bg-amber-50", text: "text-amber-600", label: "Locked" },
-  completed: { bg: "bg-stone-100", text: "text-stone-500", label: "Completed" },
+const STATUS_STYLES: Record<RoundStatus, { className: string; label: string }> = {
+  open: {
+    className: "bg-brand-tint text-brand font-bold",
+    label: "ÅBEN",
+  },
+  locked: {
+    className: "bg-signal-soft text-signal font-bold",
+    label: "LÅST",
+  },
+  completed: {
+    className: "bg-line-divider text-muted",
+    label: "AFGJORT",
+  },
 };
 
 export function RoundStatusBadge({ status }: { status: RoundStatus }) {
   const style = STATUS_STYLES[status];
   return (
     <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-        ${style.bg} ${style.text}`}
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full font-mono text-[10px] ${style.className}`}
     >
       {style.label}
     </span>
