@@ -12,6 +12,7 @@ import {
 import { calcRoundFedt, calcSeasonFedt } from "@/lib/fedt";
 import type { Pick as PickType } from "@prisma/client";
 import type { LeaderboardEntry } from "@/types";
+import { Logo } from "@/components/Logo";
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
@@ -19,12 +20,9 @@ export default async function DashboardPage() {
   if (!user) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
-        <h1 className="font-display text-5xl font-extrabold tracking-tight text-center flex items-baseline justify-center gap-2">
-          <span className="text-ink">Tips</span>
-          <span className="bg-brand text-white rounded-lg px-3 pb-1 -rotate-3 inline-block">
-            13
-          </span>
-        </h1>
+        <div className="scale-150">
+          <Logo href="/" />
+        </div>
         <p className="text-muted text-lg text-center max-w-md">
           Ugentlig fodboldtipning for venner.
         </p>

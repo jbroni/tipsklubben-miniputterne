@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { Logo } from "@/components/Logo";
 
 interface Season {
   id: string;
@@ -57,14 +58,7 @@ export default function AdminPage() {
   return (
     <div className="space-y-8">
       <div className="flex items-center gap-3">
-        <h1 className="font-display text-2xl font-bold text-ink flex items-baseline gap-2.5">
-          <span className="flex items-baseline gap-1.5">
-            <span>Tips</span>
-            <span className="bg-brand text-white rounded-[7px] px-[7px] pb-0.5 -rotate-3 inline-block text-lg">
-              13
-            </span>
-          </span>
-        </h1>
+        <Logo size="compact" />
         <span className="font-mono text-[10px] font-bold text-signal border-[1.5px] border-signal rounded-full px-2.5 py-0.5">
           ADMIN
         </span>
