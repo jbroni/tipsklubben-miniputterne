@@ -3,7 +3,7 @@ import "./globals.css";
 import { Navbar } from "@/components/Navbar";
 
 export const metadata: Metadata = {
-  title: "Tips 13 — Fodboldtipning for venner",
+  title: "Tipsklubben Miniputterne",
   description: "Ugentlig fodboldtipning for venner",
 };
 
@@ -20,7 +20,7 @@ export default function RootLayout({
           {children}
         </main>
         <footer className="border-t border-line-card py-6 text-center text-sm text-muted">
-          Tips 13
+          Tipsklubben Miniputterne · 2013
         </footer>
       </body>
     </html>

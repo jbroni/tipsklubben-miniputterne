@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { useEffect, useState, useRef } from "react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
+import { Logo } from "@/components/Logo";
 
 const navLinks = [
   { href: "/", label: "Forside" },
@@ -81,16 +82,7 @@ export function Navbar() {
     <nav className="border-b border-line-card bg-surface/90 backdrop-blur-sm sticky top-0 z-50">
       <div className="max-w-4xl mx-auto px-4">
         <div className="flex items-center justify-between h-14">
-          {/* Logo */}
-          <Link
-            href="/"
-            className="font-display font-extrabold text-lg tracking-tight flex items-baseline gap-1.5 text-ink"
-          >
-            <span>Tips</span>
-            <span className="bg-brand text-white rounded-[7px] px-[7px] pb-0.5 -rotate-3 inline-block text-base">
-              13
-            </span>
-          </Link>
+          <Logo />
 
           {/* Right side */}
           <div className="flex items-center gap-2">
