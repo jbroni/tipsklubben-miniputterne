@@ -7,11 +7,11 @@ import { useEffect, useState, useRef } from "react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 const navLinks = [
-  { href: "/", label: "Home" },
-  { href: "/rounds", label: "Rounds" },
-  { href: "/leaderboard", label: "Leaderboard" },
+  { href: "/", label: "Forside" },
+  { href: "/rounds", label: "Runder" },
+  { href: "/leaderboard", label: "Stillingen" },
   { href: "/fedt", label: "Fedt" },
-  { href: "/profile", label: "Profile" },
+  { href: "/profile", label: "Profil" },
 ];
 
 export function Navbar() {
@@ -78,16 +78,18 @@ export function Navbar() {
   };
 
   return (
-    <nav className="border-b border-stone-200 bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+    <nav className="border-b border-line-card bg-surface/90 backdrop-blur-sm sticky top-0 z-50">
       <div className="max-w-4xl mx-auto px-4">
         <div className="flex items-center justify-between h-14">
           {/* Logo */}
           <Link
             href="/"
-            className="font-display font-extrabold text-lg tracking-tight"
+            className="font-display font-extrabold text-lg tracking-tight flex items-baseline gap-1.5 text-ink"
           >
-            <span className="text-pitch-500">Tips</span>
-            <span className="text-amber-600 ml-1">13</span>
+            <span>Tips</span>
+            <span className="bg-brand text-white rounded-[7px] px-[7px] pb-0.5 -rotate-3 inline-block text-base">
+              13
+            </span>
           </Link>
 
           {/* Right side */}
@@ -96,7 +98,7 @@ export function Navbar() {
               <div className="relative" ref={menuRef}>
                 <button
                   onClick={() => setMenuOpen(!menuOpen)}
-                  className="p-2 rounded-lg text-stone-500 hover:text-stone-700 hover:bg-stone-100 transition-colors"
+                  className="p-2 rounded-lg text-muted hover:text-ink hover:bg-paper transition-colors"
                   aria-label="Menu"
                 >
                   <svg
@@ -125,9 +127,9 @@ export function Navbar() {
 
                 {/* Dropdown menu */}
                 {menuOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl border border-stone-200 shadow-lg py-2 z-50">
-                    <div className="px-4 py-2 border-b border-stone-100">
-                      <p className="text-sm font-medium text-stone-900 truncate">
+                  <div className="absolute right-0 top-full mt-2 w-56 bg-surface rounded-xl border border-line-card shadow-card py-2 z-50">
+                    <div className="px-4 py-2 border-b border-line-hairline">
+                      <p className="text-sm font-medium text-ink truncate">
                         {user.user_metadata?.full_name ?? user.email}
                       </p>
                     </div>
@@ -138,8 +140,8 @@ export function Navbar() {
                         href={link.href}
                         className={`block px-4 py-2.5 text-sm transition-colors ${
                           pathname === link.href
-                            ? "text-pitch-500 bg-pitch-50 font-medium"
-                            : "text-stone-600 hover:bg-stone-50"
+                            ? "text-brand bg-brand-tint font-medium"
+                            : "text-ink-tertiary hover:bg-paper"
                         }`}
                       >
                         {link.label}
@@ -150,20 +152,20 @@ export function Navbar() {
                         href="/admin"
                         className={`block px-4 py-2.5 text-sm transition-colors ${
                           pathname === "/admin"
-                            ? "text-coral-600 bg-coral-50 font-medium"
-                            : "text-coral-500 hover:bg-stone-50"
+                            ? "text-signal bg-signal-soft font-medium"
+                            : "text-signal hover:bg-paper"
                         }`}
                       >
-                        Admin Panel
+                        Admin-panel
                       </Link>
                     )}
 
-                    <div className="border-t border-stone-100 mt-1 pt-1">
+                    <div className="border-t border-line-hairline mt-1 pt-1">
                       <button
                         onClick={handleSignOut}
-                        className="block w-full text-left px-4 py-2.5 text-sm text-stone-500 hover:bg-stone-50 transition-colors"
+                        className="block w-full text-left px-4 py-2.5 text-sm text-muted hover:bg-paper transition-colors"
                       >
-                        Sign out
+                        Log ud
                       </button>
                     </div>
                   </div>
@@ -171,7 +173,7 @@ export function Navbar() {
               </div>
             ) : (
               <button onClick={handleSignIn} className="btn-primary text-sm">
-                Sign in with Google
+                Log ind med Google
               </button>
             )}
           </div>

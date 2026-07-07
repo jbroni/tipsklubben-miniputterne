@@ -4,6 +4,7 @@ import { RoundStatusBadge } from "@/components/RoundStatusBadge";
 import { FedtBadge } from "@/components/FedtBadge";
 import { calcRoundFedt } from "@/lib/fedt";
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import type { Pick as PickType } from "@prisma/client";
 
 const PICK_LABEL: Record<PickType, string> = {
@@ -12,11 +13,7 @@ const PICK_LABEL: Record<PickType, string> = {
   AWAY: "2",
 };
 
-const RESULT_STYLE: Record<PickType, string> = {
-  HOME: "bg-blue-100 text-blue-700",
-  DRAW: "bg-amber-100 text-amber-700",
-  AWAY: "bg-orange-100 text-orange-700",
-};
+const RANK_COLORS = ["text-rank-1", "text-rank-2", "text-rank-3"];
 
 export default async function RoundDetailPage({
   params,
@@ -71,110 +68,109 @@ export default async function RoundDetailPage({
   });
 
   const isRevealed = round.status !== "open";
+  const gridCols = `16px 1fr repeat(${usersWithPredictions.length}, 26px) 30px`;
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-stone-400">{round.season.name}</p>
-          <h1 className="font-display text-3xl font-bold text-stone-900">
-            Round {round.roundNumber}
-          </h1>
+    <div className="max-w-lg mx-auto space-y-2.5">
+      <div className="flex items-center justify-between px-0.5">
+        <div className="flex items-center gap-2.5">
+          <Link href="/rounds" className="text-muted text-lg">
+            ←
+          </Link>
+          <span className="font-display font-bold text-lg text-ink">
+            Runde {round.roundNumber} · Facit
+          </span>
         </div>
         <RoundStatusBadge status={round.status} />
       </div>
 
-      {/* Scores summary */}
       {isRevealed && userScores.length > 0 && (
         <div className="card">
-          <h2 className="font-display font-semibold text-stone-800 mb-4">Round Scores</h2>
-          <div className="space-y-2">
-            {userScores.map((us, i) => (
-              <div
-                key={us.user.id}
-                className="flex items-center justify-between py-2 border-b border-stone-100 last:border-0"
-              >
-                <div className="flex items-center gap-3">
+          <div className="kicker mb-2.5">RUNDENS SCORER</div>
+          <div className="flex flex-col gap-1.5">
+            {userScores.map((us, i) => {
+              const isMe = us.user.id === currentUser.id;
+              return (
+                <div
+                  key={us.user.id}
+                  className={`flex items-center gap-2.5 ${
+                    isMe ? "bg-brand-tint rounded-lg px-1 -mx-1" : ""
+                  }`}
+                >
                   <span
-                    className={`font-mono font-bold w-6 ${
-                      i === 0
-                        ? "text-amber-500"
-                        : i === 1
-                        ? "text-stone-400"
-                        : "text-stone-300"
+                    className={`font-mono font-bold text-xs w-3 text-right shrink-0 ${
+                      RANK_COLORS[i] ?? "text-muted-ghost"
                     }`}
                   >
                     {i + 1}
                   </span>
-                  <span className="font-medium text-stone-800">{us.user.displayName}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="font-mono font-bold text-pitch-500 inline-flex">
-                    <span className="w-5 text-right tabular-nums">{us.points}</span>
-                    <span>/13</span>
+                  <span
+                    className={`flex-1 text-[14.5px] ${
+                      isMe ? "font-bold text-brand-text" : "font-medium text-ink"
+                    }`}
+                  >
+                    {us.user.displayName}
                   </span>
                   <FedtBadge score={us.fedt} size="sm" showLabel={false} />
+                  <span className="font-mono font-bold text-brand text-sm">
+                    {us.points}/13
+                  </span>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
 
-      {/* Match results grid */}
-      <div className="space-y-3">
-        <h2 className="font-display font-semibold text-stone-800">Matches</h2>
+      <div className="card !p-3 font-mono overflow-x-auto">
+        <div
+          className="grid gap-0.5 text-[9px] text-muted-faint text-center pb-1.5 border-b border-line-divider"
+          style={{ gridTemplateColumns: gridCols }}
+        >
+          <span>#</span>
+          <span className="text-left font-body text-[10px]">KAMP</span>
+          {usersWithPredictions.map((u) => (
+            <span
+              key={u.id}
+              className={u.id === currentUser.id ? "text-brand font-bold" : ""}
+            >
+              {u.displayName.slice(0, 3).toUpperCase()}
+            </span>
+          ))}
+          <span>RES</span>
+        </div>
         {round.matches.map((match) => (
-          <div key={match.id} className="card !p-4">
-            <div className="flex items-center gap-3 mb-3">
-              <span className="font-mono text-xs text-stone-400 w-5">
-                {match.matchNumber}
-              </span>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-medium text-stone-800">{match.homeTeam}</span>
-                  <span className="text-stone-300">vs</span>
-                  <span className="font-medium text-stone-800">{match.awayTeam}</span>
-                  {match.result && (
-                    <span className={`font-mono font-bold text-sm px-2 py-0.5 rounded ${RESULT_STYLE[match.result]}`}>
-                      {PICK_LABEL[match.result]}
-                    </span>
-                  )}
-                </div>
-                <span className="text-xs text-stone-400 leading-none mt-0.5 block">{match.league}</span>
-              </div>
-            </div>
-
-            {/* Odds */}
-            <div className="flex gap-4 text-xs text-stone-400 mb-2 ml-8">
-              <span>1: {Number(match.oddsHome).toFixed(2)}</span>
-              <span>X: {Number(match.oddsDraw).toFixed(2)}</span>
-              <span>2: {Number(match.oddsAway).toFixed(2)}</span>
-            </div>
-
-            {/* Predictions (revealed) */}
-            {isRevealed && match.predictions.length > 0 && (
-              <div className="flex flex-wrap gap-2 ml-8">
-                {match.predictions.map((pred) => {
-                  const isCorrect = match.result && pred.pick === match.result;
-                  return (
-                    <span
-                      key={pred.id}
-                      className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md ${
-                        isCorrect
-                          ? "bg-pitch-50 text-pitch-500 border border-pitch-200"
-                          : "bg-stone-50 text-stone-400 border border-stone-100"
-                      }`}
-                    >
-                      <span className="font-medium">
-                        {pred.user.displayName.split(" ")[0]}
-                      </span>
-                      <span className="font-mono">{PICK_LABEL[pred.pick]}</span>
-                    </span>
-                  );
-                })}
-              </div>
-            )}
+          <div
+            key={match.id}
+            className="grid gap-0.5 items-center text-center py-1.5 border-b border-line-hairline last:border-0"
+            style={{ gridTemplateColumns: gridCols }}
+          >
+            <span className="text-[9.5px] text-muted-ghost">{match.matchNumber}</span>
+            <span className="text-left font-body text-xs text-ink-secondary whitespace-nowrap overflow-hidden text-ellipsis">
+              {match.homeTeam}–{match.awayTeam}
+            </span>
+            {usersWithPredictions.map((u) => {
+              const pred = match.predictions.find((p) => p.userId === u.id);
+              if (!pred) return <span key={u.id} className="text-muted-ghost">—</span>;
+              const isCorrect = match.result && pred.pick === match.result;
+              return (
+                <b
+                  key={u.id}
+                  className={`text-xs ${isCorrect ? "text-brand" : "text-muted-ghost"}`}
+                >
+                  {PICK_LABEL[pred.pick]}
+                </b>
+              );
+            })}
+            <span className="flex justify-center">
+              {match.result ? (
+                <span className="w-5 h-5 rounded-[5px] bg-result-ink text-white text-[11px] font-bold flex items-center justify-center">
+                  {PICK_LABEL[match.result]}
+                </span>
+              ) : (
+                <span className="text-muted-ghost">—</span>
+              )}
+            </span>
           </div>
         ))}
       </div>

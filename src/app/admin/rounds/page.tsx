@@ -16,6 +16,7 @@ interface RoundData {
 }
 
 const PICK_LABEL: Record<string, string> = { HOME: "1", DRAW: "X", AWAY: "2" };
+const LEAGUES = ["Premier League", "Superliga", "Bundesliga", "Serie A", "La Liga"];
 
 function AdminRoundsContent() {
   const searchParams = useSearchParams();
@@ -41,14 +42,10 @@ function AdminRoundsContent() {
   >([]);
 
   const [resultsRound, setResultsRound] = useState<string | null>(null);
-  const [resultEntries, setResultEntries] = useState<
-    Record<string, PickType | "">
-  >({});
+  const [resultEntries, setResultEntries] = useState<Record<string, PickType | "">>({});
 
   const fetchRounds = () => {
-    const url = seasonId
-      ? `/api/rounds?seasonId=${seasonId}`
-      : "/api/rounds";
+    const url = seasonId ? `/api/rounds?seasonId=${seasonId}` : "/api/rounds";
     fetch(url)
       .then((r) => r.json())
       .then(({ data }) => {
@@ -158,24 +155,24 @@ function AdminRoundsContent() {
   };
 
   if (loading) {
-    return <div className="text-center py-20 text-stone-400">Loading...</div>;
+    return <div className="text-center py-20 text-muted">Indlæser...</div>;
   }
 
   return (
     <div className="space-y-6">
-      <h1 className="font-display text-3xl font-bold text-stone-900">Manage Rounds</h1>
+      <h1 className="font-display text-2xl font-bold text-ink">Administrér runder</h1>
 
       {/* Create round */}
       {!showCreate ? (
         <button onClick={() => setShowCreate(true)} className="btn-primary">
-          + New Round
+          + Ny runde
         </button>
       ) : (
         <div className="card space-y-4">
-          <h2 className="font-display font-semibold text-stone-800">Create Round</h2>
+          <h2 className="font-display font-semibold text-ink">Opret runde</h2>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="label">Round Number</label>
+              <label className="label">Rundenummer</label>
               <input
                 type="number"
                 className="input"
@@ -194,8 +191,12 @@ function AdminRoundsContent() {
             </div>
           </div>
           <div className="flex gap-2">
-            <button onClick={createRound} className="btn-primary">Create</button>
-            <button onClick={() => setShowCreate(false)} className="btn-secondary">Cancel</button>
+            <button onClick={createRound} className="btn-primary">
+              Opret
+            </button>
+            <button onClick={() => setShowCreate(false)} className="btn-secondary">
+              Annullér
+            </button>
           </div>
         </div>
       )}
@@ -203,16 +204,14 @@ function AdminRoundsContent() {
       {/* Match entry form */}
       {editingRound && (
         <div className="card space-y-4">
-          <h2 className="font-display font-semibold text-stone-800">Add 13 Matches</h2>
+          <h2 className="font-display font-semibold text-ink">Tilføj 13 kampe</h2>
           <div className="space-y-3">
             {matchEntries.map((m, i) => (
               <div key={i} className="grid grid-cols-12 gap-2 items-center">
-                <span className="col-span-1 text-xs text-stone-400 font-mono">
-                  {i + 1}
-                </span>
+                <span className="col-span-1 text-xs text-muted font-mono">{i + 1}</span>
                 <input
                   className="col-span-2 input !py-1.5 text-sm"
-                  placeholder="Home"
+                  placeholder="Hjemme"
                   value={m.homeTeam}
                   onChange={(e) => {
                     const copy = [...matchEntries];
@@ -222,7 +221,7 @@ function AdminRoundsContent() {
                 />
                 <input
                   className="col-span-2 input !py-1.5 text-sm"
-                  placeholder="Away"
+                  placeholder="Ude"
                   value={m.awayTeam}
                   onChange={(e) => {
                     const copy = [...matchEntries];
@@ -239,11 +238,9 @@ function AdminRoundsContent() {
                     setMatchEntries(copy);
                   }}
                 >
-                  <option>Premier League</option>
-                  <option>Superliga</option>
-                  <option>Bundesliga</option>
-                  <option>Serie A</option>
-                  <option>La Liga</option>
+                  {LEAGUES.map((l) => (
+                    <option key={l}>{l}</option>
+                  ))}
                 </select>
                 <input
                   className="col-span-1 input !py-1.5 text-sm text-center"
@@ -280,13 +277,10 @@ function AdminRoundsContent() {
           </div>
           <div className="flex gap-2">
             <button onClick={saveMatches} className="btn-primary">
-              Save Matches
+              Gem kampe
             </button>
-            <button
-              onClick={() => setEditingRound(null)}
-              className="btn-secondary"
-            >
-              Cancel
+            <button onClick={() => setEditingRound(null)} className="btn-secondary">
+              Annullér
             </button>
           </div>
         </div>
@@ -295,13 +289,13 @@ function AdminRoundsContent() {
       {/* Results entry form */}
       {resultsRound && (
         <div className="card space-y-4">
-          <h2 className="font-display font-semibold text-stone-800">Enter Results</h2>
+          <h2 className="font-display font-semibold text-ink">Indtast resultater</h2>
           {rounds
             .find((r) => r.id === resultsRound)
             ?.matches.map((m) => (
               <div key={m.id} className="flex items-center gap-4">
-                <span className="text-sm w-48 text-stone-700">
-                  {m.homeTeam} vs {m.awayTeam}
+                <span className="text-sm w-48 text-ink-secondary">
+                  {m.homeTeam} – {m.awayTeam}
                 </span>
                 <div className="flex gap-2">
                   {(["HOME", "DRAW", "AWAY"] as PickType[]).map((pick) => (
@@ -313,14 +307,10 @@ function AdminRoundsContent() {
                           [m.id]: pick,
                         }))
                       }
-                      className={`px-3 py-1 rounded text-sm font-mono ${
+                      className={`w-9 h-9 rounded-md font-mono text-sm font-bold flex items-center justify-center ${
                         resultEntries[m.id] === pick
-                          ? pick === "HOME"
-                            ? "pick-btn-home"
-                            : pick === "DRAW"
-                            ? "pick-btn-draw"
-                            : "pick-btn-away"
-                          : "pick-btn-unselected"
+                          ? "bg-brand text-white"
+                          : "border-[1.5px] border-line-pick text-muted-faint"
                       }`}
                     >
                       {PICK_LABEL[pick]}
@@ -331,13 +321,10 @@ function AdminRoundsContent() {
             ))}
           <div className="flex gap-2">
             <button onClick={saveResults} className="btn-primary">
-              Save Results
+              Gem resultater
             </button>
-            <button
-              onClick={() => setResultsRound(null)}
-              className="btn-secondary"
-            >
-              Cancel
+            <button onClick={() => setResultsRound(null)} className="btn-secondary">
+              Annullér
             </button>
           </div>
         </div>
@@ -349,14 +336,14 @@ function AdminRoundsContent() {
           <div key={round.id} className="card !p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
-                <span className="font-display font-semibold text-stone-800">
-                  Round {round.roundNumber}
+                <span className="font-display font-semibold text-ink">
+                  Runde {round.roundNumber}
                 </span>
                 <RoundStatusBadge status={round.status} />
               </div>
-              <span className="text-xs text-stone-400">
-                {round.matches.length} matches ·{" "}
-                {Math.floor(round._count.predictions / 13)} submitted
+              <span className="font-mono text-xs text-muted">
+                {round.matches.length} kampe ·{" "}
+                {Math.floor(round._count.predictions / 13)} indleveret
               </span>
             </div>
 
@@ -366,7 +353,7 @@ function AdminRoundsContent() {
                   onClick={() => startAddMatches(round.id)}
                   className="btn-secondary text-xs"
                 >
-                  Add Matches
+                  Tilføj kampe
                 </button>
               )}
 
@@ -375,7 +362,7 @@ function AdminRoundsContent() {
                   onClick={() => updateStatus(round.id, "locked")}
                   className="btn-secondary text-xs"
                 >
-                  Lock Round
+                  Lås runden
                 </button>
               )}
 
@@ -385,19 +372,19 @@ function AdminRoundsContent() {
                     onClick={() => startEnterResults(round)}
                     className="btn-secondary text-xs"
                   >
-                    Enter Results
+                    Indtast resultater
                   </button>
                   <button
                     onClick={() => autoResolve(round.id)}
                     className="btn-secondary text-xs"
                   >
-                    Auto-resolve
+                    Beregn automatisk
                   </button>
                   <button
                     onClick={() => updateStatus(round.id, "open")}
                     className="btn-secondary text-xs"
                   >
-                    Reopen
+                    Genåbn
                   </button>
                 </>
               )}
@@ -407,7 +394,7 @@ function AdminRoundsContent() {
                   onClick={() => updateStatus(round.id, "locked")}
                   className="btn-secondary text-xs"
                 >
-                  Reopen for Edits
+                  Genåbn til redigering
                 </button>
               )}
             </div>
@@ -420,7 +407,7 @@ function AdminRoundsContent() {
 
 export default function AdminRoundsPage() {
   return (
-    <Suspense fallback={<div className="text-center py-20 text-stone-400">Loading...</div>}>
+    <Suspense fallback={<div className="text-center py-20 text-muted">Indlæser...</div>}>
       <AdminRoundsContent />
     </Suspense>
   );
