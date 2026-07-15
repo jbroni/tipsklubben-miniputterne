@@ -109,7 +109,6 @@ Visit http://localhost:3000
    - `DATABASE_URL`
    - `DIRECT_URL`
    - `FOOTBALL_DATA_API_KEY`
-   - `NEXT_PUBLIC_APP_URL` (your Vercel URL)
 
 4. Deploy!
 

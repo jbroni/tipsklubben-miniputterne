@@ -202,15 +202,24 @@ export default async function DashboardPage() {
           roundNumber: round.roundNumber,
           points,
           fedt: calcRoundFedt(fedtPicks),
+          played: userPreds.length > 0,
         };
       });
 
       const totalPoints = roundScores.reduce((s, r) => s + r.points, 0);
-      const roundsPlayed = completedRounds.length;
+      const playedRoundScores = roundScores.filter((r) => r.played);
+      const roundsPlayed = playedRoundScores.length;
       const avgScore = roundsPlayed > 0 ? totalPoints / roundsPlayed : 0;
-      const seasonFedt = calcSeasonFedt(roundScores.map((r) => r.fedt));
+      const seasonFedt = calcSeasonFedt(playedRoundScores.map((r) => r.fedt));
 
-      return { user: u, totalPoints, roundsPlayed, avgScore, seasonFedt, roundScores };
+      return {
+        user: u,
+        totalPoints,
+        roundsPlayed,
+        avgScore,
+        seasonFedt,
+        roundScores: roundScores.map(({ played: _played, ...r }) => r),
+      };
     });
 
     leaderboardEntries.sort((a, b) => {

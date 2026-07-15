@@ -68,14 +68,15 @@ export async function GET(request: Request) {
         roundNumber: round.roundNumber,
         points,
         fedt,
+        played: userPredictions.length > 0,
       };
     });
 
-    const playedRounds = roundScores.filter((r) => r.points > 0 || rounds.length > 0);
+    const playedRoundScores = roundScores.filter((r) => r.played);
     const totalPoints = roundScores.reduce((sum, r) => sum + r.points, 0);
-    const roundsPlayed = playedRounds.length;
+    const roundsPlayed = playedRoundScores.length;
     const avgScore = roundsPlayed > 0 ? totalPoints / roundsPlayed : 0;
-    const seasonFedt = calcSeasonFedt(roundScores.map((r) => r.fedt));
+    const seasonFedt = calcSeasonFedt(playedRoundScores.map((r) => r.fedt));
 
     return {
       user: u,
@@ -83,7 +84,7 @@ export async function GET(request: Request) {
       roundsPlayed,
       avgScore,
       seasonFedt,
-      roundScores,
+      roundScores: roundScores.map(({ played: _played, ...r }) => r),
     };
   });
 
