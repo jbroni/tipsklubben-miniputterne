@@ -16,6 +16,16 @@ interface RoundData {
 }
 
 const PICK_LABEL: Record<string, string> = { HOME: "1", DRAW: "X", AWAY: "2" };
+const LEAGUES = ["Premier League", "Superliga", "Bundesliga", "Serie A", "La Liga"];
+const API_LEAGUES = ["Premier League", "Bundesliga", "Serie A", "La Liga"];
+
+interface Fixture {
+  externalId: string;
+  homeTeam: string;
+  awayTeam: string;
+  league: string;
+  kickoff: string;
+}
 
 function AdminRoundsContent() {
   const searchParams = useSearchParams();
@@ -37,20 +47,29 @@ function AdminRoundsContent() {
       oddsHome: string;
       oddsDraw: string;
       oddsAway: string;
+      externalId: string | null;
     }[]
   >([]);
 
+  const [fixtureLeague, setFixtureLeague] = useState(API_LEAGUES[0]);
+  const [fixtureDateFrom, setFixtureDateFrom] = useState("");
+  const [fixtureDateTo, setFixtureDateTo] = useState("");
+  const [fetchedFixtures, setFetchedFixtures] = useState<Fixture[]>([]);
+  const [fixturesLoading, setFixturesLoading] = useState(false);
+  const [fixturesError, setFixturesError] = useState<string | null>(null);
+
   const [resultsRound, setResultsRound] = useState<string | null>(null);
-  const [resultEntries, setResultEntries] = useState<
-    Record<string, PickType | "">
+  const [resultEntries, setResultEntries] = useState<Record<string, PickType | "">>({});
+
+  const [autoResolvingRound, setAutoResolvingRound] = useState<string | null>(null);
+  const [autoResolveMessages, setAutoResolveMessages] = useState<
+    Record<string, { type: "success" | "error"; text: string }>
   >({});
 
   const [actionError, setActionError] = useState("");
 
   const fetchRounds = () => {
-    const url = seasonId
-      ? `/api/rounds?seasonId=${seasonId}`
-      : "/api/rounds";
+    const url = seasonId ? `/api/rounds?seasonId=${seasonId}` : "/api/rounds";
     fetch(url)
       .then((r) => r.json())
       .then(({ data }) => {
@@ -112,8 +131,66 @@ function AdminRoundsContent() {
         oddsHome: "",
         oddsDraw: "",
         oddsAway: "",
+        externalId: null,
       }))
     );
+    setFetchedFixtures([]);
+    setFixturesError(null);
+  };
+
+  const fetchFixturesFromApi = async () => {
+    if (!editingRound || !fixtureDateFrom || !fixtureDateTo) return;
+    setFixturesLoading(true);
+    setFixturesError(null);
+    try {
+      const res = await fetch(`/api/rounds/${editingRound}/matches/fetch`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          league: fixtureLeague,
+          dateFrom: fixtureDateFrom,
+          dateTo: fixtureDateTo,
+        }),
+      });
+      const { data, error } = await res.json();
+      if (!res.ok) {
+        setFixturesError(error ?? "Kunne ikke hente kampe");
+        return;
+      }
+      setFetchedFixtures(data ?? []);
+    } finally {
+      setFixturesLoading(false);
+    }
+  };
+
+  const applyFixture = (rowIndex: number, externalId: string) => {
+    const fixture = fetchedFixtures.find((f) => f.externalId === externalId);
+    const copy = [...matchEntries];
+    if (!fixture) {
+      copy[rowIndex] = { ...copy[rowIndex], externalId: null };
+    } else {
+      const d = new Date(fixture.kickoff);
+      const pad = (n: number) => String(n).padStart(2, "0");
+      copy[rowIndex] = {
+        ...copy[rowIndex],
+        homeTeam: fixture.homeTeam,
+        awayTeam: fixture.awayTeam,
+        league: fixture.league,
+        kickoff: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`,
+        externalId: fixture.externalId,
+      };
+    }
+    setMatchEntries(copy);
+  };
+
+  const updateMatchEntry = (
+    index: number,
+    field: "homeTeam" | "awayTeam" | "league" | "kickoff",
+    value: string
+  ) => {
+    const copy = [...matchEntries];
+    copy[index] = { ...copy[index], [field]: value, externalId: null };
+    setMatchEntries(copy);
   };
 
   const saveMatches = async () => {
@@ -127,6 +204,7 @@ function AdminRoundsContent() {
       oddsHome: parseFloat(m.oddsHome) || 1.0,
       oddsDraw: parseFloat(m.oddsDraw) || 1.0,
       oddsAway: parseFloat(m.oddsAway) || 1.0,
+      externalId: m.externalId,
     }));
 
     setActionError("");
@@ -175,27 +253,51 @@ function AdminRoundsContent() {
   };
 
   const autoResolve = async (roundId: string) => {
-    setActionError("");
-    const res = await fetch(`/api/rounds/${roundId}/results`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mode: "auto" }),
+    setAutoResolvingRound(roundId);
+    setAutoResolveMessages((prev) => {
+      const copy = { ...prev };
+      delete copy[roundId];
+      return copy;
     });
-    if (!res.ok) {
-      const { error } = await res.json().catch(() => ({ error: "Auto-resolve failed" }));
-      setActionError(error ?? "Auto-resolve failed");
-      return;
+    try {
+      const res = await fetch(`/api/rounds/${roundId}/results`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "auto" }),
+      });
+      const { data, error } = await res.json();
+      if (!res.ok) {
+        setAutoResolveMessages((prev) => ({
+          ...prev,
+          [roundId]: { type: "error", text: error ?? "Automatisk beregning fejlede" },
+        }));
+        return;
+      }
+      setAutoResolveMessages((prev) => ({
+        ...prev,
+        [roundId]: {
+          type: "success",
+          text: `${data.updated} kamp${data.updated === 1 ? "" : "e"} opdateret`,
+        },
+      }));
+      fetchRounds();
+    } catch {
+      setAutoResolveMessages((prev) => ({
+        ...prev,
+        [roundId]: { type: "error", text: "Automatisk beregning fejlede" },
+      }));
+    } finally {
+      setAutoResolvingRound(null);
     }
-    fetchRounds();
   };
 
   if (loading) {
-    return <div className="text-center py-20 text-stone-400">Loading...</div>;
+    return <div className="text-center py-20 text-muted">Indlæser...</div>;
   }
 
   return (
     <div className="space-y-6">
-      <h1 className="font-display text-3xl font-bold text-stone-900">Manage Rounds</h1>
+      <h1 className="font-display text-2xl font-bold text-ink">Administrér runder</h1>
 
       {actionError && (
         <div className="bg-coral-50 border border-coral-200 text-coral-600 rounded-lg px-4 py-3 text-sm flex items-center justify-between">
@@ -207,14 +309,14 @@ function AdminRoundsContent() {
       {/* Create round */}
       {!showCreate ? (
         <button onClick={() => setShowCreate(true)} className="btn-primary">
-          + New Round
+          + Ny runde
         </button>
       ) : (
         <div className="card space-y-4">
-          <h2 className="font-display font-semibold text-stone-800">Create Round</h2>
+          <h2 className="font-display font-semibold text-ink">Opret runde</h2>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="label">Round Number</label>
+              <label className="label">Rundenummer</label>
               <input
                 type="number"
                 className="input"
@@ -233,8 +335,12 @@ function AdminRoundsContent() {
             </div>
           </div>
           <div className="flex gap-2">
-            <button onClick={createRound} className="btn-primary">Create</button>
-            <button onClick={() => setShowCreate(false)} className="btn-secondary">Cancel</button>
+            <button onClick={createRound} className="btn-primary">
+              Opret
+            </button>
+            <button onClick={() => setShowCreate(false)} className="btn-secondary">
+              Annullér
+            </button>
           </div>
         </div>
       )}
@@ -242,60 +348,96 @@ function AdminRoundsContent() {
       {/* Match entry form */}
       {editingRound && (
         <div className="card space-y-4">
-          <h2 className="font-display font-semibold text-stone-800">Add 13 Matches</h2>
+          <h2 className="font-display font-semibold text-ink">Tilføj 13 kampe</h2>
+
+          <div className="space-y-2 border-b border-line pb-4">
+            <h3 className="text-sm font-semibold text-ink-secondary">
+              Hent kampe fra football-data.org
+            </h3>
+            <div className="flex flex-wrap gap-2 items-end">
+              <div>
+                <label className="label">Liga</label>
+                <select
+                  className="input !py-1.5 text-sm"
+                  value={fixtureLeague}
+                  onChange={(e) => setFixtureLeague(e.target.value)}
+                >
+                  {API_LEAGUES.map((l) => (
+                    <option key={l}>{l}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="label">Fra dato</label>
+                <input
+                  type="date"
+                  className="input !py-1.5 text-sm"
+                  value={fixtureDateFrom}
+                  onChange={(e) => setFixtureDateFrom(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="label">Til dato</label>
+                <input
+                  type="date"
+                  className="input !py-1.5 text-sm"
+                  value={fixtureDateTo}
+                  onChange={(e) => setFixtureDateTo(e.target.value)}
+                />
+              </div>
+              <button
+                onClick={fetchFixturesFromApi}
+                className="btn-secondary text-xs"
+                disabled={fixturesLoading || !fixtureDateFrom || !fixtureDateTo}
+              >
+                {fixturesLoading ? "Henter…" : "Hent kampe"}
+              </button>
+            </div>
+            {fixturesError && <p className="text-xs text-red-600">{fixturesError}</p>}
+            {fetchedFixtures.length > 0 && (
+              <p className="text-xs text-muted">
+                {fetchedFixtures.length} kampe fundet. Vælg dem i rækkerne nedenfor for at
+                knytte dem til automatisk resultatberegning.
+              </p>
+            )}
+          </div>
+
           <div className="space-y-3">
             {matchEntries.map((m, i) => (
-              <div key={i} className="grid grid-cols-12 gap-2 items-center">
-                <span className="col-span-1 text-xs text-stone-400 font-mono">
-                  {i + 1}
-                </span>
+              <div
+                key={i}
+                className="grid grid-cols-[auto_2fr_2fr_2fr_2fr_1fr_1fr_1fr_2fr] gap-2 items-center"
+              >
+                <span className="text-xs text-muted font-mono">{i + 1}</span>
                 <input
-                  className="col-span-2 input !py-1.5 text-sm"
-                  placeholder="Home"
+                  className="input !py-1.5 text-sm"
+                  placeholder="Hjemme"
                   value={m.homeTeam}
-                  onChange={(e) => {
-                    const copy = [...matchEntries];
-                    copy[i].homeTeam = e.target.value;
-                    setMatchEntries(copy);
-                  }}
+                  onChange={(e) => updateMatchEntry(i, "homeTeam", e.target.value)}
                 />
                 <input
-                  className="col-span-2 input !py-1.5 text-sm"
-                  placeholder="Away"
+                  className="input !py-1.5 text-sm"
+                  placeholder="Ude"
                   value={m.awayTeam}
-                  onChange={(e) => {
-                    const copy = [...matchEntries];
-                    copy[i].awayTeam = e.target.value;
-                    setMatchEntries(copy);
-                  }}
+                  onChange={(e) => updateMatchEntry(i, "awayTeam", e.target.value)}
                 />
                 <select
-                  className="col-span-2 input !py-1.5 text-sm"
+                  className="input !py-1.5 text-sm"
                   value={m.league}
-                  onChange={(e) => {
-                    const copy = [...matchEntries];
-                    copy[i].league = e.target.value;
-                    setMatchEntries(copy);
-                  }}
+                  onChange={(e) => updateMatchEntry(i, "league", e.target.value)}
                 >
-                  <option>Premier League</option>
-                  <option>Superliga</option>
-                  <option>Bundesliga</option>
-                  <option>Serie A</option>
-                  <option>La Liga</option>
+                  {LEAGUES.map((l) => (
+                    <option key={l}>{l}</option>
+                  ))}
                 </select>
                 <input
                   type="datetime-local"
-                  className="col-span-2 input !py-1.5 text-sm"
+                  className="input !py-1.5 text-sm"
                   value={m.kickoff}
-                  onChange={(e) => {
-                    const copy = [...matchEntries];
-                    copy[i].kickoff = e.target.value;
-                    setMatchEntries(copy);
-                  }}
+                  onChange={(e) => updateMatchEntry(i, "kickoff", e.target.value)}
                 />
                 <input
-                  className="col-span-1 input !py-1.5 text-sm text-center"
+                  className="input !py-1.5 text-sm text-center"
                   placeholder="1"
                   value={m.oddsHome}
                   onChange={(e) => {
@@ -305,7 +447,7 @@ function AdminRoundsContent() {
                   }}
                 />
                 <input
-                  className="col-span-1 input !py-1.5 text-sm text-center"
+                  className="input !py-1.5 text-sm text-center"
                   placeholder="X"
                   value={m.oddsDraw}
                   onChange={(e) => {
@@ -315,7 +457,7 @@ function AdminRoundsContent() {
                   }}
                 />
                 <input
-                  className="col-span-1 input !py-1.5 text-sm text-center"
+                  className="input !py-1.5 text-sm text-center"
                   placeholder="2"
                   value={m.oddsAway}
                   onChange={(e) => {
@@ -324,18 +466,29 @@ function AdminRoundsContent() {
                     setMatchEntries(copy);
                   }}
                 />
+                <select
+                  className={`input !py-1.5 text-xs ${
+                    m.externalId ? "border-green-600 text-green-700" : ""
+                  }`}
+                  value={m.externalId ?? ""}
+                  onChange={(e) => applyFixture(i, e.target.value)}
+                >
+                  <option value="">– Ikke koblet –</option>
+                  {fetchedFixtures.map((f) => (
+                    <option key={f.externalId} value={f.externalId}>
+                      {f.homeTeam} – {f.awayTeam}
+                    </option>
+                  ))}
+                </select>
               </div>
             ))}
           </div>
           <div className="flex gap-2">
             <button onClick={saveMatches} className="btn-primary">
-              Save Matches
+              Gem kampe
             </button>
-            <button
-              onClick={() => setEditingRound(null)}
-              className="btn-secondary"
-            >
-              Cancel
+            <button onClick={() => setEditingRound(null)} className="btn-secondary">
+              Annullér
             </button>
           </div>
         </div>
@@ -344,13 +497,13 @@ function AdminRoundsContent() {
       {/* Results entry form */}
       {resultsRound && (
         <div className="card space-y-4">
-          <h2 className="font-display font-semibold text-stone-800">Enter Results</h2>
+          <h2 className="font-display font-semibold text-ink">Indtast resultater</h2>
           {rounds
             .find((r) => r.id === resultsRound)
             ?.matches.map((m) => (
               <div key={m.id} className="flex items-center gap-4">
-                <span className="text-sm w-48 text-stone-700">
-                  {m.homeTeam} vs {m.awayTeam}
+                <span className="text-sm w-48 text-ink-secondary">
+                  {m.homeTeam} – {m.awayTeam}
                 </span>
                 <div className="flex gap-2">
                   {(["HOME", "DRAW", "AWAY"] as PickType[]).map((pick) => (
@@ -362,14 +515,10 @@ function AdminRoundsContent() {
                           [m.id]: pick,
                         }))
                       }
-                      className={`px-3 py-1 rounded text-sm font-mono ${
+                      className={`w-9 h-9 rounded-md font-mono text-sm font-bold flex items-center justify-center ${
                         resultEntries[m.id] === pick
-                          ? pick === "HOME"
-                            ? "pick-btn-home"
-                            : pick === "DRAW"
-                            ? "pick-btn-draw"
-                            : "pick-btn-away"
-                          : "pick-btn-unselected"
+                          ? "bg-brand text-white"
+                          : "border-[1.5px] border-line-pick text-muted-faint"
                       }`}
                     >
                       {PICK_LABEL[pick]}
@@ -380,13 +529,10 @@ function AdminRoundsContent() {
             ))}
           <div className="flex gap-2">
             <button onClick={saveResults} className="btn-primary">
-              Save Results
+              Gem resultater
             </button>
-            <button
-              onClick={() => setResultsRound(null)}
-              className="btn-secondary"
-            >
-              Cancel
+            <button onClick={() => setResultsRound(null)} className="btn-secondary">
+              Annullér
             </button>
           </div>
         </div>
@@ -398,16 +544,28 @@ function AdminRoundsContent() {
           <div key={round.id} className="card !p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
-                <span className="font-display font-semibold text-stone-800">
-                  Round {round.roundNumber}
+                <span className="font-display font-semibold text-ink">
+                  Runde {round.roundNumber}
                 </span>
                 <RoundStatusBadge status={round.status} />
               </div>
-              <span className="text-xs text-stone-400">
-                {round.matches.length} matches ·{" "}
-                {Math.floor(round._count.predictions / 13)} submitted
+              <span className="font-mono text-xs text-muted">
+                {round.matches.length} kampe ·{" "}
+                {Math.floor(round._count.predictions / 13)} indleveret
               </span>
             </div>
+
+            {autoResolveMessages[round.id] && (
+              <p
+                className={`text-xs mb-2 ${
+                  autoResolveMessages[round.id].type === "success"
+                    ? "text-green-700"
+                    : "text-red-600"
+                }`}
+              >
+                {autoResolveMessages[round.id].text}
+              </p>
+            )}
 
             <div className="flex flex-wrap gap-2">
               {round.matches.length === 0 && (
@@ -415,7 +573,7 @@ function AdminRoundsContent() {
                   onClick={() => startAddMatches(round.id)}
                   className="btn-secondary text-xs"
                 >
-                  Add Matches
+                  Tilføj kampe
                 </button>
               )}
 
@@ -424,7 +582,7 @@ function AdminRoundsContent() {
                   onClick={() => updateStatus(round.id, "locked")}
                   className="btn-secondary text-xs"
                 >
-                  Lock Round
+                  Lås runden
                 </button>
               )}
 
@@ -434,19 +592,20 @@ function AdminRoundsContent() {
                     onClick={() => startEnterResults(round)}
                     className="btn-secondary text-xs"
                   >
-                    Enter Results
+                    Indtast resultater
                   </button>
                   <button
                     onClick={() => autoResolve(round.id)}
                     className="btn-secondary text-xs"
+                    disabled={autoResolvingRound === round.id}
                   >
-                    Auto-resolve
+                    {autoResolvingRound === round.id ? "Beregner…" : "Beregn automatisk"}
                   </button>
                   <button
                     onClick={() => updateStatus(round.id, "open")}
                     className="btn-secondary text-xs"
                   >
-                    Reopen
+                    Genåbn
                   </button>
                 </>
               )}
@@ -456,7 +615,7 @@ function AdminRoundsContent() {
                   onClick={() => updateStatus(round.id, "locked")}
                   className="btn-secondary text-xs"
                 >
-                  Reopen for Edits
+                  Genåbn til redigering
                 </button>
               )}
             </div>
@@ -469,7 +628,7 @@ function AdminRoundsContent() {
 
 export default function AdminRoundsPage() {
   return (
-    <Suspense fallback={<div className="text-center py-20 text-stone-400">Loading...</div>}>
+    <Suspense fallback={<div className="text-center py-20 text-muted">Indlæser...</div>}>
       <AdminRoundsContent />
     </Suspense>
   );

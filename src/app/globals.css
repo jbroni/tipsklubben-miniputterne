@@ -6,58 +6,58 @@
 
 @layer base {
   body {
-    @apply bg-stone-50 text-stone-900 font-body antialiased;
+    @apply bg-paper text-ink font-body antialiased;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-pitch-500 hover:bg-pitch-600 text-white font-semibold px-5 py-2.5 rounded-lg
-      transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply bg-brand hover:bg-brand text-white font-semibold px-5 py-3 rounded-xl
+      shadow-btn-primary transition-all duration-200 active:scale-95 active:translate-y-px active:shadow-none
+      disabled:bg-line-pick disabled:text-muted-ghost disabled:shadow-none disabled:active:translate-y-0 disabled:cursor-not-allowed;
   }
 
   .btn-secondary {
-    @apply bg-white hover:bg-stone-50 text-stone-700 font-medium px-5 py-2.5 rounded-lg
-      border border-stone-200 transition-all duration-200 active:scale-95 shadow-sm;
+    @apply bg-surface hover:bg-[#f9f6ec] text-ink-tertiary font-semibold px-5 py-3 rounded-xl
+      border-[1.5px] border-[#d9d2bf] transition-all duration-200 active:scale-95;
   }
 
   .btn-danger {
-    @apply bg-coral-50 hover:bg-coral-100 text-coral-600 font-medium px-5 py-2.5 rounded-lg
-      border border-coral-200 transition-all duration-200 active:scale-95;
+    @apply text-signal font-medium hover:underline transition-all duration-200;
   }
 
   .card {
-    @apply bg-white border border-stone-200 rounded-xl p-6 shadow-sm;
+    @apply bg-surface border border-line-card rounded-card p-4 shadow-card;
+  }
+
+  .kicker {
+    @apply font-mono text-[10px] tracking-[1.2px] text-muted uppercase;
   }
 
   .input {
-    @apply bg-white border border-stone-300 rounded-lg px-4 py-2.5 text-stone-900
-      placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-pitch-400/30
-      focus:border-pitch-500 transition-colors w-full;
+    @apply bg-white border border-line-pick rounded-lg px-4 py-2.5 text-ink
+      placeholder:text-muted-faint focus:outline-none focus:ring-2 focus:ring-brand/20
+      focus:border-brand transition-colors w-full;
   }
 
   .label {
-    @apply block text-sm font-medium text-stone-600 mb-1.5;
+    @apply block text-sm font-medium text-ink-tertiary mb-1.5;
   }
 
   .pick-btn {
-    @apply px-4 py-2 rounded-lg font-mono font-bold text-sm transition-all duration-200
-      border-2 cursor-pointer select-none;
+    @apply h-[42px] rounded-[9px] font-mono font-bold text-sm transition-all duration-200
+      flex flex-col items-center justify-center cursor-pointer select-none;
   }
 
   .pick-btn-unselected {
-    @apply pick-btn border-stone-200 bg-white text-stone-400 hover:border-stone-300 hover:text-stone-600;
+    @apply pick-btn border-[1.5px] border-line-pick text-muted-faint;
   }
 
-  .pick-btn-home {
-    @apply pick-btn border-pitch-500 bg-pitch-50 text-pitch-600;
+  .pick-btn-selected {
+    @apply pick-btn bg-brand text-white;
   }
 
-  .pick-btn-draw {
-    @apply pick-btn border-amber-500 bg-amber-50 text-amber-700;
-  }
-
-  .pick-btn-away {
-    @apply pick-btn border-coral-500 bg-coral-50 text-coral-600;
+  .tear-line {
+    @apply border-t-2 border-dashed border-line-tear;
   }
 }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { Logo } from "@/components/Logo";
 
 interface Season {
   id: string;
@@ -51,40 +52,42 @@ export default function AdminPage() {
   };
 
   if (loading) {
-    return <div className="text-center py-20 text-stone-400">Loading...</div>;
+    return <div className="text-center py-20 text-muted">Indlæser...</div>;
   }
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <h1 className="font-display text-3xl font-bold text-coral-500">
-          Admin Panel
-        </h1>
+      <div className="flex items-center gap-3">
+        <Logo size="compact" />
+        <span className="font-mono text-[10px] font-bold text-signal border-[1.5px] border-signal rounded-full px-2.5 py-0.5">
+          ADMIN
+        </span>
+        <div className="flex-1" />
         <Link href="/admin/users" className="btn-secondary text-sm">
-          Manage Members
+          Administrér medlemmer
         </Link>
       </div>
 
       {/* Create season */}
       {!showCreate ? (
         <button onClick={() => setShowCreate(true)} className="btn-primary">
-          + New Season
+          + Ny sæson
         </button>
       ) : (
         <div className="card space-y-4">
-          <h2 className="font-display font-semibold text-stone-800">Create Season</h2>
+          <h2 className="font-display font-semibold text-ink">Opret sæson</h2>
           <div>
-            <label className="label">Season Name</label>
+            <label className="label">Sæsonnavn</label>
             <input
               type="text"
               className="input"
-              placeholder="e.g. Autumn 2026"
+              placeholder="f.eks. Efterår 2026"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
             />
           </div>
           <div>
-            <label className="label">Start Date</label>
+            <label className="label">Startdato</label>
             <input
               type="date"
               className="input"
@@ -93,7 +96,7 @@ export default function AdminPage() {
             />
           </div>
           <div>
-            <label className="label">Number of Rounds</label>
+            <label className="label">Antal runder</label>
             <input
               type="number"
               className="input w-24"
@@ -105,13 +108,10 @@ export default function AdminPage() {
           </div>
           <div className="flex gap-2">
             <button onClick={createSeason} className="btn-primary">
-              Create
+              Opret
             </button>
-            <button
-              onClick={() => setShowCreate(false)}
-              className="btn-secondary"
-            >
-              Cancel
+            <button onClick={() => setShowCreate(false)} className="btn-secondary">
+              Annullér
             </button>
           </div>
         </div>
@@ -123,42 +123,38 @@ export default function AdminPage() {
           <div key={season.id} className="card">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="font-display text-lg font-semibold text-stone-800">
+                <h3 className="font-display text-lg font-semibold text-ink">
                   {season.name}
                 </h3>
-                <p className="text-xs text-stone-400">
-                  {new Date(season.startDate).toLocaleDateString("en-GB")} ·{" "}
-                  {season.numRounds} rounds
-                  {season.isActive && (
-                    <span className="text-pitch-500 ml-2">Active</span>
-                  )}
+                <p className="text-xs text-muted">
+                  {new Date(season.startDate).toLocaleDateString("da-DK")} ·{" "}
+                  {season.numRounds} runder
+                  {season.isActive && <span className="text-brand ml-2">Aktiv</span>}
                 </p>
               </div>
               <Link
                 href={`/admin/rounds?seasonId=${season.id}`}
                 className="btn-secondary text-sm"
               >
-                Manage Rounds
+                Administrér runder
               </Link>
             </div>
 
             {/* Rounds summary */}
             <div className="flex flex-wrap gap-2">
               {Array.from({ length: season.numRounds }, (_, i) => {
-                const round = season.rounds.find(
-                  (r) => r.roundNumber === i + 1
-                );
+                const round = season.rounds.find((r) => r.roundNumber === i + 1);
                 return (
                   <div
                     key={i}
                     className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-mono ${
                       round?.status === "completed"
-                        ? "bg-pitch-50 text-pitch-500 border border-pitch-200"
+                        ? "bg-brand-tint text-brand border border-brand-tintBorder"
                         : round?.status === "locked"
-                        ? "bg-amber-50 text-amber-600 border border-amber-200"
+                        ? "bg-signal-soft text-signal border border-[#eed7d0]"
                         : round?.status === "open"
-                        ? "bg-blue-50 text-blue-500 border border-blue-200"
-                        : "bg-stone-50 text-stone-300 border border-stone-100"
+                        ? "bg-info-soft text-info border border-line-card"
+                        : "bg-paper text-muted-ghost border border-line-hairline"
                     }`}
                   >
                     {i + 1}

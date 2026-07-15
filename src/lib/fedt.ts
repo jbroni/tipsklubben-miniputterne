@@ -70,23 +70,19 @@ export function calcSeasonFedt(roundFedts: number[]): number {
 }
 
 /**
- * Get an English label for a Fedt score.
+ * Format a decimal number using Danish convention (comma instead of dot).
  */
-export function getFedtLabel(fedt: number): string {
-  if (fedt >= 85) return "Very safe";
-  if (fedt >= 65) return "Safe";
-  if (fedt >= 45) return "Neutral";
-  if (fedt >= 25) return "Bold";
-  return "Wild";
+export function formatDecimal(value: number, digits: number): string {
+  return value.toFixed(digits).replace(".", ",");
 }
 
 /**
- * Get a color class for a Fedt score (Tailwind).
+ * Get a Danish label for a Fedt score.
  */
-export function getFedtColor(fedt: number): string {
-  if (fedt >= 85) return "text-blue-500";
-  if (fedt >= 65) return "text-sky-500";
-  if (fedt >= 45) return "text-stone-500";
-  if (fedt >= 25) return "text-amber-600";
-  return "text-coral-500";
+export function getFedtLabel(fedt: number): string {
+  if (fedt >= 85) return "meget sikker";
+  if (fedt >= 65) return "sikker";
+  if (fedt >= 45) return "neutral";
+  if (fedt >= 25) return "modig";
+  return "vild";
 }
