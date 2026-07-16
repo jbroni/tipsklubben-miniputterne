@@ -75,6 +75,32 @@ function AdminRoundsContent() {
 
   const [actionError, setActionError] = useState("");
 
+  // Deadline editing state
+  const [editingDeadlineRound, setEditingDeadlineRound] = useState<string | null>(null);
+  const [deadlineInputValue, setDeadlineInputValue] = useState("");
+  const [reopeningRound, setReopeningRound] = useState<string | null>(null);
+
+  // Helper functions
+  const formatDeadline = (deadline: string): string => {
+    return new Date(deadline).toLocaleString("da-DK", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const isDeadlineInPast = (deadline: string): boolean => {
+    return new Date(deadline) <= new Date();
+  };
+
+  const convertToLocalDatetimeLocal = (isoString: string): string => {
+    const date = new Date(isoString);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  };
+
   const fetchRounds = () => {
     const url = seasonId ? `/api/rounds?seasonId=${seasonId}` : "/api/rounds";
     fetch(url)
@@ -124,6 +150,27 @@ function AdminRoundsContent() {
       setActionError(error ?? "Failed to update status");
       return;
     }
+    fetchRounds();
+  };
+
+  const updateDeadline = async (roundId: string, deadline: string, includeStatus?: boolean) => {
+    setActionError("");
+    const body: Record<string, unknown> = { deadline };
+    if (includeStatus) {
+      body.status = "open";
+    }
+    const res = await fetch(`/api/rounds/${roundId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      const { error } = await res.json().catch(() => ({ error: "Fejl ved opdatering" }));
+      setActionError(error ?? "Fejl ved opdatering");
+      return;
+    }
+    setEditingDeadlineRound(null);
+    setReopeningRound(null);
     fetchRounds();
   };
 
@@ -706,87 +753,204 @@ function AdminRoundsContent() {
 
       {/* Rounds list */}
       <div className="space-y-3">
-        {rounds.map((round) => (
-          <div key={round.id} className="card !p-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-3">
-                <span className="font-display font-semibold text-ink">
-                  Runde {round.roundNumber}
+        {rounds.map((round) => {
+          const deadlineInPast = isDeadlineInPast(round.deadline);
+          const isReopenMode = reopeningRound === round.id;
+          const isEditingDeadline = editingDeadlineRound === round.id;
+
+          return (
+            <div key={round.id} className="card !p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <span className="font-display font-semibold text-ink">
+                    Runde {round.roundNumber}
+                  </span>
+                  <RoundStatusBadge status={round.status} />
+                </div>
+                <span className="font-mono text-xs text-muted">
+                  {round.matches.length} kampe ·{" "}
+                  {Math.floor(round._count.predictions / 13)} indleveret
                 </span>
-                <RoundStatusBadge status={round.status} />
               </div>
-              <span className="font-mono text-xs text-muted">
-                {round.matches.length} kampe ·{" "}
-                {Math.floor(round._count.predictions / 13)} indleveret
-              </span>
+
+              {/* Deadline display and warning */}
+              <div className="mb-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-ink-secondary">
+                    Deadline: {formatDeadline(round.deadline)}
+                  </span>
+                  {round.status !== "completed" && !isEditingDeadline && !isReopenMode && (
+                    <button
+                      onClick={() => {
+                        setReopeningRound(null);
+                        setEditingDeadlineRound(round.id);
+                        setDeadlineInputValue(convertToLocalDatetimeLocal(round.deadline));
+                      }}
+                      className="text-xs text-muted hover:text-ink transition-colors"
+                    >
+                      Ændr deadline
+                    </button>
+                  )}
+                </div>
+                {round.status === "open" && deadlineInPast && (
+                  <p className="text-xs text-red-600 mt-1">
+                    Deadline passeret – runden vises som låst
+                  </p>
+                )}
+              </div>
+
+              {/* Deadline edit mode */}
+              {isEditingDeadline && (
+                <div className="mb-3 flex gap-2 items-end">
+                  <div className="flex-1">
+                    <input
+                      type="datetime-local"
+                      className="input !py-1.5 text-sm"
+                      value={deadlineInputValue}
+                      onChange={(e) => setDeadlineInputValue(e.target.value)}
+                    />
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (!deadlineInputValue || isNaN(Date.parse(deadlineInputValue))) {
+                        setActionError("Vælg venligst en gyldig deadline");
+                        return;
+                      }
+                      const isoString = new Date(deadlineInputValue).toISOString();
+                      updateDeadline(round.id, isoString);
+                    }}
+                    className="btn-primary !px-3 !py-1.5 text-xs"
+                    disabled={!deadlineInputValue || isNaN(Date.parse(deadlineInputValue))}
+                  >
+                    Gem
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditingDeadlineRound(null);
+                      setDeadlineInputValue("");
+                    }}
+                    className="btn-secondary !px-3 !py-1.5 text-xs"
+                  >
+                    Annullér
+                  </button>
+                </div>
+              )}
+
+              {/* Reopen with deadline mode */}
+              {isReopenMode && (
+                <div className="mb-3 flex gap-2 items-end">
+                  <div className="flex-1">
+                    <label className="text-xs text-ink-secondary block mb-1">
+                      Ny deadline:
+                    </label>
+                    <input
+                      type="datetime-local"
+                      className="input !py-1.5 text-sm"
+                      value={deadlineInputValue}
+                      onChange={(e) => setDeadlineInputValue(e.target.value)}
+                    />
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (!deadlineInputValue || isNaN(Date.parse(deadlineInputValue))) {
+                        setActionError("Vælg venligst en gyldig deadline");
+                        return;
+                      }
+                      const isoString = new Date(deadlineInputValue).toISOString();
+                      updateDeadline(round.id, isoString, true);
+                    }}
+                    className="btn-primary !px-3 !py-1.5 text-xs"
+                    disabled={!deadlineInputValue || isNaN(Date.parse(deadlineInputValue))}
+                  >
+                    Gem og genåbn
+                  </button>
+                  <button
+                    onClick={() => {
+                      setReopeningRound(null);
+                      setDeadlineInputValue("");
+                    }}
+                    className="btn-secondary !px-3 !py-1.5 text-xs"
+                  >
+                    Annullér
+                  </button>
+                </div>
+              )}
+
+              {autoResolveMessages[round.id] && (
+                <p
+                  className={`text-xs mb-2 ${
+                    autoResolveMessages[round.id].type === "success"
+                      ? "text-green-700"
+                      : "text-red-600"
+                  }`}
+                >
+                  {autoResolveMessages[round.id].text}
+                </p>
+              )}
+
+              <div className="flex flex-wrap gap-2">
+                {round.matches.length === 0 && (
+                  <button
+                    onClick={() => startAddMatches(round.id)}
+                    className="btn-secondary text-xs"
+                  >
+                    Tilføj kampe
+                  </button>
+                )}
+
+                {round.status === "open" && (
+                  <button
+                    onClick={() => updateStatus(round.id, "locked")}
+                    className="btn-secondary text-xs"
+                  >
+                    Lås runden
+                  </button>
+                )}
+
+                {round.status === "locked" && (
+                  <>
+                    <button
+                      onClick={() => startEnterResults(round)}
+                      className="btn-secondary text-xs"
+                    >
+                      Indtast resultater
+                    </button>
+                    <button
+                      onClick={() => autoResolve(round.id)}
+                      className="btn-secondary text-xs"
+                      disabled={autoResolvingRound === round.id}
+                    >
+                      {autoResolvingRound === round.id ? "Beregner…" : "Beregn automatisk"}
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (deadlineInPast) {
+                          setEditingDeadlineRound(null);
+                          setReopeningRound(round.id);
+                          setDeadlineInputValue(convertToLocalDatetimeLocal(round.deadline));
+                        } else {
+                          updateStatus(round.id, "open");
+                        }
+                      }}
+                      className="btn-secondary text-xs"
+                    >
+                      Genåbn
+                    </button>
+                  </>
+                )}
+
+                {round.status === "completed" && (
+                  <button
+                    onClick={() => updateStatus(round.id, "locked")}
+                    className="btn-secondary text-xs"
+                  >
+                    Genåbn til redigering
+                  </button>
+                )}
+              </div>
             </div>
-
-            {autoResolveMessages[round.id] && (
-              <p
-                className={`text-xs mb-2 ${
-                  autoResolveMessages[round.id].type === "success"
-                    ? "text-green-700"
-                    : "text-red-600"
-                }`}
-              >
-                {autoResolveMessages[round.id].text}
-              </p>
-            )}
-
-            <div className="flex flex-wrap gap-2">
-              {round.matches.length === 0 && (
-                <button
-                  onClick={() => startAddMatches(round.id)}
-                  className="btn-secondary text-xs"
-                >
-                  Tilføj kampe
-                </button>
-              )}
-
-              {round.status === "open" && (
-                <button
-                  onClick={() => updateStatus(round.id, "locked")}
-                  className="btn-secondary text-xs"
-                >
-                  Lås runden
-                </button>
-              )}
-
-              {round.status === "locked" && (
-                <>
-                  <button
-                    onClick={() => startEnterResults(round)}
-                    className="btn-secondary text-xs"
-                  >
-                    Indtast resultater
-                  </button>
-                  <button
-                    onClick={() => autoResolve(round.id)}
-                    className="btn-secondary text-xs"
-                    disabled={autoResolvingRound === round.id}
-                  >
-                    {autoResolvingRound === round.id ? "Beregner…" : "Beregn automatisk"}
-                  </button>
-                  <button
-                    onClick={() => updateStatus(round.id, "open")}
-                    className="btn-secondary text-xs"
-                  >
-                    Genåbn
-                  </button>
-                </>
-              )}
-
-              {round.status === "completed" && (
-                <button
-                  onClick={() => updateStatus(round.id, "locked")}
-                  className="btn-secondary text-xs"
-                >
-                  Genåbn til redigering
-                </button>
-              )}
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
