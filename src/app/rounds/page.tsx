@@ -106,7 +106,7 @@ export default async function RoundsPage() {
 
           // locked or completed
           const isCompleted = round.status === "completed";
-          let meta = "Afventer facit";
+          let meta = "Afventer resultat";
           let userWon = false;
 
           if (isCompleted) {

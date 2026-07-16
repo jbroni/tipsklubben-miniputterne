@@ -118,14 +118,14 @@ export default function ProfilePage() {
         )}
         {boldestRound && (
           <div className="card">
-            <p className="text-xs text-muted uppercase tracking-wider">Modigste runde</p>
+            <p className="text-xs text-muted uppercase tracking-wider">Mindst fedtede runde</p>
             <FedtBadge score={boldestRound.fedt} size="sm" />
             <p className="text-xs text-muted mt-1">Runde {boldestRound.roundNumber}</p>
           </div>
         )}
         {safestRound && (
           <div className="card">
-            <p className="text-xs text-muted uppercase tracking-wider">Sikreste runde</p>
+            <p className="text-xs text-muted uppercase tracking-wider">Mest fedtede runde</p>
             <FedtBadge score={safestRound.fedt} size="sm" />
             <p className="text-xs text-muted mt-1">Runde {safestRound.roundNumber}</p>
           </div>

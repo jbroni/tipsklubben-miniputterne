@@ -49,7 +49,7 @@ export default function FedtPage() {
           <div className="grid grid-cols-2 gap-4">
             {boldest && (
               <div className="card text-center">
-                <p className="text-xs text-muted uppercase tracking-wider mb-2">Modigst</p>
+                <p className="text-xs text-muted uppercase tracking-wider mb-2">Mindst fedtet</p>
                 <p className="font-display text-lg font-bold text-signal">
                   {boldest.user.displayName}
                 </p>
@@ -60,7 +60,7 @@ export default function FedtPage() {
             )}
             {safest && (
               <div className="card text-center">
-                <p className="text-xs text-muted uppercase tracking-wider mb-2">Sikrest</p>
+                <p className="text-xs text-muted uppercase tracking-wider mb-2">Mest fedtet</p>
                 <p className="font-display text-lg font-bold text-info">
                   {safest.user.displayName}
                 </p>
@@ -81,7 +81,7 @@ export default function FedtPage() {
                   : "text-muted hover:text-ink"
               }`}
             >
-              Modigst først
+              Mindst fedtet først
             </button>
             <button
               onClick={() => setSortBy("safest")}
@@ -91,7 +91,7 @@ export default function FedtPage() {
                   : "text-muted hover:text-ink"
               }`}
             >
-              Sikrest først
+              Mest fedtet først
             </button>
           </div>
 

@@ -47,7 +47,7 @@ export function PredictHero({
       <div className="my-3.5">
         <AvatarRow
           members={members}
-          caption={`${submittedCount} af ${members.length} har indleveret`}
+          caption={`${submittedCount} af ${members.length} har afleveret`}
         />
       </div>
       <Link href={href} className="btn-primary w-full block text-center">
@@ -75,7 +75,7 @@ export function SubmittedHero({
   const missing = members.filter((m) => !m.submitted);
   const caption =
     missing.length === 0
-      ? "alle har indleveret"
+      ? "alle har afleveret"
       : missing.length === 1
       ? `kun ${missing[0].initial} mangler`
       : `${missing.length} mangler stadig`;
@@ -83,13 +83,13 @@ export function SubmittedHero({
   return (
     <div className="card relative">
       <span className="absolute top-3.5 right-3.5 font-mono text-[10px] font-bold text-brand border-2 border-brand rounded-md px-2 py-0.5 -rotate-[5deg] bg-surface">
-        INDLEVERET ✓
+        AFLEVERET ✓
       </span>
       <span className="kicker">
         RUNDE {roundNumber} · {matchCount} KAMPE
       </span>
       <div className="font-display font-bold text-[23px] mt-2 mb-0.5 text-ink">
-        Din kupon er inde
+        Din kupon er afleveret
       </div>
       <div className="text-sm text-muted">
         Fedt <span className="font-mono font-bold text-ink">{Math.round(fedt)}</span> · du kan rette
@@ -123,7 +123,7 @@ export function RevealedHero({
       <div className="flex justify-between items-center">
         <span className="kicker">RUNDE {roundNumber} · AFGJORT</span>
         <span className="font-mono text-[10px] font-bold text-brand bg-brand-tint rounded-full px-2.5 py-1">
-          FACIT KLAR
+          RESULTAT KLAR
         </span>
       </div>
       <div className="font-display font-bold text-[23px] mt-2 mb-0.5 text-ink">
@@ -134,7 +134,7 @@ export function RevealedHero({
         blev nr. {userRank}
       </div>
       <Link href={href} className="btn-secondary w-full block text-center mt-3.5">
-        Se facit
+        Se resultat
       </Link>
     </div>
   );
@@ -147,7 +147,7 @@ export function LockedHero({ roundNumber }: { roundNumber: number }) {
       <div className="font-display font-bold text-[23px] mt-2 mb-0.5 text-ink">
         Runden er låst
       </div>
-      <div className="text-sm text-muted">Facit er på vej — kom tilbage snart.</div>
+      <div className="text-sm text-muted">Resultatet er på vej — kom tilbage snart.</div>
     </div>
   );
 }

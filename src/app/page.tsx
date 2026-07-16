@@ -306,7 +306,7 @@ export default async function DashboardPage() {
             href={`/rounds/${recap.roundId}`}
             className="text-[13.5px] font-semibold text-brand mt-2.5 inline-block"
           >
-            Se facit →
+            Se resultat →
           </Link>
         </div>
       )}
