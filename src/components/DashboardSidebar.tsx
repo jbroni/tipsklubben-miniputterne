@@ -128,7 +128,7 @@ export function DashboardSidebar({ currentUserId }: Props) {
         <div className="card flex gap-4">
           <div className="flex-1">
             <p className="font-mono text-[9.5px] tracking-[1.2px] text-muted uppercase">
-              MODIGST
+              MINDST FEDTET
             </p>
             <div className="flex justify-between items-baseline mt-0.5">
               <span className="text-sm font-semibold text-signal">
@@ -140,7 +140,7 @@ export function DashboardSidebar({ currentUserId }: Props) {
           <div className="w-px bg-line-card" />
           <div className="flex-1">
             <p className="font-mono text-[9.5px] tracking-[1.2px] text-muted uppercase">
-              SIKREST
+              MEST FEDTET
             </p>
             <div className="flex justify-between items-baseline mt-0.5">
               <span className="text-sm font-semibold text-info">

@@ -769,7 +769,7 @@ function AdminRoundsContent() {
                 </div>
                 <span className="font-mono text-xs text-muted">
                   {round.matches.length} kampe ·{" "}
-                  {Math.floor(round._count.predictions / 13)} indleveret
+                  {Math.floor(round._count.predictions / 13)} afleveret
                 </span>
               </div>
 

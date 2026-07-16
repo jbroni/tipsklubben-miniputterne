@@ -78,7 +78,7 @@ export default async function RoundDetailPage({
             ←
           </Link>
           <span className="font-display font-bold text-lg text-ink">
-            Runde {round.roundNumber} · Facit
+            Runde {round.roundNumber} · Resultat
           </span>
         </div>
         <RoundStatusBadge status={round.status} />
