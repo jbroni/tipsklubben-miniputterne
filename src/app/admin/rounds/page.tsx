@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { RoundStatusBadge } from "@/components/RoundStatusBadge";
+import { parseCouponText, resolveKickoff } from "@/lib/coupon-parser";
 import type { RoundStatus, Match, Pick as PickType } from "@prisma/client";
 
 interface RoundData {
@@ -38,6 +39,7 @@ function AdminRoundsContent() {
   const [newDeadline, setNewDeadline] = useState("");
 
   const [editingRound, setEditingRound] = useState<string | null>(null);
+  const [matchDate, setMatchDate] = useState<string>("");
   const [matchEntries, setMatchEntries] = useState<
     {
       homeTeam: string;
@@ -51,12 +53,17 @@ function AdminRoundsContent() {
     }[]
   >([]);
 
+  const [couponText, setCouponText] = useState("");
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [couponConfirmation, setCouponConfirmation] = useState<{ count: number; type: "success" | "warning" } | null>(null);
+
   const [fixtureLeague, setFixtureLeague] = useState(API_LEAGUES[0]);
   const [fixtureDateFrom, setFixtureDateFrom] = useState("");
   const [fixtureDateTo, setFixtureDateTo] = useState("");
   const [fetchedFixtures, setFetchedFixtures] = useState<Fixture[]>([]);
   const [fixturesLoading, setFixturesLoading] = useState(false);
   const [fixturesError, setFixturesError] = useState<string | null>(null);
+  const [showFixtureFetch, setShowFixtureFetch] = useState(false);
 
   const [resultsRound, setResultsRound] = useState<string | null>(null);
   const [resultEntries, setResultEntries] = useState<Record<string, PickType | "">>({});
@@ -122,6 +129,11 @@ function AdminRoundsContent() {
 
   const startAddMatches = (roundId: string) => {
     setEditingRound(roundId);
+    const round = rounds.find((r) => r.id === roundId);
+    const deadlineDate = round?.deadline ? new Date(round.deadline) : new Date();
+    const resolvedKickoff = resolveKickoff("lør", "00:00", deadlineDate);
+    const deadlineDateStr = resolvedKickoff ? resolvedKickoff.split("T")[0] : "";
+    setMatchDate(deadlineDateStr);
     setMatchEntries(
       Array.from({ length: 13 }, () => ({
         homeTeam: "",
@@ -134,8 +146,60 @@ function AdminRoundsContent() {
         externalId: null,
       }))
     );
+    setCouponText("");
+    setCouponError(null);
+    setCouponConfirmation(null);
     setFetchedFixtures([]);
     setFixturesError(null);
+    setShowFixtureFetch(false);
+  };
+
+  const fillMatchesFromCoupon = () => {
+    const result = parseCouponText(couponText);
+    if (!result.ok) {
+      setCouponError(result.error);
+      setCouponConfirmation(null);
+      return;
+    }
+
+    const deadline = rounds.find((r) => r.id === editingRound)?.deadline;
+    const deadlineDate = deadline ? new Date(deadline) : new Date();
+
+    const copy = [...matchEntries];
+    let firstMatchDate: string | null = null;
+    result.matches.forEach((parsed) => {
+      if (parsed.matchNumber >= 1 && parsed.matchNumber <= 13) {
+        const index = parsed.matchNumber - 1;
+        const resolvedKickoff = resolveKickoff(parsed.kickoffDay, parsed.kickoffTime, deadlineDate);
+        if (resolvedKickoff && !firstMatchDate) {
+          const [datePart] = resolvedKickoff.split("T");
+          firstMatchDate = datePart;
+        }
+        const timeOnly = resolvedKickoff ? resolvedKickoff.split("T")[1] : "";
+        copy[index] = {
+          ...copy[index],
+          homeTeam: parsed.homeTeam,
+          awayTeam: parsed.awayTeam,
+          oddsHome: parsed.oddsHome,
+          oddsDraw: parsed.oddsDraw,
+          oddsAway: parsed.oddsAway,
+          league: parsed.league,
+          kickoff: timeOnly || copy[index].kickoff,
+          externalId: null,
+        };
+      }
+    });
+
+    if (firstMatchDate) {
+      setMatchDate(firstMatchDate);
+    }
+    setMatchEntries(copy);
+    setCouponError(null);
+    setCouponText("");
+    setCouponConfirmation({
+      count: result.matches.length,
+      type: result.matches.length === 13 ? "success" : "warning",
+    });
   };
 
   const fetchFixturesFromApi = async () => {
@@ -171,14 +235,19 @@ function AdminRoundsContent() {
     } else {
       const d = new Date(fixture.kickoff);
       const pad = (n: number) => String(n).padStart(2, "0");
+      const timeOnly = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      const dateOnly = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
       copy[rowIndex] = {
         ...copy[rowIndex],
         homeTeam: fixture.homeTeam,
         awayTeam: fixture.awayTeam,
         league: fixture.league,
-        kickoff: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`,
+        kickoff: timeOnly,
         externalId: fixture.externalId,
       };
+      if (!matchDate) {
+        setMatchDate(dateOnly);
+      }
     }
     setMatchEntries(copy);
   };
@@ -195,17 +264,27 @@ function AdminRoundsContent() {
 
   const saveMatches = async () => {
     if (!editingRound) return;
-    const matches = matchEntries.map((m, i) => ({
-      matchNumber: i + 1,
-      homeTeam: m.homeTeam,
-      awayTeam: m.awayTeam,
-      league: m.league,
-      kickoff: m.kickoff ? new Date(m.kickoff).toISOString() : new Date().toISOString(),
-      oddsHome: parseFloat(m.oddsHome) || 1.0,
-      oddsDraw: parseFloat(m.oddsDraw) || 1.0,
-      oddsAway: parseFloat(m.oddsAway) || 1.0,
-      externalId: m.externalId,
-    }));
+    const matches = matchEntries.map((m, i) => {
+      let kickoff: string;
+      if (matchDate && m.kickoff) {
+        kickoff = new Date(`${matchDate}T${m.kickoff}`).toISOString();
+      } else if (matchDate) {
+        kickoff = new Date(`${matchDate}T00:00`).toISOString();
+      } else {
+        kickoff = new Date().toISOString();
+      }
+      return {
+        matchNumber: i + 1,
+        homeTeam: m.homeTeam,
+        awayTeam: m.awayTeam,
+        league: m.league,
+        kickoff,
+        oddsHome: parseFloat(m.oddsHome.replace(",", ".")) || 1.0,
+        oddsDraw: parseFloat(m.oddsDraw.replace(",", ".")) || 1.0,
+        oddsAway: parseFloat(m.oddsAway.replace(",", ".")) || 1.0,
+        externalId: m.externalId,
+      };
+    });
 
     setActionError("");
     const res = await fetch(`/api/rounds/${editingRound}/matches`, {
@@ -335,10 +414,10 @@ function AdminRoundsContent() {
             </div>
           </div>
           <div className="flex gap-2">
-            <button onClick={createRound} className="btn-primary">
+            <button onClick={createRound} className="btn-primary !px-3 !py-1.5 text-sm">
               Opret
             </button>
-            <button onClick={() => setShowCreate(false)} className="btn-secondary">
+            <button onClick={() => setShowCreate(false)} className="btn-secondary !px-3 !py-1.5 text-sm">
               Annullér
             </button>
           </div>
@@ -350,65 +429,146 @@ function AdminRoundsContent() {
         <div className="card space-y-4">
           <h2 className="font-display font-semibold text-ink">Tilføj 13 kampe</h2>
 
-          <div className="space-y-2 border-b border-line pb-4">
+          <div className="space-y-3 border-b border-line pb-4">
             <h3 className="text-sm font-semibold text-ink-secondary">
-              Hent kampe fra football-data.org
+              Indsæt fra kupon
             </h3>
-            <div className="flex flex-wrap gap-2 items-end">
-              <div>
-                <label className="label">Liga</label>
-                <select
-                  className="input !py-1.5 text-sm"
-                  value={fixtureLeague}
-                  onChange={(e) => setFixtureLeague(e.target.value)}
-                >
-                  {API_LEAGUES.map((l) => (
-                    <option key={l}>{l}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="label">Fra dato</label>
-                <input
-                  type="date"
-                  className="input !py-1.5 text-sm"
-                  value={fixtureDateFrom}
-                  onChange={(e) => setFixtureDateFrom(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="label">Til dato</label>
-                <input
-                  type="date"
-                  className="input !py-1.5 text-sm"
-                  value={fixtureDateTo}
-                  onChange={(e) => setFixtureDateTo(e.target.value)}
-                />
-              </div>
+            <div>
+              <label className="label">Dato</label>
+              <input
+                type="date"
+                className="input !py-1.5 text-sm"
+                value={matchDate}
+                onChange={(e) => setMatchDate(e.target.value)}
+              />
+            </div>
+            <textarea
+              className="input !py-1.5 text-sm font-mono"
+              rows={8}
+              placeholder="Kopiér kampene fra kupon-siden og indsæt her"
+              value={couponText}
+              onChange={(e) => setCouponText(e.target.value)}
+            />
+            <div className="flex gap-2">
               <button
-                onClick={fetchFixturesFromApi}
+                onClick={fillMatchesFromCoupon}
                 className="btn-secondary text-xs"
-                disabled={fixturesLoading || !fixtureDateFrom || !fixtureDateTo}
+                disabled={couponText.trim() === ""}
               >
-                {fixturesLoading ? "Henter…" : "Hent kampe"}
+                Udfyld kampe
               </button>
             </div>
-            {fixturesError && <p className="text-xs text-red-600">{fixturesError}</p>}
-            {fetchedFixtures.length > 0 && (
-              <p className="text-xs text-muted">
-                {fetchedFixtures.length} kampe fundet. Vælg dem i rækkerne nedenfor for at
-                knytte dem til automatisk resultatberegning.
+            {couponError && <p className="text-xs text-red-600">{couponError}</p>}
+            {couponConfirmation && (
+              <p
+                className={`text-xs ${
+                  couponConfirmation.type === "success"
+                    ? "text-green-700"
+                    : "text-amber-600"
+                }`}
+              >
+                {couponConfirmation.count === 13
+                  ? "13 kampe udfyldt"
+                  : couponConfirmation.count > 13
+                  ? `Der blev fundet ${couponConfirmation.count} kampe – kun de første 13 er brugt`
+                  : `Kun ${couponConfirmation.count} kampe fundet – forventede 13`}
               </p>
             )}
           </div>
 
-          <div className="space-y-3">
+          <button
+            onClick={() => setShowFixtureFetch(!showFixtureFetch)}
+            className="text-xs text-muted hover:text-ink-secondary hover:underline transition-colors"
+          >
+            Hent kampe fra football-data.org…
+          </button>
+
+          {showFixtureFetch && (
+            <div className="space-y-2 border-b border-line pb-4">
+              <div className="flex flex-wrap gap-2 items-end">
+                <div>
+                  <label className="label">Liga</label>
+                  <select
+                    className="input !py-1.5 text-sm"
+                    value={fixtureLeague}
+                    onChange={(e) => setFixtureLeague(e.target.value)}
+                  >
+                    {API_LEAGUES.map((l) => (
+                      <option key={l}>{l}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="label">Fra dato</label>
+                  <input
+                    type="date"
+                    className="input !py-1.5 text-sm"
+                    value={fixtureDateFrom}
+                    onChange={(e) => setFixtureDateFrom(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="label">Til dato</label>
+                  <input
+                    type="date"
+                    className="input !py-1.5 text-sm"
+                    value={fixtureDateTo}
+                    onChange={(e) => setFixtureDateTo(e.target.value)}
+                  />
+                </div>
+                <button
+                  onClick={fetchFixturesFromApi}
+                  className="btn-secondary text-xs"
+                  disabled={fixturesLoading || !fixtureDateFrom || !fixtureDateTo}
+                >
+                  {fixturesLoading ? "Henter…" : "Hent kampe"}
+                </button>
+              </div>
+              {fixturesError && <p className="text-xs text-red-600">{fixturesError}</p>}
+              {fetchedFixtures.length > 0 && (
+                <p className="text-xs text-muted">
+                  {fetchedFixtures.length} kampe fundet. Vælg dem i rækkerne nedenfor for at
+                  knytte dem til automatisk resultatberegning.
+                </p>
+              )}
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <div
+              className={`grid gap-2 items-center text-xs text-muted-faint font-medium ${
+                fetchedFixtures.length > 0
+                  ? "grid-cols-[1.5rem_2fr_2fr_2fr_6rem_3.5rem_3.5rem_3.5rem_2fr]"
+                  : "grid-cols-[1.5rem_2fr_2fr_2fr_6rem_3.5rem_3.5rem_3.5rem]"
+              }`}
+            >
+              <span className="w-6"></span>
+              <span>Hjemme</span>
+              <span>Ude</span>
+              <span>Liga</span>
+              <span>Tid</span>
+              <span>1</span>
+              <span>X</span>
+              <span>2</span>
+              {fetchedFixtures.length > 0 && <span>Kobling</span>}
+            </div>
+            <datalist id="league-list">
+              {LEAGUES.map((l) => (
+                <option key={l} value={l} />
+              ))}
+            </datalist>
             {matchEntries.map((m, i) => (
               <div
                 key={i}
-                className="grid grid-cols-[auto_2fr_2fr_2fr_2fr_1fr_1fr_1fr_2fr] gap-2 items-center"
+                className={`grid gap-2 items-center ${
+                  fetchedFixtures.length > 0
+                    ? "grid-cols-[1.5rem_2fr_2fr_2fr_6rem_3.5rem_3.5rem_3.5rem_2fr]"
+                    : "grid-cols-[1.5rem_2fr_2fr_2fr_6rem_3.5rem_3.5rem_3.5rem]"
+                }`}
               >
-                <span className="text-xs text-muted font-mono">{i + 1}</span>
+                <span className="w-6 text-right text-xs text-muted font-mono tabular-nums">
+                  {i + 1}
+                </span>
                 <input
                   className="input !py-1.5 text-sm"
                   placeholder="Hjemme"
@@ -421,23 +581,23 @@ function AdminRoundsContent() {
                   value={m.awayTeam}
                   onChange={(e) => updateMatchEntry(i, "awayTeam", e.target.value)}
                 />
-                <select
+                <input
                   className="input !py-1.5 text-sm"
+                  placeholder="Liga"
+                  list="league-list"
                   value={m.league}
                   onChange={(e) => updateMatchEntry(i, "league", e.target.value)}
-                >
-                  {LEAGUES.map((l) => (
-                    <option key={l}>{l}</option>
-                  ))}
-                </select>
+                />
                 <input
-                  type="datetime-local"
-                  className="input !py-1.5 text-sm"
+                  type="time"
+                  className="input !py-1.5 !px-1 text-sm [&::-webkit-calendar-picker-indicator]:hidden"
                   value={m.kickoff}
                   onChange={(e) => updateMatchEntry(i, "kickoff", e.target.value)}
                 />
                 <input
-                  className="input !py-1.5 text-sm text-center"
+                  type="text"
+                  inputMode="decimal"
+                  className="input !py-1.5 !px-1 text-sm text-center w-14"
                   placeholder="1"
                   value={m.oddsHome}
                   onChange={(e) => {
@@ -447,7 +607,9 @@ function AdminRoundsContent() {
                   }}
                 />
                 <input
-                  className="input !py-1.5 text-sm text-center"
+                  type="text"
+                  inputMode="decimal"
+                  className="input !py-1.5 !px-1 text-sm text-center w-14"
                   placeholder="X"
                   value={m.oddsDraw}
                   onChange={(e) => {
@@ -457,7 +619,9 @@ function AdminRoundsContent() {
                   }}
                 />
                 <input
-                  className="input !py-1.5 text-sm text-center"
+                  type="text"
+                  inputMode="decimal"
+                  className="input !py-1.5 !px-1 text-sm text-center w-14"
                   placeholder="2"
                   value={m.oddsAway}
                   onChange={(e) => {
@@ -466,28 +630,30 @@ function AdminRoundsContent() {
                     setMatchEntries(copy);
                   }}
                 />
-                <select
-                  className={`input !py-1.5 text-xs ${
-                    m.externalId ? "border-green-600 text-green-700" : ""
-                  }`}
-                  value={m.externalId ?? ""}
-                  onChange={(e) => applyFixture(i, e.target.value)}
-                >
-                  <option value="">– Ikke koblet –</option>
-                  {fetchedFixtures.map((f) => (
-                    <option key={f.externalId} value={f.externalId}>
-                      {f.homeTeam} – {f.awayTeam}
-                    </option>
-                  ))}
-                </select>
+                {fetchedFixtures.length > 0 && (
+                  <select
+                    className={`input !py-1.5 text-xs ${
+                      m.externalId ? "border-green-600 text-green-700" : ""
+                    }`}
+                    value={m.externalId ?? ""}
+                    onChange={(e) => applyFixture(i, e.target.value)}
+                  >
+                    <option value="">– Ikke koblet –</option>
+                    {fetchedFixtures.map((f) => (
+                      <option key={f.externalId} value={f.externalId}>
+                        {f.homeTeam} – {f.awayTeam}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
             ))}
           </div>
           <div className="flex gap-2">
-            <button onClick={saveMatches} className="btn-primary">
+            <button onClick={saveMatches} className="btn-primary !px-3 !py-1.5 text-sm">
               Gem kampe
             </button>
-            <button onClick={() => setEditingRound(null)} className="btn-secondary">
+            <button onClick={() => setEditingRound(null)} className="btn-secondary !px-3 !py-1.5 text-sm">
               Annullér
             </button>
           </div>
@@ -528,10 +694,10 @@ function AdminRoundsContent() {
               </div>
             ))}
           <div className="flex gap-2">
-            <button onClick={saveResults} className="btn-primary">
+            <button onClick={saveResults} className="btn-primary !px-3 !py-1.5 text-sm">
               Gem resultater
             </button>
-            <button onClick={() => setResultsRound(null)} className="btn-secondary">
+            <button onClick={() => setResultsRound(null)} className="btn-secondary !px-3 !py-1.5 text-sm">
               Annullér
             </button>
           </div>
