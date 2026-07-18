@@ -28,6 +28,7 @@ export interface LeaderboardEntry {
     roundNumber: number;
     points: number;
     fedt: number;
+    played: boolean;
   }[];
 }
 

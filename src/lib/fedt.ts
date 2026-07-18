@@ -4,14 +4,33 @@ interface MatchOdds {
   oddsHome: Decimal | number;
   oddsDraw: Decimal | number;
   oddsAway: Decimal | number;
+  fedtHome?: number | null;
+  fedtDraw?: number | null;
+  fedtAway?: number | null;
 }
 
 type PickType = "HOME" | "DRAW" | "AWAY";
 
 /**
  * Convert match odds to normalized implied probabilities (percentages that sum to 100).
+ * If fedtHome, fedtDraw, and fedtAway are all provided (non-null), return them directly
+ * without renormalization. Otherwise derive from odds.
  */
 function oddsToProb(match: MatchOdds): { home: number; draw: number; away: number } {
+  // If all three fedt percentages are provided, use them directly
+  if (
+    match.fedtHome != null &&
+    match.fedtDraw != null &&
+    match.fedtAway != null
+  ) {
+    return {
+      home: match.fedtHome,
+      draw: match.fedtDraw,
+      away: match.fedtAway,
+    };
+  }
+
+  // Otherwise derive from odds
   const h = 1 / Number(match.oddsHome);
   const d = 1 / Number(match.oddsDraw);
   const a = 1 / Number(match.oddsAway);

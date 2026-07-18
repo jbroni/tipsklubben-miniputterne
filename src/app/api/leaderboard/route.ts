@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
-import { calcRoundFedt, calcSeasonFedt } from "@/lib/fedt";
-import type { LeaderboardEntry } from "@/types";
-import type { Pick as PickType } from "@prisma/client";
+import { computeLeaderboard } from "@/lib/leaderboard";
 
 export async function GET(request: Request) {
   const user = await getCurrentUser();
@@ -42,57 +40,8 @@ export async function GET(request: Request) {
   // Get all users
   const users = await prisma.user.findMany();
 
-  // Build leaderboard
-  const entries: LeaderboardEntry[] = users.map((u) => {
-    const roundScores = rounds.map((round) => {
-      const userPredictions = round.predictions.filter(
-        (p) => p.userId === u.id
-      );
-
-      const points = userPredictions.filter(
-        (p) => p.match.result && p.pick === p.match.result
-      ).length;
-
-      const fedtPicks = userPredictions.map((p) => ({
-        match: {
-          oddsHome: p.match.oddsHome,
-          oddsDraw: p.match.oddsDraw,
-          oddsAway: p.match.oddsAway,
-        },
-        pick: p.pick as PickType,
-      }));
-
-      const fedt = calcRoundFedt(fedtPicks);
-
-      return {
-        roundNumber: round.roundNumber,
-        points,
-        fedt,
-        played: userPredictions.length > 0,
-      };
-    });
-
-    const playedRoundScores = roundScores.filter((r) => r.played);
-    const totalPoints = roundScores.reduce((sum, r) => sum + r.points, 0);
-    const roundsPlayed = playedRoundScores.length;
-    const avgScore = roundsPlayed > 0 ? totalPoints / roundsPlayed : 0;
-    const seasonFedt = calcSeasonFedt(playedRoundScores.map((r) => r.fedt));
-
-    return {
-      user: u,
-      totalPoints,
-      roundsPlayed,
-      avgScore,
-      seasonFedt,
-      roundScores: roundScores.map(({ played: _played, ...r }) => r),
-    };
-  });
-
-  // Sort: most points first, then lower Fedt (bolder) breaks ties
-  entries.sort((a, b) => {
-    if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
-    return a.seasonFedt - b.seasonFedt;
-  });
+  // Build leaderboard using shared utility
+  const entries = computeLeaderboard(rounds, users);
 
   return NextResponse.json({ data: entries });
 }

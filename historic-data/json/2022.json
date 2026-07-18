@@ -1,0 +1,3068 @@
+{
+  "expectedSeason": {
+    "BVG": {
+      "fedt": 72.38058270330666,
+      "points": 75
+    },
+    "JBA": {
+      "fedt": 66.77227656845928,
+      "points": 60
+    },
+    "MITO": {
+      "fedt": 69.9601056833874,
+      "points": 72
+    },
+    "MJO": {
+      "fedt": 86.51031543062113,
+      "points": 78
+    },
+    "SBH": {
+      "fedt": 76.54104053284065,
+      "points": 70
+    },
+    "SOC": {
+      "fedt": 77.8526654196617,
+      "points": 66
+    }
+  },
+  "players": [
+    "JBA",
+    "MJO",
+    "SBH",
+    "MITO",
+    "SOC",
+    "BVG"
+  ],
+  "rounds": [
+    {
+      "expected": {
+        "BVG": {
+          "fedt": 41.17647058823529,
+          "points": 8
+        },
+        "JBA": {
+          "fedt": 59.55882352941176,
+          "points": 3
+        },
+        "MITO": {
+          "fedt": 68.38235294117648,
+          "points": 3
+        },
+        "MJO": {
+          "fedt": 88.60294117647058,
+          "points": 5
+        },
+        "SBH": {
+          "fedt": 66.91176470588235,
+          "points": 8
+        },
+        "SOC": {
+          "fedt": 72.79411764705883,
+          "points": 3
+        }
+      },
+      "matches": [
+        {
+          "fedtPct": {
+            "away": 21,
+            "draw": 24,
+            "home": 55
+          },
+          "matchNumber": 1,
+          "picks": {
+            "BVG": "X",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "X"
+        },
+        {
+          "fedtPct": {
+            "away": 19,
+            "draw": 22,
+            "home": 59
+          },
+          "matchNumber": 2,
+          "picks": {
+            "BVG": "2",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "X",
+            "SOC": "1"
+          },
+          "result": "X"
+        },
+        {
+          "fedtPct": {
+            "away": 32,
+            "draw": 25,
+            "home": 43
+          },
+          "matchNumber": 3,
+          "picks": {
+            "BVG": "1",
+            "JBA": "2",
+            "MITO": "1",
+            "MJO": "2",
+            "SBH": "2",
+            "SOC": "2"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 38,
+            "draw": 27,
+            "home": 35
+          },
+          "matchNumber": 4,
+          "picks": {
+            "BVG": "X",
+            "JBA": "2",
+            "MITO": "2",
+            "MJO": "2",
+            "SBH": "2",
+            "SOC": "2"
+          },
+          "result": "X"
+        },
+        {
+          "fedtPct": {
+            "away": 29,
+            "draw": 27,
+            "home": 45
+          },
+          "matchNumber": 5,
+          "picks": {
+            "BVG": "1",
+            "JBA": "X",
+            "MITO": "2",
+            "MJO": "1",
+            "SBH": "2",
+            "SOC": "X"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 31,
+            "draw": 26,
+            "home": 44
+          },
+          "matchNumber": 6,
+          "picks": {
+            "BVG": "2",
+            "JBA": "1",
+            "MITO": "2",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "X"
+        },
+        {
+          "fedtPct": {
+            "away": 33,
+            "draw": 28,
+            "home": 39
+          },
+          "matchNumber": 7,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "2",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 25,
+            "draw": 26,
+            "home": 49
+          },
+          "matchNumber": 8,
+          "picks": {
+            "BVG": "X",
+            "JBA": "2",
+            "MITO": "X",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "2"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 41,
+            "draw": 26,
+            "home": 33
+          },
+          "matchNumber": 9,
+          "picks": {
+            "BVG": "2",
+            "JBA": "2",
+            "MITO": "1",
+            "MJO": "2",
+            "SBH": "2",
+            "SOC": "2"
+          },
+          "result": "2"
+        },
+        {
+          "fedtPct": {
+            "away": 27,
+            "draw": 26,
+            "home": 47
+          },
+          "matchNumber": 10,
+          "picks": {
+            "BVG": "1",
+            "JBA": "2",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "X"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 23,
+            "draw": 28,
+            "home": 48
+          },
+          "matchNumber": 11,
+          "picks": {
+            "BVG": "2",
+            "JBA": "X",
+            "MITO": "1",
+            "MJO": "X",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 33,
+            "draw": 25,
+            "home": 42
+          },
+          "matchNumber": 12,
+          "picks": {
+            "BVG": "X",
+            "JBA": "X",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "X",
+            "SOC": "1"
+          },
+          "result": "X"
+        },
+        {
+          "fedtPct": {
+            "away": 43,
+            "draw": 23,
+            "home": 34
+          },
+          "matchNumber": 13,
+          "picks": {
+            "BVG": "2",
+            "JBA": "2",
+            "MITO": "X",
+            "MJO": "2",
+            "SBH": "1",
+            "SOC": "2"
+          },
+          "result": "1"
+        }
+      ],
+      "weekNumber": 36
+    },
+    {
+      "expected": {
+        "BVG": {
+          "fedt": 52.94117647058824,
+          "points": 5
+        },
+        "JBA": {
+          "fedt": 81.31487889273356,
+          "points": 4
+        },
+        "MITO": {
+          "fedt": 69.20415224913495,
+          "points": 6
+        },
+        "MJO": {
+          "fedt": 67.82006920415225,
+          "points": 5
+        },
+        "SBH": {
+          "fedt": 70.93425605536332,
+          "points": 4
+        },
+        "SOC": {
+          "fedt": 71.97231833910035,
+          "points": 5
+        }
+      },
+      "matches": [
+        {
+          "fedtPct": {
+            "away": 15,
+            "draw": 20,
+            "home": 65
+          },
+          "matchNumber": 1,
+          "picks": {
+            "BVG": "X",
+            "JBA": "1",
+            "MITO": "X",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 13,
+            "draw": 21,
+            "home": 66
+          },
+          "matchNumber": 2,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "X"
+        },
+        {
+          "fedtPct": {
+            "away": 38,
+            "draw": 29,
+            "home": 33
+          },
+          "matchNumber": 3,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "X",
+            "MJO": "2",
+            "SBH": "X",
+            "SOC": "2"
+          },
+          "result": "X"
+        },
+        {
+          "fedtPct": {
+            "away": 19,
+            "draw": 24,
+            "home": 57
+          },
+          "matchNumber": 4,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "2",
+            "SBH": "1",
+            "SOC": "2"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 34,
+            "draw": 30,
+            "home": 36
+          },
+          "matchNumber": 5,
+          "picks": {
+            "BVG": "2",
+            "JBA": "2",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "2",
+            "SOC": "X"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 28,
+            "draw": 28,
+            "home": 44
+          },
+          "matchNumber": 6,
+          "picks": {
+            "BVG": "2",
+            "JBA": "2",
+            "MITO": "2",
+            "MJO": "2",
+            "SBH": "X",
+            "SOC": "1"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 26,
+            "draw": 27,
+            "home": 47
+          },
+          "matchNumber": 7,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "X",
+            "SBH": "X",
+            "SOC": "1"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 33,
+            "draw": 28,
+            "home": 39
+          },
+          "matchNumber": 8,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "2"
+          },
+          "result": "X"
+        },
+        {
+          "fedtPct": {
+            "away": 41,
+            "draw": 29,
+            "home": 30
+          },
+          "matchNumber": 9,
+          "picks": {
+            "BVG": "2",
+            "JBA": "X",
+            "MITO": "2",
+            "MJO": "2",
+            "SBH": "2",
+            "SOC": "2"
+          },
+          "result": "2"
+        },
+        {
+          "fedtPct": {
+            "away": 31,
+            "draw": 28,
+            "home": 41
+          },
+          "matchNumber": 10,
+          "picks": {
+            "BVG": "2",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "X"
+          },
+          "result": "X"
+        },
+        {
+          "fedtPct": {
+            "away": 25,
+            "draw": 27,
+            "home": 48
+          },
+          "matchNumber": 11,
+          "picks": {
+            "BVG": "X",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "X"
+        },
+        {
+          "fedtPct": {
+            "away": 27,
+            "draw": 27,
+            "home": 46
+          },
+          "matchNumber": 12,
+          "picks": {
+            "BVG": "2",
+            "JBA": "X",
+            "MITO": "X",
+            "MJO": "2",
+            "SBH": "X",
+            "SOC": "1"
+          },
+          "result": "2"
+        },
+        {
+          "fedtPct": {
+            "away": 27,
+            "draw": 28,
+            "home": 45
+          },
+          "matchNumber": 13,
+          "picks": {
+            "BVG": "2",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "2",
+            "SOC": "2"
+          },
+          "result": "1"
+        }
+      ],
+      "weekNumber": 37
+    },
+    {
+      "expected": {
+        "BVG": {
+          "fedt": 89.54248366013073,
+          "points": 8
+        },
+        "JBA": {
+          "fedt": 70.58823529411765,
+          "points": 6
+        },
+        "MITO": {
+          "fedt": 80.71895424836602,
+          "points": 8
+        },
+        "MJO": {
+          "fedt": 96.07843137254902,
+          "points": 8
+        },
+        "SBH": {
+          "fedt": 90.19607843137256,
+          "points": 7
+        },
+        "SOC": {
+          "fedt": 87.58169934640523,
+          "points": 8
+        }
+      },
+      "fedtDivergences": [
+        "JBA",
+        "MJO",
+        "SBH"
+      ],
+      "matches": [
+        {
+          "fedtPct": {
+            "away": 15,
+            "draw": 22,
+            "home": 63
+          },
+          "matchNumber": 1,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "2"
+        },
+        {
+          "fedtPct": {
+            "away": 26,
+            "draw": 28,
+            "home": 46
+          },
+          "matchNumber": 2,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "2",
+            "MJO": "1",
+            "SBH": "X",
+            "SOC": "1"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 54,
+            "draw": 26,
+            "home": 20
+          },
+          "matchNumber": 3,
+          "picks": {
+            "BVG": "2",
+            "JBA": "X",
+            "MITO": "2",
+            "MJO": "2",
+            "SBH": "2",
+            "SOC": "2"
+          },
+          "result": "2"
+        },
+        {
+          "fedtPct": {
+            "away": 28,
+            "draw": 29,
+            "home": 43
+          },
+          "matchNumber": 4,
+          "picks": {
+            "BVG": "2",
+            "JBA": "2",
+            "MITO": "X",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 58,
+            "draw": 26,
+            "home": 16
+          },
+          "matchNumber": 5,
+          "picks": {
+            "BVG": "2",
+            "JBA": "2",
+            "MITO": "2",
+            "MJO": "2",
+            "SBH": "2",
+            "SOC": "2"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 30,
+            "draw": 29,
+            "home": 41
+          },
+          "matchNumber": 6,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 49,
+            "draw": 27,
+            "home": 24
+          },
+          "matchNumber": 7,
+          "picks": {
+            "BVG": "2",
+            "JBA": "2",
+            "MITO": "1",
+            "MJO": "2",
+            "SBH": "2",
+            "SOC": "2"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 29,
+            "draw": 28,
+            "home": 43
+          },
+          "matchNumber": 8,
+          "picks": {
+            "BVG": "2",
+            "JBA": "2",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 32,
+            "draw": 28,
+            "home": 40
+          },
+          "matchNumber": 9,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 35,
+            "draw": 27,
+            "home": 38
+          },
+          "matchNumber": 10,
+          "picks": {
+            "BVG": "2",
+            "JBA": "2",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "X"
+          },
+          "result": "2"
+        },
+        {
+          "fedtPct": {
+            "away": 39,
+            "draw": 28,
+            "home": 33
+          },
+          "matchNumber": 11,
+          "picks": {
+            "BVG": "2",
+            "JBA": "2",
+            "MITO": "2",
+            "MJO": "X",
+            "SBH": "X",
+            "SOC": "2"
+          },
+          "result": "2"
+        },
+        {
+          "fedtPct": {
+            "away": 24,
+            "draw": 25,
+            "home": 51
+          },
+          "matchNumber": 12,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "2"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 21,
+            "draw": 24,
+            "home": 55
+          },
+          "matchNumber": 13,
+          "picks": {
+            "BVG": "1",
+            "JBA": "X",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "1"
+        }
+      ],
+      "weekNumber": 38
+    },
+    {
+      "expected": {
+        "BVG": {
+          "fedt": 75,
+          "points": 6
+        },
+        "JBA": {
+          "fedt": 64.01515151515152,
+          "points": 6
+        },
+        "MITO": {
+          "fedt": 65.15151515151516,
+          "points": 5
+        },
+        "MJO": {
+          "fedt": 87.12121212121212,
+          "points": 4
+        },
+        "SBH": {
+          "fedt": 79.54545454545455,
+          "points": 7
+        },
+        "SOC": {
+          "fedt": 72.72727272727273,
+          "points": 6
+        }
+      },
+      "matches": [
+        {
+          "fedtPct": {
+            "away": 11,
+            "draw": 18,
+            "home": 71
+          },
+          "matchNumber": 1,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "X",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "X"
+        },
+        {
+          "fedtPct": {
+            "away": 52,
+            "draw": 26,
+            "home": 22
+          },
+          "matchNumber": 2,
+          "picks": {
+            "BVG": "2",
+            "JBA": "1",
+            "MITO": "2",
+            "MJO": "2",
+            "SBH": "2",
+            "SOC": "2"
+          },
+          "result": "2"
+        },
+        {
+          "fedtPct": {
+            "away": 43,
+            "draw": 28,
+            "home": 29
+          },
+          "matchNumber": 3,
+          "picks": {
+            "BVG": "2",
+            "JBA": "X",
+            "MITO": "1",
+            "MJO": "2",
+            "SBH": "X",
+            "SOC": "X"
+          },
+          "result": "X"
+        },
+        {
+          "fedtPct": {
+            "away": 24,
+            "draw": 27,
+            "home": 49
+          },
+          "matchNumber": 4,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "X",
+            "SBH": "1",
+            "SOC": "X"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 40,
+            "draw": 28,
+            "home": 32
+          },
+          "matchNumber": 5,
+          "picks": {
+            "BVG": "X",
+            "JBA": "X",
+            "MITO": "2",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "2"
+        },
+        {
+          "fedtPct": {
+            "away": 28,
+            "draw": 28,
+            "home": 44
+          },
+          "matchNumber": 6,
+          "picks": {
+            "BVG": "2",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "X",
+            "SOC": "2"
+          },
+          "result": "2"
+        },
+        {
+          "fedtPct": {
+            "away": 29,
+            "draw": 29,
+            "home": 42
+          },
+          "matchNumber": 7,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 51,
+            "draw": 26,
+            "home": 23
+          },
+          "matchNumber": 8,
+          "picks": {
+            "BVG": "2",
+            "JBA": "2",
+            "MITO": "X",
+            "MJO": "2",
+            "SBH": "2",
+            "SOC": "2"
+          },
+          "result": "2"
+        },
+        {
+          "fedtPct": {
+            "away": 31,
+            "draw": 27,
+            "home": 42
+          },
+          "matchNumber": 9,
+          "picks": {
+            "BVG": "X",
+            "JBA": "2",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "2"
+          },
+          "result": "2"
+        },
+        {
+          "fedtPct": {
+            "away": 40,
+            "draw": 29,
+            "home": 31
+          },
+          "matchNumber": 10,
+          "picks": {
+            "BVG": "X",
+            "JBA": "2",
+            "MITO": "2",
+            "MJO": "2",
+            "SBH": "X",
+            "SOC": "2"
+          },
+          "result": "X"
+        },
+        {
+          "fedtPct": {
+            "away": 38,
+            "draw": 28,
+            "home": 34
+          },
+          "matchNumber": 11,
+          "picks": {
+            "BVG": "2",
+            "JBA": "2",
+            "MITO": "2",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "2"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 30,
+            "draw": 29,
+            "home": 41
+          },
+          "matchNumber": 12,
+          "picks": {
+            "BVG": "X",
+            "JBA": "X",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "2"
+        },
+        {
+          "fedtPct": {
+            "away": 27,
+            "draw": 29,
+            "home": 44
+          },
+          "matchNumber": 13,
+          "picks": {
+            "BVG": "1",
+            "JBA": "X",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "X"
+        }
+      ],
+      "weekNumber": 39
+    },
+    {
+      "expected": {
+        "BVG": {
+          "fedt": 97.43589743589743,
+          "points": 5
+        },
+        "JBA": {
+          "fedt": 74.92877492877493,
+          "points": 5
+        },
+        "MITO": {
+          "fedt": 64.1025641025641,
+          "points": 6
+        },
+        "MJO": {
+          "fedt": 68.94586894586895,
+          "points": 9
+        },
+        "SBH": {
+          "fedt": 84.04558404558404,
+          "points": 6
+        },
+        "SOC": {
+          "fedt": 83.76068376068376,
+          "points": 8
+        }
+      },
+      "matches": [
+        {
+          "fedtPct": {
+            "away": 5,
+            "draw": 10,
+            "home": 85
+          },
+          "matchNumber": 1,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "X",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 11,
+            "draw": 20,
+            "home": 69
+          },
+          "matchNumber": 2,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 38,
+            "draw": 28,
+            "home": 34
+          },
+          "matchNumber": 3,
+          "picks": {
+            "BVG": "2",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "2",
+            "SBH": "X",
+            "SOC": "2"
+          },
+          "result": "2"
+        },
+        {
+          "fedtPct": {
+            "away": 22,
+            "draw": 25,
+            "home": 53
+          },
+          "matchNumber": 4,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 45,
+            "draw": 27,
+            "home": 28
+          },
+          "matchNumber": 5,
+          "picks": {
+            "BVG": "2",
+            "JBA": "2",
+            "MITO": "1",
+            "MJO": "2",
+            "SBH": "1",
+            "SOC": "X"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 42,
+            "draw": 28,
+            "home": 30
+          },
+          "matchNumber": 6,
+          "picks": {
+            "BVG": "2",
+            "JBA": "X",
+            "MITO": "2",
+            "MJO": "1",
+            "SBH": "2",
+            "SOC": "1"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 44,
+            "draw": 27,
+            "home": 29
+          },
+          "matchNumber": 7,
+          "picks": {
+            "BVG": "2",
+            "JBA": "2",
+            "MITO": "2",
+            "MJO": "1",
+            "SBH": "2",
+            "SOC": "2"
+          },
+          "result": "2"
+        },
+        {
+          "fedtPct": {
+            "away": 35,
+            "draw": 29,
+            "home": 36
+          },
+          "matchNumber": 8,
+          "picks": {
+            "BVG": "2",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "X",
+            "SOC": "1"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 19,
+            "draw": 23,
+            "home": 58
+          },
+          "matchNumber": 9,
+          "picks": {
+            "BVG": "1",
+            "JBA": "X",
+            "MITO": "1",
+            "MJO": "2",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "2"
+        },
+        {
+          "fedtPct": {
+            "away": 44,
+            "draw": 28,
+            "home": 28
+          },
+          "matchNumber": 10,
+          "picks": {
+            "BVG": "2",
+            "JBA": "2",
+            "MITO": "2",
+            "MJO": "1",
+            "SBH": "2",
+            "SOC": "2"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 32,
+            "draw": 28,
+            "home": 40
+          },
+          "matchNumber": 11,
+          "picks": {
+            "BVG": "2",
+            "JBA": "2",
+            "MITO": "2",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 23,
+            "draw": 27,
+            "home": 50
+          },
+          "matchNumber": 12,
+          "picks": {
+            "BVG": "1",
+            "JBA": "2",
+            "MITO": "1",
+            "MJO": "2",
+            "SBH": "1",
+            "SOC": "2"
+          },
+          "result": "X"
+        },
+        {
+          "fedtPct": {
+            "away": 26,
+            "draw": 26,
+            "home": 48
+          },
+          "matchNumber": 13,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "X",
+            "MJO": "1",
+            "SBH": "2",
+            "SOC": "1"
+          },
+          "result": "X"
+        }
+      ],
+      "weekNumber": 40
+    },
+    {
+      "expected": {
+        "BVG": {
+          "fedt": 58.57988165680473,
+          "points": 7
+        },
+        "JBA": {
+          "fedt": 61.834319526627226,
+          "points": 3
+        },
+        "MITO": {
+          "fedt": 71.89349112426035,
+          "points": 5
+        },
+        "MJO": {
+          "fedt": 90.23668639053254,
+          "points": 8
+        },
+        "SBH": {
+          "fedt": 76.33136094674556,
+          "points": 8
+        },
+        "SOC": {
+          "fedt": 74.2603550295858,
+          "points": 5
+        }
+      },
+      "matches": [
+        {
+          "fedtPct": {
+            "away": 14,
+            "draw": 21,
+            "home": 65
+          },
+          "matchNumber": 1,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "X",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 23,
+            "draw": 25,
+            "home": 52
+          },
+          "matchNumber": 2,
+          "picks": {
+            "BVG": "X",
+            "JBA": "X",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "X",
+            "SOC": "2"
+          },
+          "result": "X"
+        },
+        {
+          "fedtPct": {
+            "away": 18,
+            "draw": 25,
+            "home": 57
+          },
+          "matchNumber": 3,
+          "picks": {
+            "BVG": "1",
+            "JBA": "X",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 33,
+            "draw": 29,
+            "home": 38
+          },
+          "matchNumber": 4,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "X",
+            "SBH": "X",
+            "SOC": "1"
+          },
+          "result": "2"
+        },
+        {
+          "fedtPct": {
+            "away": 21,
+            "draw": 26,
+            "home": 53
+          },
+          "matchNumber": 5,
+          "picks": {
+            "BVG": "X",
+            "JBA": "X",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 29,
+            "draw": 28,
+            "home": 43
+          },
+          "matchNumber": 6,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "2",
+            "MJO": "2",
+            "SBH": "X",
+            "SOC": "1"
+          },
+          "result": "2"
+        },
+        {
+          "fedtPct": {
+            "away": 24,
+            "draw": 27,
+            "home": 49
+          },
+          "matchNumber": 7,
+          "picks": {
+            "BVG": "2",
+            "JBA": "1",
+            "MITO": "X",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "2"
+          },
+          "result": "2"
+        },
+        {
+          "fedtPct": {
+            "away": 30,
+            "draw": 30,
+            "home": 40
+          },
+          "matchNumber": 8,
+          "picks": {
+            "BVG": "2",
+            "JBA": "X",
+            "MITO": "1",
+            "MJO": "2",
+            "SBH": "X",
+            "SOC": "1"
+          },
+          "result": "2"
+        },
+        {
+          "fedtPct": {
+            "away": 45,
+            "draw": 28,
+            "home": 27
+          },
+          "matchNumber": 9,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "2",
+            "MJO": "2",
+            "SBH": "2",
+            "SOC": "1"
+          },
+          "result": "2"
+        },
+        {
+          "fedtPct": {
+            "away": 17,
+            "draw": 23,
+            "home": 60
+          },
+          "matchNumber": 10,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "X"
+        },
+        {
+          "fedtPct": {
+            "away": 28,
+            "draw": 29,
+            "home": 43
+          },
+          "matchNumber": 11,
+          "picks": {
+            "BVG": "X",
+            "JBA": "2",
+            "MITO": "2",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "2"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 27,
+            "draw": 27,
+            "home": 46
+          },
+          "matchNumber": 12,
+          "picks": {
+            "BVG": "X",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "X",
+            "SOC": "1"
+          },
+          "result": "X"
+        },
+        {
+          "fedtPct": {
+            "away": 54,
+            "draw": 25,
+            "home": 21
+          },
+          "matchNumber": 13,
+          "picks": {
+            "BVG": "2",
+            "JBA": "2",
+            "MITO": "2",
+            "MJO": "2",
+            "SBH": "2",
+            "SOC": "2"
+          },
+          "result": "2"
+        }
+      ],
+      "weekNumber": 41
+    },
+    {
+      "expected": {
+        "BVG": {
+          "fedt": 83.7037037037037,
+          "points": 6
+        },
+        "JBA": {
+          "fedt": 65.92592592592592,
+          "points": 8
+        },
+        "MITO": {
+          "fedt": 72.5925925925926,
+          "points": 6
+        },
+        "MJO": {
+          "fedt": 92.5925925925926,
+          "points": 5
+        },
+        "SBH": {
+          "fedt": 74.07407407407408,
+          "points": 5
+        },
+        "SOC": {
+          "fedt": 83.33333333333334,
+          "points": 5
+        }
+      },
+      "matches": [
+        {
+          "fedtPct": {
+            "away": 25,
+            "draw": 25,
+            "home": 50
+          },
+          "matchNumber": 1,
+          "picks": {
+            "BVG": "2",
+            "JBA": "X",
+            "MITO": "2",
+            "MJO": "1",
+            "SBH": "X",
+            "SOC": "2"
+          },
+          "result": "X"
+        },
+        {
+          "fedtPct": {
+            "away": 7,
+            "draw": 14,
+            "home": 79
+          },
+          "matchNumber": 2,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 32,
+            "draw": 29,
+            "home": 39
+          },
+          "matchNumber": 3,
+          "picks": {
+            "BVG": "1",
+            "JBA": "X",
+            "MITO": "1",
+            "MJO": "2",
+            "SBH": "X",
+            "SOC": "2"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 23,
+            "draw": 28,
+            "home": 49
+          },
+          "matchNumber": 4,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 21,
+            "draw": 26,
+            "home": 53
+          },
+          "matchNumber": 5,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "X",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "X"
+        },
+        {
+          "fedtPct": {
+            "away": 37,
+            "draw": 29,
+            "home": 34
+          },
+          "matchNumber": 6,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "2",
+            "MJO": "1",
+            "SBH": "2",
+            "SOC": "1"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 24,
+            "draw": 27,
+            "home": 49
+          },
+          "matchNumber": 7,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 32,
+            "draw": 28,
+            "home": 40
+          },
+          "matchNumber": 8,
+          "picks": {
+            "BVG": "2",
+            "JBA": "1",
+            "MITO": "2",
+            "MJO": "2",
+            "SBH": "X",
+            "SOC": "1"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 30,
+            "draw": 28,
+            "home": 42
+          },
+          "matchNumber": 9,
+          "picks": {
+            "BVG": "1",
+            "JBA": "2",
+            "MITO": "X",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "2"
+        },
+        {
+          "fedtPct": {
+            "away": 35,
+            "draw": 28,
+            "home": 37
+          },
+          "matchNumber": 10,
+          "picks": {
+            "BVG": "1",
+            "JBA": "X",
+            "MITO": "1",
+            "MJO": "2",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "X"
+        },
+        {
+          "fedtPct": {
+            "away": 29,
+            "draw": 28,
+            "home": 43
+          },
+          "matchNumber": 11,
+          "picks": {
+            "BVG": "1",
+            "JBA": "X",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "X",
+            "SOC": "1"
+          },
+          "result": "2"
+        },
+        {
+          "fedtPct": {
+            "away": 39,
+            "draw": 29,
+            "home": 32
+          },
+          "matchNumber": 12,
+          "picks": {
+            "BVG": "2",
+            "JBA": "X",
+            "MITO": "2",
+            "MJO": "2",
+            "SBH": "2",
+            "SOC": "X"
+          },
+          "result": "2"
+        },
+        {
+          "fedtPct": {
+            "away": 32,
+            "draw": 28,
+            "home": 40
+          },
+          "matchNumber": 13,
+          "picks": {
+            "BVG": "2",
+            "JBA": "2",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "2",
+            "SOC": "1"
+          },
+          "result": "X"
+        }
+      ],
+      "weekNumber": 42
+    },
+    {
+      "expected": {
+        "BVG": {
+          "fedt": 79.34782608695652,
+          "points": 6
+        },
+        "JBA": {
+          "fedt": 67.3913043478261,
+          "points": 3
+        },
+        "MITO": {
+          "fedt": 73.55072463768117,
+          "points": 9
+        },
+        "MJO": {
+          "fedt": 95.28985507246377,
+          "points": 7
+        },
+        "SBH": {
+          "fedt": 78.26086956521739,
+          "points": 7
+        },
+        "SOC": {
+          "fedt": 67.3913043478261,
+          "points": 6
+        }
+      },
+      "matches": [
+        {
+          "fedtPct": {
+            "away": 57,
+            "draw": 24,
+            "home": 19
+          },
+          "matchNumber": 1,
+          "picks": {
+            "BVG": "2",
+            "JBA": "2",
+            "MITO": "2",
+            "MJO": "2",
+            "SBH": "2",
+            "SOC": "2"
+          },
+          "result": "2"
+        },
+        {
+          "fedtPct": {
+            "away": 28,
+            "draw": 28,
+            "home": 44
+          },
+          "matchNumber": 2,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "X",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "X"
+        },
+        {
+          "fedtPct": {
+            "away": 38,
+            "draw": 29,
+            "home": 33
+          },
+          "matchNumber": 3,
+          "picks": {
+            "BVG": "2",
+            "JBA": "X",
+            "MITO": "2",
+            "MJO": "2",
+            "SBH": "2",
+            "SOC": "2"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 29,
+            "draw": 25,
+            "home": 46
+          },
+          "matchNumber": 4,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "X"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 32,
+            "draw": 27,
+            "home": 41
+          },
+          "matchNumber": 5,
+          "picks": {
+            "BVG": "2",
+            "JBA": "1",
+            "MITO": "X",
+            "MJO": "1",
+            "SBH": "X",
+            "SOC": "1"
+          },
+          "result": "X"
+        },
+        {
+          "fedtPct": {
+            "away": 23,
+            "draw": 26,
+            "home": 51
+          },
+          "matchNumber": 6,
+          "picks": {
+            "BVG": "1",
+            "JBA": "X",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 18,
+            "draw": 23,
+            "home": 59
+          },
+          "matchNumber": 7,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 26,
+            "draw": 28,
+            "home": 46
+          },
+          "matchNumber": 8,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "2",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "2"
+        },
+        {
+          "fedtPct": {
+            "away": 34,
+            "draw": 29,
+            "home": 37
+          },
+          "matchNumber": 9,
+          "picks": {
+            "BVG": "2",
+            "JBA": "1",
+            "MITO": "X",
+            "MJO": "2",
+            "SBH": "2",
+            "SOC": "2"
+          },
+          "result": "2"
+        },
+        {
+          "fedtPct": {
+            "away": 25,
+            "draw": 27,
+            "home": 48
+          },
+          "matchNumber": 10,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "X"
+          },
+          "result": "X"
+        },
+        {
+          "fedtPct": {
+            "away": 22,
+            "draw": 25,
+            "home": 53
+          },
+          "matchNumber": 11,
+          "picks": {
+            "BVG": "X",
+            "JBA": "2",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "X",
+            "SOC": "X"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 39,
+            "draw": 29,
+            "home": 32
+          },
+          "matchNumber": 12,
+          "picks": {
+            "BVG": "2",
+            "JBA": "X",
+            "MITO": "2",
+            "MJO": "X",
+            "SBH": "2",
+            "SOC": "2"
+          },
+          "result": "2"
+        },
+        {
+          "fedtPct": {
+            "away": 44,
+            "draw": 27,
+            "home": 29
+          },
+          "matchNumber": 13,
+          "picks": {
+            "BVG": "X",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "2",
+            "SBH": "1",
+            "SOC": "X"
+          },
+          "result": "2"
+        }
+      ],
+      "weekNumber": 43
+    },
+    {
+      "expected": {
+        "BVG": {
+          "fedt": 86.875,
+          "points": 5
+        },
+        "JBA": {
+          "fedt": 87.1875,
+          "points": 6
+        },
+        "MITO": {
+          "fedt": 71.5625,
+          "points": 5
+        },
+        "MJO": {
+          "fedt": 88.75,
+          "points": 3
+        },
+        "SBH": {
+          "fedt": 78.4375,
+          "points": 5
+        },
+        "SOC": {
+          "fedt": 76.875,
+          "points": 5
+        }
+      },
+      "matches": [
+        {
+          "fedtPct": {
+            "away": 5,
+            "draw": 11,
+            "home": 84
+          },
+          "matchNumber": 1,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 32,
+            "draw": 28,
+            "home": 40
+          },
+          "matchNumber": 2,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "2",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "2"
+        },
+        {
+          "fedtPct": {
+            "away": 21,
+            "draw": 24,
+            "home": 55
+          },
+          "matchNumber": 3,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "X",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "X"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 37,
+            "draw": 28,
+            "home": 35
+          },
+          "matchNumber": 4,
+          "picks": {
+            "BVG": "2",
+            "JBA": "1",
+            "MITO": "2",
+            "MJO": "1",
+            "SBH": "2",
+            "SOC": "2"
+          },
+          "result": "X"
+        },
+        {
+          "fedtPct": {
+            "away": 45,
+            "draw": 28,
+            "home": 27
+          },
+          "matchNumber": 5,
+          "picks": {
+            "BVG": "2",
+            "JBA": "2",
+            "MITO": "2",
+            "MJO": "X",
+            "SBH": "X",
+            "SOC": "2"
+          },
+          "result": "2"
+        },
+        {
+          "fedtPct": {
+            "away": 20,
+            "draw": 26,
+            "home": 54
+          },
+          "matchNumber": 6,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 24,
+            "draw": 27,
+            "home": 49
+          },
+          "matchNumber": 7,
+          "picks": {
+            "BVG": "2",
+            "JBA": "X",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "X",
+            "SOC": "2"
+          },
+          "result": "X"
+        },
+        {
+          "fedtPct": {
+            "away": 34,
+            "draw": 28,
+            "home": 38
+          },
+          "matchNumber": 8,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "X",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "2"
+        },
+        {
+          "fedtPct": {
+            "away": 45,
+            "draw": 27,
+            "home": 28
+          },
+          "matchNumber": 9,
+          "picks": {
+            "BVG": "2",
+            "JBA": "2",
+            "MITO": "2",
+            "MJO": "1",
+            "SBH": "2",
+            "SOC": "2"
+          },
+          "result": "2"
+        },
+        {
+          "fedtPct": {
+            "away": 27,
+            "draw": 28,
+            "home": 45
+          },
+          "matchNumber": 10,
+          "picks": {
+            "BVG": "X",
+            "JBA": "X",
+            "MITO": "X",
+            "MJO": "1",
+            "SBH": "X",
+            "SOC": "2"
+          },
+          "result": "2"
+        },
+        {
+          "fedtPct": {
+            "away": 29,
+            "draw": 29,
+            "home": 42
+          },
+          "matchNumber": 11,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "X",
+            "SOC": "1"
+          },
+          "result": "2"
+        },
+        {
+          "fedtPct": {
+            "away": 24,
+            "draw": 27,
+            "home": 49
+          },
+          "matchNumber": 12,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "2",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "X"
+        },
+        {
+          "fedtPct": {
+            "away": 24,
+            "draw": 27,
+            "home": 49
+          },
+          "matchNumber": 13,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "2"
+        }
+      ],
+      "weekNumber": 44
+    },
+    {
+      "expected": {
+        "BVG": {
+          "fedt": 46.2046204620462,
+          "points": 7
+        },
+        "JBA": {
+          "fedt": 53.46534653465347,
+          "points": 6
+        },
+        "MITO": {
+          "fedt": 70.95709570957096,
+          "points": 5
+        },
+        "MJO": {
+          "fedt": 82.83828382838284,
+          "points": 7
+        },
+        "SBH": {
+          "fedt": 66.006600660066,
+          "points": 5
+        },
+        "SOC": {
+          "fedt": 79.20792079207921,
+          "points": 5
+        }
+      },
+      "matches": [
+        {
+          "fedtPct": {
+            "away": 9,
+            "draw": 15,
+            "home": 76
+          },
+          "matchNumber": 1,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 18,
+            "draw": 22,
+            "home": 60
+          },
+          "matchNumber": 2,
+          "picks": {
+            "BVG": "X",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 31,
+            "draw": 28,
+            "home": 41
+          },
+          "matchNumber": 3,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "X",
+            "MJO": "2",
+            "SBH": "X",
+            "SOC": "X"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 26,
+            "draw": 27,
+            "home": 47
+          },
+          "matchNumber": 4,
+          "picks": {
+            "BVG": "2",
+            "JBA": "2",
+            "MITO": "1",
+            "MJO": "2",
+            "SBH": "X",
+            "SOC": "2"
+          },
+          "result": "2"
+        },
+        {
+          "fedtPct": {
+            "away": 37,
+            "draw": 29,
+            "home": 34
+          },
+          "matchNumber": 5,
+          "picks": {
+            "BVG": "2",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "2",
+            "SOC": "2"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 40,
+            "draw": 29,
+            "home": 31
+          },
+          "matchNumber": 6,
+          "picks": {
+            "BVG": "X",
+            "JBA": "X",
+            "MITO": "X",
+            "MJO": "2",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 41,
+            "draw": 28,
+            "home": 31
+          },
+          "matchNumber": 7,
+          "picks": {
+            "BVG": "X",
+            "JBA": "X",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "2"
+          },
+          "result": "X"
+        },
+        {
+          "fedtPct": {
+            "away": 42,
+            "draw": 28,
+            "home": 30
+          },
+          "matchNumber": 8,
+          "picks": {
+            "BVG": "2",
+            "JBA": "1",
+            "MITO": "2",
+            "MJO": "2",
+            "SBH": "X",
+            "SOC": "1"
+          },
+          "result": "2"
+        },
+        {
+          "fedtPct": {
+            "away": 32,
+            "draw": 28,
+            "home": 40
+          },
+          "matchNumber": 9,
+          "picks": {
+            "BVG": "1",
+            "JBA": "2",
+            "MITO": "2",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "2"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 40,
+            "draw": 28,
+            "home": 32
+          },
+          "matchNumber": 10,
+          "picks": {
+            "BVG": "X",
+            "JBA": "1",
+            "MITO": "2",
+            "MJO": "1",
+            "SBH": "X",
+            "SOC": "2"
+          },
+          "result": "X"
+        },
+        {
+          "fedtPct": {
+            "away": 28,
+            "draw": 28,
+            "home": 44
+          },
+          "matchNumber": 11,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "2"
+        },
+        {
+          "fedtPct": {
+            "away": 24,
+            "draw": 27,
+            "home": 49
+          },
+          "matchNumber": 12,
+          "picks": {
+            "BVG": "2",
+            "JBA": "X",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "2",
+            "SOC": "1"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 15,
+            "draw": 21,
+            "home": 64
+          },
+          "matchNumber": 13,
+          "picks": {
+            "BVG": "X",
+            "JBA": "X",
+            "MITO": "X",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "2"
+        }
+      ],
+      "weekNumber": 45
+    },
+    {
+      "expected": {
+        "BVG": {
+          "fedt": 81.42857142857143,
+          "points": 3
+        },
+        "JBA": {
+          "fedt": 44.642857142857146,
+          "points": 3
+        },
+        "MITO": {
+          "fedt": 67.5,
+          "points": 9
+        },
+        "MJO": {
+          "fedt": 84.28571428571429,
+          "points": 7
+        },
+        "SBH": {
+          "fedt": 73.57142857142858,
+          "points": 2
+        },
+        "SOC": {
+          "fedt": 71.42857142857143,
+          "points": 2
+        }
+      },
+      "matches": [
+        {
+          "fedtPct": {
+            "away": 21,
+            "draw": 26,
+            "home": 53
+          },
+          "matchNumber": 1,
+          "picks": {
+            "BVG": "1",
+            "JBA": "2",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 43,
+            "draw": 26,
+            "home": 31
+          },
+          "matchNumber": 2,
+          "picks": {
+            "BVG": "2",
+            "JBA": "X",
+            "MITO": "1",
+            "MJO": "X",
+            "SBH": "X",
+            "SOC": "2"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 40,
+            "draw": 27,
+            "home": 33
+          },
+          "matchNumber": 3,
+          "picks": {
+            "BVG": "2",
+            "JBA": "X",
+            "MITO": "2",
+            "MJO": "2",
+            "SBH": "2",
+            "SOC": "2"
+          },
+          "result": "X"
+        },
+        {
+          "fedtPct": {
+            "away": 33,
+            "draw": 28,
+            "home": 39
+          },
+          "matchNumber": 4,
+          "picks": {
+            "BVG": "1",
+            "JBA": "X",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "X"
+          },
+          "result": "2"
+        },
+        {
+          "fedtPct": {
+            "away": 44,
+            "draw": 28,
+            "home": 28
+          },
+          "matchNumber": 5,
+          "picks": {
+            "BVG": "2",
+            "JBA": "2",
+            "MITO": "X",
+            "MJO": "1",
+            "SBH": "X",
+            "SOC": "2"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 41,
+            "draw": 28,
+            "home": 31
+          },
+          "matchNumber": 6,
+          "picks": {
+            "BVG": "2",
+            "JBA": "1",
+            "MITO": "2",
+            "MJO": "2",
+            "SBH": "1",
+            "SOC": "X"
+          },
+          "result": "2"
+        },
+        {
+          "fedtPct": {
+            "away": 23,
+            "draw": 27,
+            "home": 50
+          },
+          "matchNumber": 7,
+          "picks": {
+            "BVG": "X",
+            "JBA": "X",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "X",
+            "SOC": "X"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 18,
+            "draw": 23,
+            "home": 59
+          },
+          "matchNumber": 8,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "X",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "X"
+        },
+        {
+          "fedtPct": {
+            "away": 32,
+            "draw": 28,
+            "home": 40
+          },
+          "matchNumber": 9,
+          "picks": {
+            "BVG": "2",
+            "JBA": "X",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "2",
+            "SOC": "X"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 15,
+            "draw": 22,
+            "home": 63
+          },
+          "matchNumber": 10,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 28,
+            "draw": 28,
+            "home": 44
+          },
+          "matchNumber": 11,
+          "picks": {
+            "BVG": "1",
+            "JBA": "2",
+            "MITO": "2",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "2"
+        },
+        {
+          "fedtPct": {
+            "away": 40,
+            "draw": 29,
+            "home": 31
+          },
+          "matchNumber": 12,
+          "picks": {
+            "BVG": "2",
+            "JBA": "2",
+            "MITO": "X",
+            "MJO": "X",
+            "SBH": "2",
+            "SOC": "2"
+          },
+          "result": "X"
+        },
+        {
+          "fedtPct": {
+            "away": 25,
+            "draw": 27,
+            "home": 48
+          },
+          "matchNumber": 13,
+          "picks": {
+            "BVG": "X",
+            "JBA": "X",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "X"
+          },
+          "result": "2"
+        }
+      ],
+      "weekNumber": 46
+    },
+    {
+      "expected": {
+        "BVG": {
+          "fedt": 76.33136094674556,
+          "points": 9
+        },
+        "JBA": {
+          "fedt": 70.41420118343196,
+          "points": 7
+        },
+        "MITO": {
+          "fedt": 63.905325443786985,
+          "points": 5
+        },
+        "MJO": {
+          "fedt": 95.56213017751479,
+          "points": 10
+        },
+        "SBH": {
+          "fedt": 80.1775147928994,
+          "points": 6
+        },
+        "SOC": {
+          "fedt": 92.89940828402366,
+          "points": 8
+        }
+      },
+      "matches": [
+        {
+          "fedtPct": {
+            "away": 24,
+            "draw": 28,
+            "home": 48
+          },
+          "matchNumber": 1,
+          "picks": {
+            "BVG": "1",
+            "JBA": "X",
+            "MITO": "2",
+            "MJO": "1",
+            "SBH": "2",
+            "SOC": "X"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 14,
+            "draw": 25,
+            "home": 61
+          },
+          "matchNumber": 2,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 17,
+            "draw": 22,
+            "home": 61
+          },
+          "matchNumber": 3,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "X",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 31,
+            "draw": 30,
+            "home": 39
+          },
+          "matchNumber": 4,
+          "picks": {
+            "BVG": "2",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "2"
+        },
+        {
+          "fedtPct": {
+            "away": 15,
+            "draw": 22,
+            "home": 63
+          },
+          "matchNumber": 5,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 29,
+            "draw": 28,
+            "home": 43
+          },
+          "matchNumber": 6,
+          "picks": {
+            "BVG": "2",
+            "JBA": "2",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "X",
+            "SOC": "1"
+          },
+          "result": "2"
+        },
+        {
+          "fedtPct": {
+            "away": 25,
+            "draw": 26,
+            "home": 49
+          },
+          "matchNumber": 7,
+          "picks": {
+            "BVG": "X",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "X"
+        },
+        {
+          "fedtPct": {
+            "away": 38,
+            "draw": 28,
+            "home": 34
+          },
+          "matchNumber": 8,
+          "picks": {
+            "BVG": "2",
+            "JBA": "X",
+            "MITO": "X",
+            "MJO": "1",
+            "SBH": "X",
+            "SOC": "1"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 28,
+            "draw": 26,
+            "home": 46
+          },
+          "matchNumber": 9,
+          "picks": {
+            "BVG": "1",
+            "JBA": "X",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "2",
+            "SOC": "1"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 23,
+            "draw": 26,
+            "home": 51
+          },
+          "matchNumber": 10,
+          "picks": {
+            "BVG": "X",
+            "JBA": "X",
+            "MITO": "2",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 15,
+            "draw": 23,
+            "home": 62
+          },
+          "matchNumber": 11,
+          "picks": {
+            "BVG": "1",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 41,
+            "draw": 29,
+            "home": 30
+          },
+          "matchNumber": 12,
+          "picks": {
+            "BVG": "2",
+            "JBA": "1",
+            "MITO": "1",
+            "MJO": "1",
+            "SBH": "2",
+            "SOC": "2"
+          },
+          "result": "1"
+        },
+        {
+          "fedtPct": {
+            "away": 30,
+            "draw": 30,
+            "home": 40
+          },
+          "matchNumber": 13,
+          "picks": {
+            "BVG": "X",
+            "JBA": "1",
+            "MITO": "X",
+            "MJO": "1",
+            "SBH": "1",
+            "SOC": "1"
+          },
+          "result": "1"
+        }
+      ],
+      "weekNumber": 47
+    }
+  ],
+  "year": 2022
+}

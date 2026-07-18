@@ -71,6 +71,9 @@ export function PredictionForm({ roundId, compact = false }: PredictionFormProps
         oddsHome: m.oddsHome,
         oddsDraw: m.oddsDraw,
         oddsAway: m.oddsAway,
+        fedtHome: m.fedtHome,
+        fedtDraw: m.fedtDraw,
+        fedtAway: m.fedtAway,
       },
       pick: picks[m.id],
     }));

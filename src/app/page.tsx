@@ -9,9 +9,9 @@ import {
   RevealedHero,
   LockedHero,
 } from "@/components/DashboardHero";
-import { calcRoundFedt, calcSeasonFedt } from "@/lib/fedt";
-import type { Pick as PickType } from "@prisma/client";
-import type { LeaderboardEntry } from "@/types";
+import { calcRoundFedt } from "@/lib/fedt";
+import { computeLeaderboard, toFedtInput } from "@/lib/leaderboard";
+import type { Pick as PickType, LeaderboardEntry } from "@/types";
 import { Logo } from "@/components/Logo";
 
 export default async function DashboardPage() {
@@ -164,7 +164,7 @@ export default async function DashboardPage() {
     const picks = currentRound.matches
       .filter((m) => userPredictions[m.id])
       .map((m) => ({
-        match: { oddsHome: m.oddsHome, oddsDraw: m.oddsDraw, oddsAway: m.oddsAway },
+        match: toFedtInput(m),
         pick: userPredictions[m.id],
       }));
     userFedt = calcRoundFedt(picks);
@@ -184,48 +184,7 @@ export default async function DashboardPage() {
 
     const users = await prisma.user.findMany();
 
-    leaderboardEntries = users.map((u) => {
-      const roundScores = completedRounds.map((round) => {
-        const userPreds = round.predictions.filter((p) => p.userId === u.id);
-        const points = userPreds.filter(
-          (p) => p.match.result && p.pick === p.match.result
-        ).length;
-        const fedtPicks = userPreds.map((p) => ({
-          match: {
-            oddsHome: p.match.oddsHome,
-            oddsDraw: p.match.oddsDraw,
-            oddsAway: p.match.oddsAway,
-          },
-          pick: p.pick as PickType,
-        }));
-        return {
-          roundNumber: round.roundNumber,
-          points,
-          fedt: calcRoundFedt(fedtPicks),
-          played: userPreds.length > 0,
-        };
-      });
-
-      const totalPoints = roundScores.reduce((s, r) => s + r.points, 0);
-      const playedRoundScores = roundScores.filter((r) => r.played);
-      const roundsPlayed = playedRoundScores.length;
-      const avgScore = roundsPlayed > 0 ? totalPoints / roundsPlayed : 0;
-      const seasonFedt = calcSeasonFedt(playedRoundScores.map((r) => r.fedt));
-
-      return {
-        user: u,
-        totalPoints,
-        roundsPlayed,
-        avgScore,
-        seasonFedt,
-        roundScores: roundScores.map(({ played: _played, ...r }) => r),
-      };
-    });
-
-    leaderboardEntries.sort((a, b) => {
-      if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
-      return a.seasonFedt - b.seasonFedt;
-    });
+    leaderboardEntries = computeLeaderboard(completedRounds, users);
   }
 
   return (

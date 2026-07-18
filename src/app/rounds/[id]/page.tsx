@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/auth";
 import { RoundStatusBadge } from "@/components/RoundStatusBadge";
 import { FedtBadge } from "@/components/FedtBadge";
 import { calcRoundFedt } from "@/lib/fedt";
+import { toFedtInput } from "@/lib/leaderboard";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Pick as PickType } from "@prisma/client";
@@ -44,11 +45,7 @@ export default async function RoundDetailPage({
     const picks = round.matches.map((m) => {
       const pred = m.predictions.find((p) => p.userId === u.id);
       return {
-        match: {
-          oddsHome: m.oddsHome,
-          oddsDraw: m.oddsDraw,
-          oddsAway: m.oddsAway,
-        },
+        match: m,
         pick: pred?.pick as PickType,
         correct: pred && m.result ? pred.pick === m.result : false,
       };
@@ -56,7 +53,7 @@ export default async function RoundDetailPage({
 
     const points = picks.filter((p) => p.correct).length;
     const fedt = calcRoundFedt(
-      picks.filter((p) => p.pick).map((p) => ({ match: p.match, pick: p.pick }))
+      picks.filter((p) => p.pick).map((p) => ({ match: toFedtInput(p.match), pick: p.pick }))
     );
 
     return { user: u, points, fedt };

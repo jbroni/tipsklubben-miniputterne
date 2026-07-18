@@ -2,6 +2,7 @@ import type { LeaderboardEntry } from "@/types";
 import { FedtBadge } from "./FedtBadge";
 import { Avatar } from "./Avatar";
 import { formatDecimal } from "@/lib/fedt";
+import { compareEntries } from "@/lib/leaderboard";
 
 interface LeaderboardTableProps {
   entries: LeaderboardEntry[];
@@ -11,10 +12,7 @@ interface LeaderboardTableProps {
 const RANK_COLORS = ["text-rank-1", "text-rank-2", "text-rank-3"];
 
 export function LeaderboardTable({ entries, compact = false }: LeaderboardTableProps) {
-  const sorted = [...entries].sort((a, b) => {
-    if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
-    return a.seasonFedt - b.seasonFedt;
-  });
+  const sorted = [...entries].sort(compareEntries);
 
   return (
     <div className="overflow-x-auto">
