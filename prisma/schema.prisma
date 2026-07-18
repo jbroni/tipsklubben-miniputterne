@@ -78,6 +78,9 @@ model Match {
   oddsAway    Decimal      @map("odds_away") @db.Decimal(5, 2)
   result      Pick?
   externalId  String?      @map("external_id")
+  fedtHome    Int?         @map("fedt_home")
+  fedtDraw    Int?         @map("fedt_draw")
+  fedtAway    Int?         @map("fedt_away")
   round       Round        @relation(fields: [roundId], references: [id], onDelete: Cascade)
   predictions Prediction[]
 

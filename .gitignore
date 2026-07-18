@@ -39,3 +39,6 @@ next-env.d.ts
 # claude (local session state; agent definitions are tracked)
 .claude/*
 !.claude/agents/
+
+# historic source sheets (local only; JSON conversions are tracked)
+historic-data/*.xlsx

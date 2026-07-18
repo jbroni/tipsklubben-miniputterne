@@ -12,6 +12,7 @@ const navLinks = [
   { href: "/rounds", label: "Runder" },
   { href: "/leaderboard", label: "Stillingen" },
   { href: "/fedt", label: "Fedt" },
+  { href: "/historik", label: "Historik" },
   { href: "/profile", label: "Profil" },
 ];
 
