@@ -13,6 +13,7 @@ import { calcRoundFedt } from "@/lib/fedt";
 import { computeLeaderboard, toFedtInput } from "@/lib/leaderboard";
 import type { Pick as PickType, LeaderboardEntry } from "@/types";
 import { Logo } from "@/components/Logo";
+import { LoginButton } from "@/components/LoginButton";
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
@@ -23,9 +24,7 @@ export default async function DashboardPage() {
         <div className="scale-150">
           <Logo href="/" />
         </div>
-        <p className="text-muted text-lg text-center max-w-md">
-          Ugentlig fodboldtipning for venner.
-        </p>
+        <LoginButton className="text-sm" />
       </div>
     );
   }
