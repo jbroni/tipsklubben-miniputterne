@@ -209,15 +209,14 @@ function AdminRoundsContent() {
       return;
     }
 
-    const deadline = rounds.find((r) => r.id === editingRound)?.deadline;
-    const deadlineDate = deadline ? new Date(deadline) : new Date();
+    const referenceDate = new Date();
 
     const copy = [...matchEntries];
     let firstMatchDate: string | null = null;
     result.matches.forEach((parsed) => {
       if (parsed.matchNumber >= 1 && parsed.matchNumber <= 13) {
         const index = parsed.matchNumber - 1;
-        const resolvedKickoff = resolveKickoff(parsed.kickoffDay, parsed.kickoffTime, deadlineDate);
+        const resolvedKickoff = resolveKickoff(parsed.kickoffDay, parsed.kickoffTime, referenceDate);
         if (resolvedKickoff && !firstMatchDate) {
           const [datePart] = resolvedKickoff.split("T");
           firstMatchDate = datePart;

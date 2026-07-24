@@ -1126,7 +1126,7 @@ Test League`;
       }
     });
 
-    it("returns error when trailing garbage after last complete match", () => {
+    it("ignores a single trailing line after the last match (optional TV channel)", () => {
       const couponText = `1
 Team A
 Team B
@@ -1148,9 +1148,20 @@ Some extra garbage here`;
 
       const result = parseCouponText(couponText);
 
-      expect(result.ok).toBe(false);
-      if (!result.ok) {
-        expect(result.error).toContain("kamp 2");
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.matches).toHaveLength(1);
+        expect(result.matches[0]).toEqual({
+          matchNumber: 1,
+          homeTeam: "Team A",
+          awayTeam: "Team B",
+          oddsHome: "2.00",
+          oddsDraw: "3.00",
+          oddsAway: "4.00",
+          kickoffDay: "lør",
+          kickoffTime: "16:00",
+          league: "Test League",
+        });
       }
     });
 
@@ -1593,6 +1604,471 @@ Süper Lig (Türkiye)`;
     });
   });
 
+  describe("optional TV channel line", () => {
+    it("parses coupon where some matches have TV channel lines and others do not", () => {
+      const couponText = `1
+Team A
+Team B
+1
+
+Team A
+2.00
+x
+
+Uafgjort
+3.00
+2
+
+Team B
+4.00
+lør 16:00
+Test League
+3+
+2
+Team C
+Team D
+1
+
+Team C
+1.50
+x
+
+Uafgjort
+3.50
+2
+
+Team D
+5.00
+lør 18:00
+Another League
+3
+Team E
+Team F
+1
+
+Team E
+2.50
+x
+
+Uafgjort
+2.50
+2
+
+Team F
+2.50
+lør 20:00
+Third League
+Viaplay`;
+
+      const result = parseCouponText(couponText);
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.matches).toHaveLength(3);
+
+        // Match 1: has TV channel "3+" after league
+        expect(result.matches[0]).toEqual({
+          matchNumber: 1,
+          homeTeam: "Team A",
+          awayTeam: "Team B",
+          oddsHome: "2.00",
+          oddsDraw: "3.00",
+          oddsAway: "4.00",
+          kickoffDay: "lør",
+          kickoffTime: "16:00",
+          league: "Test League",
+        });
+
+        // Match 2: no TV channel line (league directly followed by match 3)
+        expect(result.matches[1]).toEqual({
+          matchNumber: 2,
+          homeTeam: "Team C",
+          awayTeam: "Team D",
+          oddsHome: "1.50",
+          oddsDraw: "3.50",
+          oddsAway: "5.00",
+          kickoffDay: "lør",
+          kickoffTime: "18:00",
+          league: "Another League",
+        });
+
+        // Match 3: has TV channel "Viaplay" after league (at end-of-input)
+        expect(result.matches[2]).toEqual({
+          matchNumber: 3,
+          homeTeam: "Team E",
+          awayTeam: "Team F",
+          oddsHome: "2.50",
+          oddsDraw: "2.50",
+          oddsAway: "2.50",
+          kickoffDay: "lør",
+          kickoffTime: "20:00",
+          league: "Third League",
+        });
+      }
+    });
+
+    it("handles TV channel line at end-of-input for last match", () => {
+      const couponText = `1
+Team A
+Team B
+1
+
+Team A
+2.00
+x
+
+Uafgjort
+3.00
+2
+
+Team B
+4.00
+lør 16:00
+Test League
+SVT`;
+
+      const result = parseCouponText(couponText);
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.matches).toHaveLength(1);
+        expect(result.matches[0]).toEqual({
+          matchNumber: 1,
+          homeTeam: "Team A",
+          awayTeam: "Team B",
+          oddsHome: "2.00",
+          oddsDraw: "3.00",
+          oddsAway: "4.00",
+          kickoffDay: "lør",
+          kickoffTime: "16:00",
+          league: "Test League",
+        });
+      }
+    });
+
+    it("parses coupon with multiple matches where each has a TV channel line", () => {
+      const couponText = `1
+Team A
+Team B
+1
+
+Team A
+2.00
+x
+
+Uafgjort
+3.00
+2
+
+Team B
+4.00
+lør 16:00
+Test League
+3+
+2
+Team C
+Team D
+1
+
+Team C
+1.50
+x
+
+Uafgjort
+3.50
+2
+
+Team D
+5.00
+lør 18:00
+Another League
+Viaplay`;
+
+      const result = parseCouponText(couponText);
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.matches).toHaveLength(2);
+        expect(result.matches[0].league).toBe("Test League");
+        expect(result.matches[0].matchNumber).toBe(1);
+        expect(result.matches[1].league).toBe("Another League");
+        expect(result.matches[1].matchNumber).toBe(2);
+      }
+    });
+
+    it("parses coupon where no matches have TV channel lines", () => {
+      const couponText = `1
+Team A
+Team B
+1
+
+Team A
+2.00
+x
+
+Uafgjort
+3.00
+2
+
+Team B
+4.00
+lør 16:00
+Test League
+2
+Team C
+Team D
+1
+
+Team C
+1.50
+x
+
+Uafgjort
+3.50
+2
+
+Team D
+5.00
+lør 18:00
+Another League`;
+
+      const result = parseCouponText(couponText);
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.matches).toHaveLength(2);
+        expect(result.matches[0].league).toBe("Test League");
+        expect(result.matches[1].league).toBe("Another League");
+      }
+    });
+
+    it("handles unusual TV channel name like '3+'", () => {
+      const couponText = `1
+Team A
+Team B
+1
+
+Team A
+2.00
+x
+
+Uafgjort
+3.00
+2
+
+Team B
+4.00
+lør 16:00
+Test League
+3+
+2
+Team C
+Team D
+1
+
+Team C
+1.50
+x
+
+Uafgjort
+3.50
+2
+
+Team D
+5.00
+lør 18:00
+Another League`;
+
+      const result = parseCouponText(couponText);
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.matches).toHaveLength(2);
+        expect(result.matches[0]).toEqual({
+          matchNumber: 1,
+          homeTeam: "Team A",
+          awayTeam: "Team B",
+          oddsHome: "2.00",
+          oddsDraw: "3.00",
+          oddsAway: "4.00",
+          kickoffDay: "lør",
+          kickoffTime: "16:00",
+          league: "Test League",
+        });
+        expect(result.matches[1]).toEqual({
+          matchNumber: 2,
+          homeTeam: "Team C",
+          awayTeam: "Team D",
+          oddsHome: "1.50",
+          oddsDraw: "3.50",
+          oddsAway: "5.00",
+          kickoffDay: "lør",
+          kickoffTime: "18:00",
+          league: "Another League",
+        });
+      }
+    });
+
+    it("correctly parses full 5-match coupon with mixed TV channel presence", () => {
+      const couponText = `1
+A
+B
+1
+
+A
+2.00
+x
+
+Uafgjort
+3.00
+2
+
+B
+4.00
+lør 16:00
+League 1
+TV2
+2
+C
+D
+1
+
+C
+1.50
+x
+
+Uafgjort
+3.50
+2
+
+D
+5.00
+lør 18:00
+League 2
+3
+E
+F
+1
+
+E
+2.50
+x
+
+Uafgjort
+2.50
+2
+
+F
+2.50
+lør 20:00
+League 3
+DR1
+4
+G
+H
+1
+
+G
+1.80
+x
+
+Uafgjort
+3.20
+2
+
+H
+4.50
+lør 16:30
+League 4
+5
+I
+J
+1
+
+I
+3.00
+x
+
+Uafgjort
+3.00
+2
+
+J
+2.20
+lør 17:15
+League 5
+Viaplay`;
+
+      const result = parseCouponText(couponText);
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.matches).toHaveLength(5);
+
+        // Verify each match is parsed correctly with league intact
+        expect(result.matches[0]).toEqual({
+          matchNumber: 1,
+          homeTeam: "A",
+          awayTeam: "B",
+          oddsHome: "2.00",
+          oddsDraw: "3.00",
+          oddsAway: "4.00",
+          kickoffDay: "lør",
+          kickoffTime: "16:00",
+          league: "League 1",
+        });
+
+        expect(result.matches[1]).toEqual({
+          matchNumber: 2,
+          homeTeam: "C",
+          awayTeam: "D",
+          oddsHome: "1.50",
+          oddsDraw: "3.50",
+          oddsAway: "5.00",
+          kickoffDay: "lør",
+          kickoffTime: "18:00",
+          league: "League 2",
+        });
+
+        expect(result.matches[2]).toEqual({
+          matchNumber: 3,
+          homeTeam: "E",
+          awayTeam: "F",
+          oddsHome: "2.50",
+          oddsDraw: "2.50",
+          oddsAway: "2.50",
+          kickoffDay: "lør",
+          kickoffTime: "20:00",
+          league: "League 3",
+        });
+
+        expect(result.matches[3]).toEqual({
+          matchNumber: 4,
+          homeTeam: "G",
+          awayTeam: "H",
+          oddsHome: "1.80",
+          oddsDraw: "3.20",
+          oddsAway: "4.50",
+          kickoffDay: "lør",
+          kickoffTime: "16:30",
+          league: "League 4",
+        });
+
+        expect(result.matches[4]).toEqual({
+          matchNumber: 5,
+          homeTeam: "I",
+          awayTeam: "J",
+          oddsHome: "3.00",
+          oddsDraw: "3.00",
+          oddsAway: "2.20",
+          kickoffDay: "lør",
+          kickoffTime: "17:15",
+          league: "League 5",
+        });
+      }
+    });
+  });
+
   describe("kickoff handling", () => {
     it("normalizes all weekday abbreviations correctly", () => {
       const tests = [
@@ -1666,6 +2142,305 @@ Test League`;
         if (result.ok) {
           expect(result.matches[0].kickoffTime).toBe(expectedTime);
         }
+      });
+    });
+
+    describe("Danish relative phrases (i dag, i morgen)", () => {
+      it("accepts 'i dag' as a valid kickoff day phrase", () => {
+        const couponText = `1
+Team A
+Team B
+1
+
+Team A
+2.00
+x
+
+Uafgjort
+3.00
+2
+
+Team B
+4.00
+i dag 18:00
+Test League`;
+
+        const result = parseCouponText(couponText);
+        expect(result.ok).toBe(true);
+        if (result.ok) {
+          expect(result.matches[0].kickoffDay).toBe("i dag");
+          expect(result.matches[0].kickoffTime).toBe("18:00");
+        }
+      });
+
+      it("accepts 'i morgen' as a valid kickoff day phrase", () => {
+        const couponText = `1
+Team A
+Team B
+1
+
+Team A
+2.00
+x
+
+Uafgjort
+3.00
+2
+
+Team B
+4.00
+i morgen 18:00
+Test League`;
+
+        const result = parseCouponText(couponText);
+        expect(result.ok).toBe(true);
+        if (result.ok) {
+          expect(result.matches[0].kickoffDay).toBe("i morgen");
+          expect(result.matches[0].kickoffTime).toBe("18:00");
+        }
+      });
+
+      it("accepts uppercase 'I dag' for relative phrases", () => {
+        const couponText = `1
+Team A
+Team B
+1
+
+Team A
+2.00
+x
+
+Uafgjort
+3.00
+2
+
+Team B
+4.00
+I dag 20:30
+Test League`;
+
+        const result = parseCouponText(couponText);
+        expect(result.ok).toBe(true);
+        if (result.ok) {
+          expect(result.matches[0].kickoffDay).toBe("i dag");
+          expect(result.matches[0].kickoffTime).toBe("20:30");
+        }
+      });
+
+      it("accepts uppercase 'I morgen' for relative phrases", () => {
+        const couponText = `1
+Team A
+Team B
+1
+
+Team A
+2.00
+x
+
+Uafgjort
+3.00
+2
+
+Team B
+4.00
+I morgen 16:00
+Test League`;
+
+        const result = parseCouponText(couponText);
+        expect(result.ok).toBe(true);
+        if (result.ok) {
+          expect(result.matches[0].kickoffDay).toBe("i morgen");
+          expect(result.matches[0].kickoffTime).toBe("16:00");
+        }
+      });
+
+      it("accepts dot time separator with 'i morgen' phrase", () => {
+        const couponText = `1
+Team A
+Team B
+1
+
+Team A
+2.00
+x
+
+Uafgjort
+3.00
+2
+
+Team B
+4.00
+i morgen 18.00
+Test League`;
+
+        const result = parseCouponText(couponText);
+        expect(result.ok).toBe(true);
+        if (result.ok) {
+          expect(result.matches[0].kickoffDay).toBe("i morgen");
+          expect(result.matches[0].kickoffTime).toBe("18:00");
+        }
+      });
+
+      it("accepts dot time separator with 'i dag' phrase", () => {
+        const couponText = `1
+Team A
+Team B
+1
+
+Team A
+2.00
+x
+
+Uafgjort
+3.00
+2
+
+Team B
+4.00
+i dag 20.30
+Test League`;
+
+        const result = parseCouponText(couponText);
+        expect(result.ok).toBe(true);
+        if (result.ok) {
+          expect(result.matches[0].kickoffDay).toBe("i dag");
+          expect(result.matches[0].kickoffTime).toBe("20:30");
+        }
+      });
+
+      it("parses full coupon with multiple relative phrases", () => {
+        const couponText = `1
+Team A
+Team B
+1
+
+Team A
+2.00
+x
+
+Uafgjort
+3.00
+2
+
+Team B
+4.00
+i dag 18:00
+Test League 1
+2
+Team C
+Team D
+1
+
+Team C
+1.50
+x
+
+Uafgjort
+3.50
+2
+
+Team D
+5.00
+i morgen 16:00
+Test League 2
+3
+Team E
+Team F
+1
+
+Team E
+2.50
+x
+
+Uafgjort
+2.50
+2
+
+F
+2.50
+i dag 20:00
+Test League 3`;
+
+        const result = parseCouponText(couponText);
+
+        expect(result.ok).toBe(true);
+        if (result.ok) {
+          expect(result.matches).toHaveLength(3);
+
+          // Match 1: i dag
+          expect(result.matches[0]).toEqual({
+            matchNumber: 1,
+            homeTeam: "Team A",
+            awayTeam: "Team B",
+            oddsHome: "2.00",
+            oddsDraw: "3.00",
+            oddsAway: "4.00",
+            kickoffDay: "i dag",
+            kickoffTime: "18:00",
+            league: "Test League 1",
+          });
+
+          // Match 2: i morgen
+          expect(result.matches[1]).toEqual({
+            matchNumber: 2,
+            homeTeam: "Team C",
+            awayTeam: "Team D",
+            oddsHome: "1.50",
+            oddsDraw: "3.50",
+            oddsAway: "5.00",
+            kickoffDay: "i morgen",
+            kickoffTime: "16:00",
+            league: "Test League 2",
+          });
+
+          // Match 3: another i dag
+          expect(result.matches[2]).toEqual({
+            matchNumber: 3,
+            homeTeam: "Team E",
+            awayTeam: "Team F",
+            oddsHome: "2.50",
+            oddsDraw: "2.50",
+            oddsAway: "2.50",
+            kickoffDay: "i dag",
+            kickoffTime: "20:00",
+            league: "Test League 3",
+          });
+        }
+      });
+
+      it("accepts mixed case variations of 'i dag' and 'i morgen'", () => {
+        const tests = [
+          { input: "i dag 10:00", expectedDay: "i dag" },
+          { input: "I dag 10:00", expectedDay: "i dag" },
+          { input: "i morgen 10:00", expectedDay: "i morgen" },
+          { input: "I morgen 10:00", expectedDay: "i morgen" },
+        ];
+
+        tests.forEach(({ input, expectedDay }) => {
+          const couponText = `1
+Team A
+Team B
+1
+
+Team A
+2.00
+x
+
+Uafgjort
+3.00
+2
+
+Team B
+4.00
+${input}
+Test League`;
+
+          const result = parseCouponText(couponText);
+          expect(result.ok).toBe(true);
+          if (result.ok) {
+            expect(result.matches[0].kickoffDay).toBe(expectedDay);
+          }
+        });
       });
     });
   });
@@ -1832,6 +2607,126 @@ describe("resolveKickoff", () => {
       times.forEach((time) => {
         const result = resolveKickoff("lør", time, wed);
         expect(result).toBe(`2026-07-18T${time}`);
+      });
+    });
+  });
+
+  describe("relative phrases (i dag, i morgen)", () => {
+    describe("i dag resolution", () => {
+      it("resolves 'i dag' to reference date's own calendar day with time", () => {
+        // July 24, 2026 (Friday)
+        const refDate = new Date(2026, 6, 24);
+        const result = resolveKickoff("i dag", "20:30", refDate);
+        expect(result).toBe("2026-07-24T20:30");
+      });
+
+      it("resolves 'i dag' on a Monday", () => {
+        const refDate = new Date(2026, 6, 20);
+        const result = resolveKickoff("i dag", "15:00", refDate);
+        expect(result).toBe("2026-07-20T15:00");
+      });
+
+      it("resolves 'i dag' on a Sunday", () => {
+        const refDate = new Date(2026, 6, 19);
+        const result = resolveKickoff("i dag", "18:00", refDate);
+        expect(result).toBe("2026-07-19T18:00");
+      });
+
+      it("resolves 'i dag' with various times", () => {
+        const refDate = new Date(2026, 6, 24);
+        const times = ["08:00", "12:30", "19:45", "23:59"];
+        times.forEach((time) => {
+          const result = resolveKickoff("i dag", time, refDate);
+          expect(result).toBe(`2026-07-24T${time}`);
+        });
+      });
+    });
+
+    describe("i morgen resolution", () => {
+      it("resolves 'i morgen' to reference date + 1 day with time", () => {
+        // July 24, 2026 (Friday) → July 25, 2026 (Saturday)
+        const refDate = new Date(2026, 6, 24);
+        const result = resolveKickoff("i morgen", "18:00", refDate);
+        expect(result).toBe("2026-07-25T18:00");
+      });
+
+      it("resolves 'i morgen' on a Monday (adds 1 day)", () => {
+        const refDate = new Date(2026, 6, 20);
+        const result = resolveKickoff("i morgen", "16:00", refDate);
+        expect(result).toBe("2026-07-21T16:00");
+      });
+
+      it("resolves 'i morgen' crossing month boundary from July to August", () => {
+        // July 31, 2026 (Friday) → August 1, 2026 (Saturday)
+        const refDate = new Date(2026, 6, 31);
+        const result = resolveKickoff("i morgen", "19:00", refDate);
+        expect(result).toBe("2026-08-01T19:00");
+      });
+
+      it("resolves 'i morgen' crossing year boundary from December to January", () => {
+        // December 31, 2025 (Thursday) → January 1, 2026 (Friday)
+        const refDate = new Date(2025, 11, 31);
+        const result = resolveKickoff("i morgen", "20:00", refDate);
+        expect(result).toBe("2026-01-01T20:00");
+      });
+
+      it("resolves 'i morgen' with various times", () => {
+        const refDate = new Date(2026, 6, 24);
+        const times = ["08:00", "12:30", "19:45", "23:59"];
+        times.forEach((time) => {
+          const result = resolveKickoff("i morgen", time, refDate);
+          expect(result).toBe(`2026-07-25T${time}`);
+        });
+      });
+    });
+
+    describe("case insensitivity for relative phrases", () => {
+      const refDate = new Date(2026, 6, 24);
+
+      it("resolves 'I dag' (uppercase I)", () => {
+        const result = resolveKickoff("I dag", "18:00", refDate);
+        expect(result).toBe("2026-07-24T18:00");
+      });
+
+      it("resolves 'I morgen' (uppercase I)", () => {
+        const result = resolveKickoff("I morgen", "18:00", refDate);
+        expect(result).toBe("2026-07-25T18:00");
+      });
+
+      it("resolves 'I DAG' (all uppercase)", () => {
+        const result = resolveKickoff("I DAG", "18:00", refDate);
+        expect(result).toBe("2026-07-24T18:00");
+      });
+
+      it("resolves 'I MORGEN' (all uppercase)", () => {
+        const result = resolveKickoff("I MORGEN", "18:00", refDate);
+        expect(result).toBe("2026-07-25T18:00");
+      });
+    });
+
+    describe("error handling for relative phrases", () => {
+      it("returns null for typo 'i di dag'", () => {
+        const refDate = new Date(2026, 6, 24);
+        const result = resolveKickoff("i di dag", "18:00", refDate);
+        expect(result).toBeNull();
+      });
+
+      it("returns null for typo 'i morgendag'", () => {
+        const refDate = new Date(2026, 6, 24);
+        const result = resolveKickoff("i morgendag", "18:00", refDate);
+        expect(result).toBeNull();
+      });
+
+      it("returns null for partial phrase 'dag'", () => {
+        const refDate = new Date(2026, 6, 24);
+        const result = resolveKickoff("dag", "18:00", refDate);
+        expect(result).toBeNull();
+      });
+
+      it("returns null for partial phrase 'morgen'", () => {
+        const refDate = new Date(2026, 6, 24);
+        const result = resolveKickoff("morgen", "18:00", refDate);
+        expect(result).toBeNull();
       });
     });
   });

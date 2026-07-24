@@ -5,7 +5,7 @@ export interface ParsedCouponMatch {
   oddsHome: string; // decimal string normalized to "." separator, e.g. "3.00"
   oddsDraw: string;
   oddsAway: string;
-  kickoffDay: string; // lowercase abbreviation without dot, e.g. "lør"
+  kickoffDay: string; // lowercase abbreviation without dot (e.g. "lør") or relative phrase ("i dag", "i morgen")
   kickoffTime: string; // normalized "HH:mm" with ":" separator, e.g. "16:00"
   league: string;
 }
@@ -44,11 +44,11 @@ export function parseCouponText(text: string): CouponParseResult {
   };
 
   const parseKickoff = (kickoffStr: string): { day: string; time: string } | null => {
-    const match = kickoffStr.match(/^(man|tir|ons|tor|fre|lør|søn)\.?\s+(\d{1,2})[:.]\d{2}$/i);
+    const match = kickoffStr.match(/^(?:(man|tir|ons|tor|fre|lør|søn)\.?|(i\s+(?:dag|morgen)))\s+(\d{1,2})[:.]\d{2}$/i);
     if (!match) {
       return null;
     }
-    const day = match[1].toLowerCase().replace('.', '');
+    const day = (match[1] || match[2]).toLowerCase().replace('.', '');
     const timeMatch = kickoffStr.match(/(\d{1,2})[:.]\d{2}$/);
     if (!timeMatch) {
       return null;
@@ -257,6 +257,13 @@ export function parseCouponText(text: string): CouponParseResult {
     }
     lineIndex++;
 
+    // Optionally consume a TV channel line (free text, ignored). Present for some
+    // matches (e.g. "3+", "Viaplay"), absent for others including the last match.
+    // Detected as any line that is not the next match number.
+    if (lineIndex < lines.length && lines[lineIndex] !== String(currentMatchNumber + 1)) {
+      lineIndex++;
+    }
+
     matches.push({
       matchNumber: currentMatchNumber,
       homeTeam,
@@ -296,21 +303,31 @@ export function resolveKickoff(kickoffDay: string, kickoffTime: string, referenc
     'lør': 6,
   };
 
-  const targetDayOfWeek = dayMap[kickoffDay.toLowerCase()];
-  if (targetDayOfWeek === undefined) {
-    return null;
-  }
-
+  const lowerDay = kickoffDay.toLowerCase();
   const date = new Date(reference);
   date.setHours(0, 0, 0, 0);
 
-  const currentDayOfWeek = date.getDay();
-  let daysToAdd = targetDayOfWeek - currentDayOfWeek;
-  if (daysToAdd < 0) {
-    daysToAdd += 7;
-  }
+  // Handle relative phrases
+  if (lowerDay === 'i dag') {
+    // Use reference date's own day, no additional days to add
+  } else if (lowerDay === 'i morgen') {
+    // Add one day
+    date.setDate(date.getDate() + 1);
+  } else {
+    // Handle weekday abbreviations
+    const targetDayOfWeek = dayMap[lowerDay];
+    if (targetDayOfWeek === undefined) {
+      return null;
+    }
 
-  date.setDate(date.getDate() + daysToAdd);
+    const currentDayOfWeek = date.getDay();
+    let daysToAdd = targetDayOfWeek - currentDayOfWeek;
+    if (daysToAdd < 0) {
+      daysToAdd += 7;
+    }
+
+    date.setDate(date.getDate() + daysToAdd);
+  }
 
   const [hour, min] = kickoffTime.split(':').map(s => parseInt(s, 10));
   const pad = (n: number) => String(n).padStart(2, '0');
