@@ -6,6 +6,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { useEffect, useState, useRef } from "react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { Logo } from "@/components/Logo";
+import { LoginButton } from "@/components/LoginButton";
 
 const navLinks = [
   { href: "/", label: "Forside" },
@@ -60,19 +61,6 @@ export function Navbar() {
       .then(({ data }) => setIsAdmin(data?.role === "admin"))
       .catch(() => {});
   }, [user]);
-
-  const handleSignIn = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/api/auth/callback`,
-      },
-    });
-    if (error) {
-      console.error("Sign in error:", error.message);
-      alert(`Sign in failed: ${error.message}`);
-    }
-  };
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -164,11 +152,9 @@ export function Navbar() {
                   </div>
                 )}
               </div>
-            ) : (
-              <button onClick={handleSignIn} className="btn-primary text-sm">
-                Log ind med Google
-              </button>
-            )}
+            ) : pathname !== "/" ? (
+              <LoginButton className="text-sm" />
+            ) : null}
           </div>
         </div>
       </div>
