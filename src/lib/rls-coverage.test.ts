@@ -32,14 +32,31 @@ function parseModelsFromSchema(schemaContent: string): Map<string, string> {
  * Parse all migration files and extract table names that have RLS enabled.
  * Tolerates: case-insensitive keywords, optional "public." prefix,
  * double-quoted identifiers, and arbitrary whitespace/newlines.
+ * Handles Prisma Migrate directory structure (migrations/ containing numbered subdirectories).
  */
 function parseRlsEnabledTables(migrationsDir: string): Set<string> {
   const rlsTables = new Set<string>();
 
-  const files = fs.readdirSync(migrationsDir).filter((f) => f.endsWith(".sql"));
+  // Recursively find all .sql files in migrations directory
+  function findSqlFiles(dir: string): string[] {
+    const sqlFiles: string[] = [];
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
 
-  for (const file of files) {
-    const filePath = path.join(migrationsDir, file);
+    for (const entry of entries) {
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        sqlFiles.push(...findSqlFiles(fullPath));
+      } else if (entry.isFile() && entry.name.endsWith(".sql")) {
+        sqlFiles.push(fullPath);
+      }
+    }
+
+    return sqlFiles;
+  }
+
+  const files = findSqlFiles(migrationsDir);
+
+  for (const filePath of files) {
     const content = fs.readFileSync(filePath, "utf-8");
 
     // Regex to match: ALTER TABLE [public.]"?"table_name"? ENABLE ROW LEVEL SECURITY
@@ -77,7 +94,7 @@ describe("RLS coverage", () => {
     const models = parseModelsFromSchema(schemaContent);
 
     // Parse migrations
-    const migrationsDir = path.join(repoRoot, "supabase", "migrations");
+    const migrationsDir = path.join(repoRoot, "prisma", "migrations");
     const rlsTables = parseRlsEnabledTables(migrationsDir);
 
     // Check coverage: every table must have RLS
@@ -85,10 +102,10 @@ describe("RLS coverage", () => {
     const missingRls = tableNames.filter((tableName) => !rlsTables.has(tableName));
 
     const failureMessage = `
-The following table(s) lack ENABLE ROW LEVEL SECURITY in supabase/migrations/:
+The following table(s) lack ENABLE ROW LEVEL SECURITY in prisma/migrations/:
 ${missingRls.map((t) => `  - ${t}`).join("\n")}
 
-Fix: Create a new migration file in supabase/migrations/ with:
+Fix: Create a new migration file in prisma/migrations/ with:
 ${missingRls.map((t) => `  ALTER TABLE ${t} ENABLE ROW LEVEL SECURITY;`).join("\n")}
 
 Do NOT edit an existing migration — add a new one.

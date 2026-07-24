@@ -30,7 +30,7 @@ Layout:
   `supabase-server.ts`
 - `src/types/` — shared TypeScript types
 - `prisma/schema.prisma` — database schema; `prisma/seed.ts` — seed data
-- `supabase/migrations/` — SQL migrations
+- `prisma/migrations/` — Prisma Migrate migrations
 
 ## Core commands
 
@@ -39,10 +39,13 @@ Layout:
   e.g. `src/lib/fedt.test.ts`)
 - `npx vitest run src/lib/fedt.test.ts` — run a single test file
 - `npm run build` — runs tests, then `next build`; use as the final
-  verification gate
+  verification gate (local only; no database)
 - `npm run lint` — ESLint via Next.js
-- `npm run db:push` / `db:migrate` / `db:seed` / `db:studio` — Prisma
-  schema push, migrations, seed, data browser
+- `npm run db:migrate` — Prisma Migrate dev workflow (creates a migration
+  from schema changes and applies it to the dev DB)
+- `npm run db:deploy` — applies pending migrations to the database (prod
+  runs this automatically via `vercel-build`)
+- `npm run db:seed` / `db:studio` — seed data, data browser
 - `npx prisma generate` — regenerate the Prisma client after schema
   changes (also runs on `postinstall`)
 
@@ -109,10 +112,13 @@ the reviewer flagged.
   environment variables by name only (`DATABASE_URL`, `DIRECT_URL`,
   `SUPABASE_SECRET_KEY`, `NEXT_PUBLIC_SUPABASE_*`,
   `FOOTBALL_DATA_API_KEY`, `NEXT_PUBLIC_APP_URL`).
-- **Database:** schema changes go through `prisma/schema.prisma`; never
-  edit an existing migration in `supabase/migrations/` — add a new one.
-  Do not run `db:push`, `db:migrate`, or `db:seed` unless the user asks;
-  they hit the live Supabase database.
+- **Database:** schema changes go through `prisma/schema.prisma` and get a
+  migration via `npm run db:migrate`; never edit an existing migration in
+  `prisma/migrations/` — add a new one. Do not run `db:migrate`,
+  `db:deploy`, `db:seed`, or `vercel-build` unless the user asks; they
+  connect to live databases. Use plain `npm run build` as the local
+  verification gate (database-free). See `docs/prisma-migrate-rollout.md`
+  for the one-time production baseline and rollout procedure.
 - **Dependencies:** don't add new npm packages without asking; the
   project deliberately keeps a small dependency footprint.
 - **Design references:** `design_handoff_tips13_redesign/` and

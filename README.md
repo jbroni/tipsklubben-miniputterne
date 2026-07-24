@@ -67,8 +67,8 @@ cp .env.example .env
 
 # Fill in your .env file with the values from steps 2-3
 
-# Push the database schema
-npx prisma db push
+# Apply database migrations
+npx prisma migrate deploy
 
 # Generate Prisma client
 npx prisma generate
