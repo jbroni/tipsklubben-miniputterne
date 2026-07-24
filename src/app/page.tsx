@@ -83,7 +83,7 @@ export default async function DashboardPage() {
   }
 
   // Members of the season = anyone who has ever predicted, for avatar rows
-  let members: { id: string; initial: string; submitted: boolean }[] = [];
+  let members: { id: string; initial: string; submitted: boolean; avatarUrl?: string | null }[] = [];
   if (currentRound) {
     const allUsers = await prisma.user.findMany();
     const submittedIds = new Set(
@@ -103,6 +103,7 @@ export default async function DashboardPage() {
       id: u.id,
       initial: u.displayName.charAt(0).toUpperCase(),
       submitted: submittedIds.has(u.id),
+      avatarUrl: u.avatarUrl,
     }));
   }
 
