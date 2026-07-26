@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, getCurrentUser } from "@/lib/auth";
+import { Prisma } from "@prisma/client";
 
 export async function GET() {
   const user = await getCurrentUser();
@@ -32,20 +33,34 @@ export async function POST(request: Request) {
     );
   }
 
-  // Deactivate other seasons
-  await prisma.season.updateMany({
-    where: { isActive: true },
-    data: { isActive: false },
-  });
+  // Atomically deactivate other seasons and create new active season
+  try {
+    const season = await prisma.$transaction(async (tx) => {
+      // Deactivate other seasons
+      await tx.season.updateMany({
+        where: { isActive: true },
+        data: { isActive: false },
+      });
 
-  const season = await prisma.season.create({
-    data: {
-      name,
-      startDate: new Date(startDate),
-      numRounds,
-      isActive: true,
-    },
-  });
+      return tx.season.create({
+        data: {
+          name,
+          startDate: new Date(startDate),
+          numRounds,
+          isActive: true,
+        },
+      });
+    });
 
-  return NextResponse.json({ data: season }, { status: 201 });
+    return NextResponse.json({ data: season }, { status: 201 });
+  } catch (error) {
+    // Detect Prisma unique-constraint violation and return 409 conflict response
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      return NextResponse.json(
+        { error: "Der er allerede en aktiv sæson" },
+        { status: 409 }
+      );
+    }
+    throw error;
+  }
 }

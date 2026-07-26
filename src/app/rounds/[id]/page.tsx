@@ -4,6 +4,7 @@ import { RoundStatusBadge } from "@/components/RoundStatusBadge";
 import { FedtBadge } from "@/components/FedtBadge";
 import { calcRoundFedt } from "@/lib/fedt";
 import { toFedtInput } from "@/lib/leaderboard";
+import { resolveRoundBackHref } from "@/lib/back-href";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Pick as PickType } from "@prisma/client";
@@ -18,8 +19,10 @@ const RANK_COLORS = ["text-rank-1", "text-rank-2", "text-rank-3"];
 
 export default async function RoundDetailPage({
   params,
+  searchParams,
 }: {
   params: { id: string };
+  searchParams: { from?: string | string[] };
 }) {
   const currentUser = await requireUser();
 
@@ -66,12 +69,17 @@ export default async function RoundDetailPage({
 
   const isRevealed = round.status !== "open";
   const gridCols = `16px 1fr repeat(${usersWithPredictions.length}, 26px) 30px`;
+  const backHref = resolveRoundBackHref(
+    searchParams.from,
+    round.seasonId,
+    round.season.isActive
+  );
 
   return (
     <div className="max-w-lg mx-auto space-y-2.5">
       <div className="flex items-center justify-between px-0.5">
         <div className="flex items-center gap-2.5">
-          <Link href="/rounds" className="text-muted text-lg">
+          <Link href={backHref} className="text-muted text-lg">
             ←
           </Link>
           <span className="font-display font-bold text-lg text-ink">

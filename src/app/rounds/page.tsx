@@ -83,7 +83,7 @@ export default async function RoundsPage() {
             return (
               <Link
                 key={round.id}
-                href={`/rounds/${round.id}/predict`}
+                href={`/rounds/${round.id}/predict?from=rounds`}
                 className="bg-surface border-[1.5px] border-brand rounded-card px-4 py-3.5 shadow-card flex items-center gap-3 hover:bg-[#f9f6ec] transition-colors"
               >
                 <div className="flex-1">

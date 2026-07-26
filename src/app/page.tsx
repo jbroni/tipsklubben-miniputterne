@@ -231,7 +231,7 @@ export default async function DashboardPage() {
           winnerName={revealedInfo.winnerName}
           userScore={revealedInfo.userScore}
           userRank={revealedInfo.userRank}
-          href={`/rounds/${currentRound.id}`}
+          href={`/rounds/${currentRound.id}?from=hjem`}
         />
       )}
 
@@ -262,7 +262,7 @@ export default async function DashboardPage() {
             <span className="font-mono font-medium text-sm">{recap.userScore}/13</span>
           </div>
           <Link
-            href={`/rounds/${recap.roundId}`}
+            href={`/rounds/${recap.roundId}?from=hjem`}
             className="text-[13.5px] font-semibold text-brand mt-2.5 inline-block"
           >
             Se resultat →
