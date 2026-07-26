@@ -89,7 +89,7 @@ export default async function SeasonDetailPage({
           return (
             <Link
               key={round.id}
-              href={`/rounds/${round.id}`}
+              href={`/rounds/${round.id}?from=historik`}
               className="card block hover:bg-[#f9f6ec] transition-colors"
             >
               <div className="flex items-center justify-between">

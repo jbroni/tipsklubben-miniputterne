@@ -43,6 +43,7 @@ model Season {
   name      String
   startDate DateTime @map("start_date") @db.Date
   numRounds Int      @default(12) @map("num_rounds")
+  /// Partial unique index in supabase/migrations/ enforces at most one active season.
   isActive  Boolean  @default(true) @map("is_active")
   createdAt DateTime @default(now()) @map("created_at")
   rounds    Round[]

@@ -19,13 +19,18 @@ interface RoundData {
 interface PredictionFormProps {
   roundId: string;
   compact?: boolean;
+  backHref?: string;
 }
 
 function draftKey(roundId: string) {
   return `tips13-draft-${roundId}`;
 }
 
-export function PredictionForm({ roundId, compact = false }: PredictionFormProps) {
+export function PredictionForm({
+  roundId,
+  compact = false,
+  backHref = "/",
+}: PredictionFormProps) {
   const router = useRouter();
   const [round, setRound] = useState<RoundData | null>(null);
   const [picks, setPicks] = useState<Record<string, PickType>>({});
@@ -146,7 +151,7 @@ export function PredictionForm({ roundId, compact = false }: PredictionFormProps
       {!compact && (
         <div className="flex items-center justify-between mb-3 px-0.5">
           <div className="flex items-center gap-2.5">
-            <Link href="/" className="text-muted text-lg">
+            <Link href={backHref} className="text-muted text-lg">
               ←
             </Link>
             <span className="font-display font-bold text-lg text-ink">
