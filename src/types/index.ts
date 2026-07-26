@@ -17,9 +17,16 @@ export type RoundFull = Round & {
   predictions: Prediction[];
 };
 
+// Narrowed user type for leaderboard entries (only rendered fields)
+export type LeaderboardUser = {
+  id: string;
+  displayName: string;
+  avatarUrl: string | null;
+};
+
 // Leaderboard
 export interface LeaderboardEntry {
-  user: User;
+  user: LeaderboardUser;
   totalPoints: number;
   roundsPlayed: number;
   avgScore: number;

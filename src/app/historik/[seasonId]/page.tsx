@@ -32,7 +32,9 @@ export default async function SeasonDetailPage({
   if (!season) notFound();
 
   // Get all users
-  const users = await prisma.user.findMany();
+  const users = await prisma.user.findMany({
+    select: { id: true, displayName: true, avatarUrl: true },
+  });
 
   // Filter to only completed rounds for leaderboard computation
   const completedRounds = season.rounds.filter((r) => r.status === "completed");

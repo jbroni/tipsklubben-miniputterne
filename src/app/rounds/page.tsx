@@ -5,24 +5,30 @@ import Link from "next/link";
 export default async function RoundsPage() {
   const currentUser = await requireUser();
 
-  const season = await prisma.season.findFirst({
-    where: { isActive: true },
-    include: {
-      rounds: {
-        orderBy: { roundNumber: "asc" },
-        include: {
-          matches: { orderBy: { matchNumber: "asc" }, include: { predictions: true } },
+  const [season, users] = await Promise.all([
+    prisma.season.findFirst({
+      where: { isActive: true },
+      include: {
+        rounds: {
+          orderBy: { roundNumber: "asc" },
+          include: {
+            matches: {
+              orderBy: { matchNumber: "asc" },
+              include: { predictions: { select: { userId: true, pick: true } } },
+            },
+          },
         },
       },
-    },
-  });
+    }),
+    prisma.user.findMany({ select: { id: true, displayName: true } }),
+  ]);
+
+  const memberCount = users.length;
 
   if (!season) {
     return <div className="text-center py-20 text-muted">Ingen aktiv sæson fundet.</div>;
   }
 
-  const memberCount = await prisma.user.count();
-  const users = await prisma.user.findMany();
   const userName = (id: string) =>
     users.find((u) => u.id === id)?.displayName.split(" ")[0] ?? "?";
 

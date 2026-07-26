@@ -1,30 +1,15 @@
-"use client";
-
-import { useState, useEffect } from "react";
 import { FedtBadge } from "@/components/FedtBadge";
 import { formatDecimal } from "@/lib/fedt";
-import type { LeaderboardEntry } from "@/types";
+import { requireUser } from "@/lib/auth";
+import { getLeaderboardEntries } from "@/lib/leaderboard-data";
 
-export default function ProfilePage() {
-  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+export default async function ProfilePage() {
+  const [currentUser, entries] = await Promise.all([
+    requireUser(),
+    getLeaderboardEntries(),
+  ]);
 
-  useEffect(() => {
-    Promise.all([
-      fetch("/api/leaderboard").then((r) => r.json()),
-      fetch("/api/auth/me").then((r) => r.json()).catch(() => ({ data: null })),
-    ]).then(([leaderboard, me]) => {
-      setEntries(leaderboard.data ?? []);
-      setCurrentUserId(me.data?.id ?? null);
-      setLoading(false);
-    });
-  }, []);
-
-  if (loading) {
-    return <div className="text-center py-20 text-muted">Indlæser...</div>;
-  }
-
+  const currentUserId = currentUser.id;
   const myEntry = entries.find((e) => e.user.id === currentUserId);
   const myRank = entries.findIndex((e) => e.user.id === currentUserId) + 1;
 

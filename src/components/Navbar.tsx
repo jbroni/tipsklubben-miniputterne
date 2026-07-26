@@ -1,10 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
-import { useEffect, useState, useRef } from "react";
-import type { User as SupabaseUser } from "@supabase/supabase-js";
+import { useEffect, useRef, useState } from "react";
 import { Logo } from "@/components/Logo";
 import { LoginButton } from "@/components/LoginButton";
 
@@ -17,26 +16,32 @@ const navLinks = [
   { href: "/profile", label: "Profil" },
 ];
 
-export function Navbar() {
+export function Navbar({
+  displayName,
+  isAdmin,
+}: {
+  displayName: string | null;
+  isAdmin: boolean;
+}) {
   const pathname = usePathname();
-  const [user, setUser] = useState<SupabaseUser | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const supabase = createSupabaseBrowserClient();
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUser(data.user));
-
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      supabase.auth.getUser().then(({ data }) => setUser(data.user));
-      if (!session?.user) setIsAdmin(false);
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      // Refresh the page on sign-in (another tab) or sign-out to update server-rendered state.
+      // Only refresh on explicit auth events, never on INITIAL_SESSION.
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
+        router.refresh();
+      }
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [supabase, router]);
 
   // Close menu on outside click
   useEffect(() => {
@@ -54,14 +59,6 @@ export function Navbar() {
     setMenuOpen(false);
   }, [pathname]);
 
-  useEffect(() => {
-    if (!user) return;
-    fetch("/api/auth/me")
-      .then((r) => r.json())
-      .then(({ data }) => setIsAdmin(data?.role === "admin"))
-      .catch(() => {});
-  }, [user]);
-
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     window.location.href = "/";
@@ -75,7 +72,7 @@ export function Navbar() {
 
           {/* Right side */}
           <div className="flex items-center gap-2">
-            {user ? (
+            {displayName ? (
               <div className="relative" ref={menuRef}>
                 <button
                   onClick={() => setMenuOpen(!menuOpen)}
@@ -111,7 +108,7 @@ export function Navbar() {
                   <div className="absolute right-0 top-full mt-2 w-56 bg-surface rounded-xl border border-line-card shadow-card py-2 z-50">
                     <div className="px-4 py-2 border-b border-line-hairline">
                       <p className="text-sm font-medium text-ink truncate">
-                        {user.user_metadata?.full_name ?? user.email}
+                        {displayName}
                       </p>
                     </div>
 

@@ -1,6 +1,6 @@
-import type { User, Round, Match, Prediction, Pick as PickType } from "@prisma/client";
+import type { Round, Match, Prediction, Pick as PickType } from "@prisma/client";
 import { calcRoundFedt, calcSeasonFedt } from "./fedt";
-import type { LeaderboardEntry } from "@/types";
+import type { LeaderboardEntry, LeaderboardUser } from "@/types";
 
 type RoundWithMatches = Round & {
   matches: Match[];
@@ -48,7 +48,7 @@ export function compareEntries(a: LeaderboardEntry, b: LeaderboardEntry): number
  */
 export function computeLeaderboard(
   rounds: RoundWithMatches[],
-  users: User[]
+  users: LeaderboardUser[]
 ): LeaderboardEntry[] {
   const entries: LeaderboardEntry[] = users.map((u) => {
     const roundScores = rounds.map((round) => {
@@ -98,3 +98,4 @@ export function computeLeaderboard(
 
   return entries;
 }
+

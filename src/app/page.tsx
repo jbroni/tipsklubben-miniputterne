@@ -29,23 +29,26 @@ export default async function DashboardPage() {
     );
   }
 
-  const season = await prisma.season.findFirst({
-    where: { isActive: true },
-    include: {
-      rounds: {
-        orderBy: { roundNumber: "desc" },
-        take: 2,
-        include: {
-          matches: {
-            orderBy: { matchNumber: "asc" },
-            include: {
-              predictions: { include: { user: true } },
+  const [season, users] = await Promise.all([
+    prisma.season.findFirst({
+      where: { isActive: true },
+      include: {
+        rounds: {
+          orderBy: { roundNumber: "desc" },
+          take: 2,
+          include: {
+            matches: {
+              orderBy: { matchNumber: "asc" },
+              include: {
+                predictions: { select: { userId: true, pick: true } },
+              },
             },
           },
         },
       },
-    },
-  });
+    }),
+    prisma.user.findMany(),
+  ]);
 
   const currentRound = season?.rounds[0] ?? null;
   const previousRound = season?.rounds[1] ?? null;
@@ -84,7 +87,6 @@ export default async function DashboardPage() {
   // Members of the season = anyone who has ever predicted, for avatar rows
   let members: { id: string; initial: string; submitted: boolean; avatarUrl?: string | null }[] = [];
   if (currentRound) {
-    const allUsers = await prisma.user.findMany();
     const submittedIds = new Set(
       currentRound.matches
         .flatMap((m) => m.predictions)
@@ -98,7 +100,7 @@ export default async function DashboardPage() {
         )
         .map((p) => p.userId)
     );
-    members = allUsers.map((u) => ({
+    members = users.map((u) => ({
       id: u.id,
       initial: u.displayName.charAt(0).toUpperCase(),
       submitted: submittedIds.has(u.id),
@@ -116,7 +118,7 @@ export default async function DashboardPage() {
     roundId: string;
   } | null = null;
   if (previousRound && previousRound.status === "completed") {
-    const scores = (await prisma.user.findMany()).map((u) => {
+    const scores = users.map((u) => {
       const points = previousRound.matches.filter((m) => {
         const pred = m.predictions.find((p) => p.userId === u.id);
         return pred && m.result && pred.pick === m.result;
@@ -142,7 +144,7 @@ export default async function DashboardPage() {
   let revealedInfo: { winnerName: string | null; userScore: number; userRank: number } | null =
     null;
   if (mode === "revealed" && currentRound) {
-    const scores = (await prisma.user.findMany()).map((u) => {
+    const scores = users.map((u) => {
       const points = currentRound.matches.filter((m) => {
         const pred = m.predictions.find((p) => p.userId === u.id);
         return pred && m.result && pred.pick === m.result;
@@ -181,8 +183,6 @@ export default async function DashboardPage() {
       },
       orderBy: { roundNumber: "asc" },
     });
-
-    const users = await prisma.user.findMany();
 
     leaderboardEntries = computeLeaderboard(completedRounds, users);
   }

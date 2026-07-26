@@ -1,25 +1,10 @@
-"use client";
-
-import { useState, useEffect } from "react";
 import { LeaderboardTable } from "@/components/LeaderboardTable";
-import type { LeaderboardEntry } from "@/types";
+import { requireUser } from "@/lib/auth";
+import { getLeaderboardEntries } from "@/lib/leaderboard-data";
 
-export default function LeaderboardPage() {
-  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch("/api/leaderboard")
-      .then((r) => r.json())
-      .then(({ data }) => {
-        setEntries(data ?? []);
-        setLoading(false);
-      });
-  }, []);
-
-  if (loading) {
-    return <div className="text-center py-20 text-muted">Indlæser...</div>;
-  }
+export default async function LeaderboardPage() {
+  await requireUser();
+  const entries = await getLeaderboardEntries();
 
   return (
     <div className="space-y-6">
