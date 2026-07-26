@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Navbar } from "@/components/Navbar";
 import { getCurrentUserFromHeaders } from "@/lib/auth";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: "Tipsklubben Miniputterne",
@@ -27,6 +28,7 @@ export default async function RootLayout({
         <footer className="border-t border-line-card py-6 text-center text-sm text-muted">
           Tipsklubben Miniputterne · 2013
         </footer>
+        <Analytics />
       </body>
     </html>
   );
