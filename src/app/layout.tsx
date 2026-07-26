@@ -3,6 +3,7 @@ import "./globals.css";
 import { Navbar } from "@/components/Navbar";
 import { getCurrentUserFromHeaders } from "@/lib/auth";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata: Metadata = {
   title: "Tipsklubben Miniputterne",
@@ -29,6 +30,7 @@ export default async function RootLayout({
           Tipsklubben Miniputterne · 2013
         </footer>
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
