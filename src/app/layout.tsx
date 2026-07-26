@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Navbar } from "@/components/Navbar";
-import { getCurrentUserFromSession } from "@/lib/auth";
+import { getCurrentUserFromHeaders } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: "Tipsklubben Miniputterne",
@@ -13,7 +13,7 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const user = await getCurrentUserFromSession();
+  const user = await getCurrentUserFromHeaders();
   const displayName = user?.displayName || user?.email || null;
   const isAdmin = user?.role === "admin";
 

@@ -1,22 +1,20 @@
 import { createSupabaseServerClient } from "./supabase-server";
 import { prisma } from "./prisma";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import type { User } from "@prisma/client";
 
-export async function getCurrentUserFromSession(): Promise<User | null> {
-  const supabase = createSupabaseServerClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  if (!session?.user.id) return null;
+export async function getCurrentUserFromHeaders(): Promise<User | null> {
+  const authId = headers().get("x-auth-user-id");
+  if (!authId) return null;
 
-  // Reads the session from the cookie with NO network call, and does NOT
-  // verify the JWT signature. ONLY safe in page/layout server components on
-  // routes covered by the middleware matcher, where middleware has already
-  // verified and refreshed the session in this same request.
-  // NEVER use in a route handler or Server Action.
+  // The x-auth-user-id header is set by middleware from a network-verified
+  // getUser() result and is stripped from inbound requests, so it is trustworthy.
+  // ONLY safe in page/layout server components on routes covered by the
+  // middleware matcher. NEVER use in a route handler or Server Action
+  // (where middleware does not populate this header).
   const user = await prisma.user.findUnique({
-    where: { authId: session.user.id },
+    where: { authId },
   });
 
   return user;

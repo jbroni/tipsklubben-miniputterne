@@ -75,7 +75,26 @@ export async function middleware(request: NextRequest) {
     return redirectResponse;
   }
 
-  return response;
+  // Pass verified user id from middleware to layout via request header.
+  // Unconditionally delete any inbound value first (anti-spoofing),
+  // then set it only if we have a verified user.
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.delete("x-auth-user-id");
+  if (user) {
+    requestHeaders.set("x-auth-user-id", user.id);
+  }
+
+  const finalResponse = NextResponse.next({
+    request: { headers: requestHeaders },
+  });
+
+  // Copy cookies from the existing response (which may include refreshed
+  // auth tokens from the getUser() call above).
+  response.cookies.getAll().forEach((cookie) => {
+    finalResponse.cookies.set(cookie);
+  });
+
+  return finalResponse;
 }
 
 export const config = {
