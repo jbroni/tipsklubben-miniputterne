@@ -3,6 +3,25 @@ import { prisma } from "./prisma";
 import { redirect } from "next/navigation";
 import type { User } from "@prisma/client";
 
+export async function getCurrentUserFromSession(): Promise<User | null> {
+  const supabase = createSupabaseServerClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session?.user.id) return null;
+
+  // Reads the session from the cookie with NO network call, and does NOT
+  // verify the JWT signature. ONLY safe in page/layout server components on
+  // routes covered by the middleware matcher, where middleware has already
+  // verified and refreshed the session in this same request.
+  // NEVER use in a route handler or Server Action.
+  const user = await prisma.user.findUnique({
+    where: { authId: session.user.id },
+  });
+
+  return user;
+}
+
 export async function getCurrentUser(): Promise<User | null> {
   const supabase = createSupabaseServerClient();
   const {
@@ -10,6 +29,9 @@ export async function getCurrentUser(): Promise<User | null> {
   } = await supabase.auth.getUser();
   if (!authUser) return null;
 
+  // Network-verified user fetch. Always makes a network call to Supabase auth
+  // server to cryptographically verify the JWT signature. Safe to use anywhere:
+  // page/layout server components, route handlers, and Server Actions.
   const user = await prisma.user.findUnique({
     where: { authId: authUser.id },
   });

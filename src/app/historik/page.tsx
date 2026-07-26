@@ -10,26 +10,28 @@ const RANK_COLORS = ["text-rank-1", "text-rank-2", "text-rank-3"];
 export default async function HistorikPage() {
   await requireUser();
 
-  // Get all seasons (both historic and live)
-  const seasons = await prisma.season.findMany({
-    orderBy: { startDate: "desc" },
-    include: {
-      rounds: {
-        orderBy: { roundNumber: "asc" },
-        include: {
-          matches: {
-            orderBy: { matchNumber: "asc" },
-          },
-          predictions: {
-            include: { match: true },
+  // Get all seasons and users concurrently
+  const [seasons, users] = await Promise.all([
+    prisma.season.findMany({
+      orderBy: { startDate: "desc" },
+      include: {
+        rounds: {
+          orderBy: { roundNumber: "asc" },
+          include: {
+            matches: {
+              orderBy: { matchNumber: "asc" },
+            },
+            predictions: {
+              include: { match: true },
+            },
           },
         },
       },
-    },
-  });
-
-  // Get all users
-  const users = await prisma.user.findMany();
+    }),
+    prisma.user.findMany({
+      select: { id: true, displayName: true, avatarUrl: true },
+    }),
+  ]);
 
   // Filter seasons that have at least one completed round
   const completedRoundSeasons = seasons.filter((s) =>

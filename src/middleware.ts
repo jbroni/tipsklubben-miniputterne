@@ -1,6 +1,21 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+function clearAuthCookies(response: NextResponse, request: NextRequest): void {
+  const authCookies = request.cookies.getAll().filter((cookie) =>
+    cookie.name.startsWith("sb-") && cookie.name.includes("-auth-token")
+  );
+
+  authCookies.forEach((cookie) => {
+    response.cookies.set({
+      name: cookie.name,
+      value: "",
+      maxAge: 0,
+      path: "/",
+    });
+  });
+}
+
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
     request: { headers: request.headers },
@@ -36,6 +51,11 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Clear invalid auth cookies if user is null (middleware validates JWT; null means invalid/forged)
+  if (!user) {
+    clearAuthCookies(response, request);
+  }
+
   // Protected routes - redirect to home if not authenticated
   const protectedPaths = [
     "/rounds",
@@ -50,7 +70,9 @@ export async function middleware(request: NextRequest) {
   );
 
   if (isProtected && !user) {
-    return NextResponse.redirect(new URL("/", request.url));
+    const redirectResponse = NextResponse.redirect(new URL("/", request.url));
+    clearAuthCookies(redirectResponse, request);
+    return redirectResponse;
   }
 
   return response;
@@ -58,6 +80,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|api/auth).*)",
+    "/((?!_next/static|_next/image|favicon.ico|api).*)",
   ],
 };

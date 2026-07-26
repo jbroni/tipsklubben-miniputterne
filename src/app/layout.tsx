@@ -1,21 +1,26 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Navbar } from "@/components/Navbar";
+import { getCurrentUserFromSession } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: "Tipsklubben Miniputterne",
   description: "Ugentlig fodboldtipning for venner",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const user = await getCurrentUserFromSession();
+  const displayName = user?.displayName || user?.email || null;
+  const isAdmin = user?.role === "admin";
+
   return (
     <html lang="da">
       <body className="min-h-screen flex flex-col bg-paper">
-        <Navbar />
+        <Navbar displayName={displayName} isAdmin={isAdmin} />
         <main className="flex-1 max-w-4xl mx-auto w-full px-4 py-8">
           {children}
         </main>
