@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Navbar } from "@/components/Navbar";
 import { getCurrentUserFromHeaders } from "@/lib/auth";
+import { MainContainer } from "@/components/MainContainer";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
@@ -23,9 +24,7 @@ export default async function RootLayout({
     <html lang="da">
       <body className="min-h-screen flex flex-col bg-paper">
         <Navbar displayName={displayName} isAdmin={isAdmin} />
-        <main className="flex-1 max-w-4xl mx-auto w-full px-4 py-8">
-          {children}
-        </main>
+        <MainContainer>{children}</MainContainer>
         <footer className="border-t border-line-card py-6 text-center text-sm text-muted">
           Tipsklubben Miniputterne · 2013
         </footer>

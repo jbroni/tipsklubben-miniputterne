@@ -547,7 +547,7 @@ function GroupCouponContent() {
       )}
 
       {/* Two-column grid */}
-      <div className="max-w-[1360px] mx-auto px-7 py-6 grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-5">
+      <div className="max-w-[1360px] mx-auto px-7 py-6 grid grid-cols-1 lg:grid-cols-[200px_1fr] gap-5">
         {/* System list (sidebar) */}
         <div className="sticky top-[82px] h-fit">
           <div className="space-y-2">
@@ -558,32 +558,30 @@ function GroupCouponContent() {
               <button
                 key={fit.system.code}
                 onClick={() => handleSystemChange(fit.system.code)}
-                className={`w-full text-left px-3 py-2.5 rounded-lg border transition-colors text-sm text-ink ${
+                className={`w-full text-left px-3 py-2 rounded-lg border transition-colors text-sm text-ink flex items-center gap-2 ${
                   selectedSystemCode === fit.system.code
                     ? "bg-brand-tint border-brand-tintBorder"
                     : "border-line-card"
                 }`}
               >
-                <div className="font-mono font-semibold text-sm mb-1">
+                <div className="font-mono font-semibold text-sm">
                   {fit.system.code}
                 </div>
-                <div className="flex items-baseline justify-between">
-                  <div className="text-xs">
-                    <span
-                      className={
-                        fit.coverage >= 80
-                          ? "text-brand"
-                          : fit.coverage >= 55
-                            ? "text-gold"
-                            : "text-signal"
-                      }
-                    >
-                      {fit.coverage.toFixed(0)}%
-                    </span>
-                  </div>
-                  <div className="text-xs text-muted">
-                    {fit.system.rows} rk.
-                  </div>
+                <div className="text-xs">
+                  <span
+                    className={
+                      fit.coverage >= 80
+                        ? "text-brand"
+                        : fit.coverage >= 55
+                          ? "text-gold"
+                          : "text-signal"
+                    }
+                  >
+                    {fit.coverage.toFixed(0)}%
+                  </span>
+                </div>
+                <div className="text-xs text-muted">
+                  {fit.system.rows} rk.
                 </div>
               </button>
             ))}
@@ -595,7 +593,7 @@ function GroupCouponContent() {
           className="overflow-x-auto"
           style={{ minHeight: "fit-content" }}
         >
-          <div style={{ minWidth: "720px" }} className="space-y-0">
+          <div className="space-y-0">
             {renderedMatches.map((match, idx) => {
               const matchDetails = suggestion.matches?.find(
                 (m) => m.matchNumber === match.matchNumber
@@ -611,110 +609,115 @@ function GroupCouponContent() {
               return (
                 <div
                   key={match.matchNumber}
-                  className={`border-b border-line-card py-3 px-4 flex items-start gap-4 text-sm ${
+                  className={`border-b border-line-card py-3 px-4 ${
                     isOverridden ? "bg-surface-edited" : ""
                   }`}
                 >
-                  {/* Match number */}
-                  <div className="text-xs font-mono text-muted w-8">
-                    {match.matchNumber}
-                  </div>
+                  {/* Top line: match number, teams, vote bar, buttons, base outcome, controls */}
+                  <div className="flex items-start gap-4 text-sm mb-2">
+                    {/* Match number */}
+                    <div className="text-xs font-mono text-muted w-8">
+                      {match.matchNumber}
+                    </div>
 
-                  {/* Teams and odds */}
-                  <div className="w-40 flex-shrink-0">
-                    <div className="font-medium text-ink mb-1">
-                      {matchDetails?.homeTeam} – {matchDetails?.awayTeam}
-                    </div>
-                    <div className="text-xs text-muted">
-                      {matchDetails?.league}
-                    </div>
-                    <div className="text-xs font-mono text-muted mt-0.5">
-                      {matchDetails?.oddsHome.toFixed(2)} ·{" "}
-                      {matchDetails?.oddsDraw.toFixed(2)} ·{" "}
-                      {matchDetails?.oddsAway.toFixed(2)}
-                    </div>
-                  </div>
-
-                  {/* Vote split bar */}
-                  <div className="w-24 flex-shrink-0">
-                    <div className="flex h-4 rounded-sm overflow-hidden gap-0.5">
-                      <div
-                        className="bg-brand"
-                        style={{
-                          width: `${homePercent}%`,
-                          minWidth: homePercent > 5 ? "auto" : "2px",
-                        }}
-                      />
-                      <div
-                        className="bg-gold"
-                        style={{
-                          width: `${drawPercent}%`,
-                          minWidth: drawPercent > 5 ? "auto" : "2px",
-                        }}
-                      />
-                      <div
-                        className="bg-line-card"
-                        style={{
-                          width: `${awayPercent}%`,
-                          minWidth: awayPercent > 5 ? "auto" : "2px",
-                        }}
-                      />
-                    </div>
-                    <div className="flex text-xs text-muted font-mono mt-0.5 gap-2">
-                      <span>{match.tally.HOME}</span>
-                      <span>{match.tally.DRAW}</span>
-                      <span>{match.tally.AWAY}</span>
-                    </div>
-                  </div>
-
-                  {/* Outcome buttons */}
-                  <div className="flex gap-1.5 flex-shrink-0">
-                    {(["HOME", "DRAW", "AWAY"] as const).map((outcome) => (
-                      <button
-                        key={outcome}
-                        onClick={() =>
-                          handleToggleOutcome(match.matchNumber, outcome)
-                        }
-                        className={`w-9 h-9 rounded-lg font-mono font-bold text-sm flex items-center justify-center transition-colors ${
-                          match.outcomes.includes(outcome)
-                            ? "bg-brand text-white"
-                            : "bg-surface text-muted border border-line-pick"
-                        }`}
-                      >
-                        {PICK_LABEL[outcome]}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Base outcome for U-systems */}
-                  {systemDef.requiresBaseRow && match.coverage !== "single" && (
-                    <div className="w-10 flex-shrink-0 text-center">
-                      <div className="text-xs text-muted mb-1">Uds.</div>
-                      <div className="font-mono font-bold text-sm">
-                        {match.baseOutcome
-                          ? PICK_LABEL[match.baseOutcome]
-                          : "-"}
+                    {/* Teams and odds - now flexible */}
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-ink truncate mb-1">
+                        {matchDetails?.homeTeam} – {matchDetails?.awayTeam}
+                      </div>
+                      <div className="text-xs text-muted hidden xl:block">
+                        {matchDetails?.league}
+                      </div>
+                      <div className="text-xs font-mono text-muted mt-0.5 hidden xl:block">
+                        {matchDetails?.oddsHome.toFixed(2)} ·{" "}
+                        {matchDetails?.oddsDraw.toFixed(2)} ·{" "}
+                        {matchDetails?.oddsAway.toFixed(2)}
                       </div>
                     </div>
-                  )}
 
-                  {/* Rationale */}
-                  <div className="flex-1 min-w-0 text-xs text-muted line-clamp-2">
-                    {match.reasoning}
+                    {/* Vote split bar */}
+                    <div className="w-24 flex-shrink-0">
+                      <div className="flex h-4 rounded-sm overflow-hidden gap-0.5">
+                        <div
+                          className="bg-brand"
+                          style={{
+                            width: `${homePercent}%`,
+                            minWidth: homePercent > 5 ? "auto" : "2px",
+                          }}
+                        />
+                        <div
+                          className="bg-gold"
+                          style={{
+                            width: `${drawPercent}%`,
+                            minWidth: drawPercent > 5 ? "auto" : "2px",
+                          }}
+                        />
+                        <div
+                          className="bg-line-card"
+                          style={{
+                            width: `${awayPercent}%`,
+                            minWidth: awayPercent > 5 ? "auto" : "2px",
+                          }}
+                        />
+                      </div>
+                      <div className="flex text-xs text-muted font-mono mt-0.5 gap-2">
+                        <span>{match.tally.HOME}</span>
+                        <span>{match.tally.DRAW}</span>
+                        <span>{match.tally.AWAY}</span>
+                      </div>
+                    </div>
+
+                    {/* Outcome buttons */}
+                    <div className="flex gap-1.5 flex-shrink-0">
+                      {(["HOME", "DRAW", "AWAY"] as const).map((outcome) => (
+                        <button
+                          key={outcome}
+                          onClick={() =>
+                            handleToggleOutcome(match.matchNumber, outcome)
+                          }
+                          className={`w-9 h-9 rounded-lg font-mono font-bold text-sm flex items-center justify-center transition-colors ${
+                            match.outcomes.includes(outcome)
+                              ? "bg-brand text-white"
+                              : "bg-surface text-muted border border-line-pick"
+                          }`}
+                        >
+                          {PICK_LABEL[outcome]}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Base outcome for U-systems */}
+                    {systemDef.requiresBaseRow && match.coverage !== "single" && (
+                      <div className="w-10 flex-shrink-0 text-center">
+                        <div className="text-xs text-muted mb-1">Uds.</div>
+                        <div className="font-mono font-bold text-sm">
+                          {match.baseOutcome
+                            ? PICK_LABEL[match.baseOutcome]
+                            : "-"}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Override badge and reset */}
+                    {isOverridden && (
+                      <div className="flex-shrink-0 flex items-center gap-2">
+                        <span className="px-2 py-1 rounded text-xs font-medium bg-gold text-white">
+                          redigeret
+                        </span>
+                        <button
+                          onClick={() => handleResetMatch(match.matchNumber)}
+                          className="text-xs text-signal hover:underline"
+                        >
+                          nulstil
+                        </button>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Override badge and reset */}
-                  {isOverridden && (
-                    <div className="flex-shrink-0 flex items-center gap-2">
-                      <span className="px-2 py-1 rounded text-xs font-medium bg-gold text-white">
-                        redigeret
-                      </span>
-                      <button
-                        onClick={() => handleResetMatch(match.matchNumber)}
-                        className="text-xs text-signal hover:underline"
-                      >
-                        nulstil
-                      </button>
+                  {/* Bottom line: Reasoning text (full width) */}
+                  {match.reasoning && (
+                    <div className="text-xs text-muted line-clamp-2 pl-12">
+                      {match.reasoning}
                     </div>
                   )}
                 </div>
