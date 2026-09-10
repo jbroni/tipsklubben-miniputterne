@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MatchRow } from "@/components/MatchRow";
 import { calcRoundFedt, getFedtLabel } from "@/lib/fedt";
+import { arePicksStillOpen } from "@/lib/rounds";
 import type { Match, Pick as PickType } from "@prisma/client";
 
 interface RoundData {
@@ -65,7 +66,7 @@ export function PredictionForm({
     return <div className="text-center py-12 text-muted">Indlæser kampe...</div>;
   }
 
-  const isOpen = round.status === "open" && new Date(round.deadline) > new Date();
+  const isOpen = arePicksStillOpen(round);
   const allPicked = round.matches.every((m) => picks[m.id]);
   const pickedCount = Object.keys(picks).length;
 

@@ -98,3 +98,82 @@ export interface SerializedRound {
   seasonName: string;
   matches: SerializedMatch[];
 }
+
+// Group coupon types
+export interface SerializedGroupCouponMatch {
+  id: string;
+  matchId: string;
+  matchNumber: number;
+  coverage: "single" | "half" | "full";
+  outcomes: ("HOME" | "DRAW" | "AWAY")[];
+  baseOutcome: ("HOME" | "DRAW" | "AWAY") | null;
+  reasoning: string;
+  isOverridden: boolean;
+}
+
+export interface SerializedGroupCoupon {
+  id: string;
+  systemCode: string;
+  status: "draft" | "final";
+  createdAt: string;
+  updatedAt: string;
+  matches: SerializedGroupCouponMatch[];
+}
+
+// Extended match details for group coupon admin builder
+export interface SerializedGroupCouponMatchDetails {
+  id: string;
+  matchNumber: number;
+  homeTeam: string;
+  awayTeam: string;
+  league: string;
+  oddsHome: number;
+  oddsDraw: number;
+  oddsAway: number;
+}
+
+// Suggestion response types (imported engine types are already JSON-serializable)
+export interface GroupCouponSuggestionResponse {
+  coupon: SerializedGroupCoupon | null;
+  suggestion?: {
+    systems: Array<{
+      system: {
+        code: string;
+        type: "R" | "U" | "M";
+        full: number;
+        half: number;
+        single: number;
+        rows: number;
+        requiresBaseRow: boolean;
+      };
+      assignments: Array<{
+        matchNumber: number;
+        coverage: "single" | "half" | "full";
+        outcomes: ("HOME" | "DRAW" | "AWAY")[];
+        baseOutcome: ("HOME" | "DRAW" | "AWAY") | null;
+        tally: {
+          HOME: number;
+          DRAW: number;
+          AWAY: number;
+          total: number;
+        };
+        idealCoverage: "single" | "half" | "full";
+        reasoning: string;
+      }>;
+      totalCost: number;
+      coverage: number;
+    }>;
+  };
+  ballots?: Array<{
+    userId: string;
+    displayName: string;
+    source: "current" | "carried";
+    sourceRoundNumber: number;
+    picks: Record<number, "HOME" | "DRAW" | "AWAY">;
+  }>;
+  // Admin builder: match details for rendering and re-solving
+  matches?: SerializedGroupCouponMatchDetails[];
+  roundNumber?: number;
+  seasonName: string;
+  suggestionError?: string;
+}

@@ -48,6 +48,7 @@ const config: Config = {
         surface: {
           DEFAULT: "#fffdf8",
           coupon: "#fffdf6",
+          edited: "#fefaf0",
         },
         ink: {
           DEFAULT: "#221f18",

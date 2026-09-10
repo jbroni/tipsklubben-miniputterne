@@ -11,6 +11,7 @@ import {
 } from "@/components/DashboardHero";
 import { calcRoundFedt } from "@/lib/fedt";
 import { computeLeaderboard, toFedtInput } from "@/lib/leaderboard";
+import { arePicksRevealed } from "@/lib/rounds";
 import type { Pick as PickType, LeaderboardEntry } from "@/types";
 import { Logo } from "@/components/Logo";
 import { LoginButton } from "@/components/LoginButton";
@@ -53,9 +54,6 @@ export default async function DashboardPage() {
   const currentRound = season?.rounds[0] ?? null;
   const previousRound = season?.rounds[1] ?? null;
 
-  const now = new Date();
-  const deadlinePassed = currentRound ? new Date(currentRound.deadline) <= now : false;
-
   const userPredictions: Record<string, PickType> = {};
   if (currentRound) {
     currentRound.matches.forEach((m) => {
@@ -76,7 +74,7 @@ export default async function DashboardPage() {
     mode = "empty";
   } else if (currentRound.status === "completed") {
     mode = "revealed";
-  } else if (currentRound.status === "locked" || deadlinePassed) {
+  } else if (arePicksRevealed(currentRound)) {
     mode = "locked";
   } else if (hasSubmitted) {
     mode = "submitted";

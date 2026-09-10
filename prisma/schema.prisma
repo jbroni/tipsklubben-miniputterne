@@ -20,20 +20,32 @@ enum RoundStatus {
 }
 
 enum Pick {
-  HOME  @map("1")
-  DRAW  @map("X")
-  AWAY  @map("2")
+  HOME @map("1")
+  DRAW @map("X")
+  AWAY @map("2")
+}
+
+enum Coverage {
+  single
+  half
+  full
+}
+
+enum GroupCouponStatus {
+  draft
+  final
 }
 
 model User {
-  id          String       @id @default(uuid()) @db.Uuid
-  authId      String       @unique @map("auth_id")
-  email       String       @unique
-  displayName String       @map("display_name")
-  avatarUrl   String?      @map("avatar_url")
-  role        Role         @default(member)
-  createdAt   DateTime     @default(now()) @map("created_at")
-  predictions Prediction[]
+  id           String        @id @default(uuid()) @db.Uuid
+  authId       String        @unique @map("auth_id")
+  email        String        @unique
+  displayName  String        @map("display_name")
+  avatarUrl    String?       @map("avatar_url")
+  role         Role          @default(member)
+  createdAt    DateTime      @default(now()) @map("created_at")
+  predictions  Prediction[]
+  groupCoupons GroupCoupon[]
 
   @@map("users")
 }
@@ -52,38 +64,40 @@ model Season {
 }
 
 model Round {
-  id          String      @id @default(uuid()) @db.Uuid
-  seasonId    String      @map("season_id") @db.Uuid
-  roundNumber Int         @map("round_number")
+  id          String       @id @default(uuid()) @db.Uuid
+  seasonId    String       @map("season_id") @db.Uuid
+  roundNumber Int          @map("round_number")
   deadline    DateTime
-  status      RoundStatus @default(open)
-  createdAt   DateTime    @default(now()) @map("created_at")
-  season      Season      @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  status      RoundStatus  @default(open)
+  createdAt   DateTime     @default(now()) @map("created_at")
+  season      Season       @relation(fields: [seasonId], references: [id], onDelete: Cascade)
   matches     Match[]
   predictions Prediction[]
+  groupCoupon GroupCoupon?
 
   @@unique([seasonId, roundNumber])
   @@map("rounds")
 }
 
 model Match {
-  id          String       @id @default(uuid()) @db.Uuid
-  roundId     String       @map("round_id") @db.Uuid
-  matchNumber Int          @map("match_number")
-  homeTeam    String       @map("home_team")
-  awayTeam    String       @map("away_team")
-  league      String
-  kickoff     DateTime
-  oddsHome    Decimal      @map("odds_home") @db.Decimal(5, 2)
-  oddsDraw    Decimal      @map("odds_draw") @db.Decimal(5, 2)
-  oddsAway    Decimal      @map("odds_away") @db.Decimal(5, 2)
-  result      Pick?
-  externalId  String?      @map("external_id")
-  fedtHome    Int?         @map("fedt_home")
-  fedtDraw    Int?         @map("fedt_draw")
-  fedtAway    Int?         @map("fedt_away")
-  round       Round        @relation(fields: [roundId], references: [id], onDelete: Cascade)
-  predictions Prediction[]
+  id                 String             @id @default(uuid()) @db.Uuid
+  roundId            String             @map("round_id") @db.Uuid
+  matchNumber        Int                @map("match_number")
+  homeTeam           String             @map("home_team")
+  awayTeam           String             @map("away_team")
+  league             String
+  kickoff            DateTime
+  oddsHome           Decimal            @map("odds_home") @db.Decimal(5, 2)
+  oddsDraw           Decimal            @map("odds_draw") @db.Decimal(5, 2)
+  oddsAway           Decimal            @map("odds_away") @db.Decimal(5, 2)
+  result             Pick?
+  externalId         String?            @map("external_id")
+  fedtHome           Int?               @map("fedt_home")
+  fedtDraw           Int?               @map("fedt_draw")
+  fedtAway           Int?               @map("fedt_away")
+  round              Round              @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  predictions        Prediction[]
+  groupCouponMatches GroupCouponMatch[]
 
   @@unique([roundId, matchNumber])
   @@map("matches")
@@ -103,4 +117,37 @@ model Prediction {
 
   @@unique([userId, matchId])
   @@map("predictions")
+}
+
+model GroupCoupon {
+  id          String            @id @default(uuid()) @db.Uuid
+  roundId     String            @unique @map("round_id") @db.Uuid
+  systemCode  String            @map("system_code")
+  status      GroupCouponStatus @default(draft)
+  createdById String            @map("created_by_id") @db.Uuid
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+
+  round     Round              @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  createdBy User               @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  matches   GroupCouponMatch[]
+
+  @@map("group_coupons")
+}
+
+model GroupCouponMatch {
+  id           String   @id @default(uuid()) @db.Uuid
+  couponId     String   @map("coupon_id") @db.Uuid
+  matchId      String   @map("match_id") @db.Uuid
+  coverage     Coverage
+  outcomes     Pick[]
+  baseOutcome  Pick?    @map("base_outcome")
+  reasoning    String
+  isOverridden Boolean  @default(false) @map("is_overridden")
+
+  groupCoupon GroupCoupon @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  match       Match       @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@unique([couponId, matchId])
+  @@map("group_coupon_matches")
 }

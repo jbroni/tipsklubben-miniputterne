@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, getCurrentUser } from "@/lib/auth";
+import { arePicksRevealed } from "@/lib/rounds";
 
 export async function GET(
   _request: Request,
@@ -28,8 +29,8 @@ export async function GET(
     return NextResponse.json({ error: "Round not found" }, { status: 404 });
   }
 
-  // If round is open, filter predictions to only show the current user's
-  if (round.status === "open") {
+  // If picks are not yet revealed, filter predictions to only show the current user's
+  if (!arePicksRevealed(round)) {
     round.matches = round.matches.map((match) => ({
       ...match,
       predictions: match.predictions.filter((p) => p.userId === user.id),

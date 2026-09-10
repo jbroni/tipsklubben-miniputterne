@@ -2,6 +2,7 @@
 
 import type { Pick as PickType } from "@prisma/client";
 import { formatDecimal } from "@/lib/fedt";
+import { PICK_LABEL, type PickValue } from "@/lib/picks";
 
 interface PickButtonProps {
   pick: PickType;
@@ -10,12 +11,6 @@ interface PickButtonProps {
   onClick: () => void;
   disabled?: boolean;
 }
-
-const PICK_LABELS: Record<PickType, string> = {
-  HOME: "1",
-  DRAW: "X",
-  AWAY: "2",
-};
 
 export function PickButton({
   pick,
@@ -32,7 +27,7 @@ export function PickButton({
         selected ? "pick-btn-selected" : "pick-btn-unselected"
       } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
     >
-      <span className="text-sm">{PICK_LABELS[pick]}</span>
+      <span className="text-sm">{PICK_LABEL[pick as PickValue]}</span>
       <span
         className={`text-[8.5px] font-body font-normal ${
           selected ? "opacity-75" : "text-muted-ghost"

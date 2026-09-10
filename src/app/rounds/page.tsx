@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import Link from "next/link";
+import { arePicksStillOpen } from "@/lib/rounds";
 
 export default async function RoundsPage() {
   const currentUser = await requireUser();
@@ -75,7 +76,7 @@ export default async function RoundsPage() {
 
           const round = row.round;
 
-          if (round.status === "open") {
+          if (arePicksStillOpen(round)) {
             const submittedCount = Math.floor(
               round.matches.reduce((sum, m) => sum + m.predictions.length, 0) /
                 (round.matches.length || 1)

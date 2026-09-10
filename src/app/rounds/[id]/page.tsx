@@ -2,18 +2,14 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { RoundStatusBadge } from "@/components/RoundStatusBadge";
 import { FedtBadge } from "@/components/FedtBadge";
+import { GroupCouponCard } from "@/components/GroupCouponCard";
 import { calcRoundFedt } from "@/lib/fedt";
 import { toFedtInput } from "@/lib/leaderboard";
 import { resolveRoundBackHref } from "@/lib/back-href";
+import { PICK_LABEL, type PickValue } from "@/lib/picks";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Pick as PickType } from "@prisma/client";
-
-const PICK_LABEL: Record<PickType, string> = {
-  HOME: "1",
-  DRAW: "X",
-  AWAY: "2",
-};
 
 const RANK_COLORS = ["text-rank-1", "text-rank-2", "text-rank-3"];
 
@@ -34,10 +30,33 @@ export default async function RoundDetailPage({
         orderBy: { matchNumber: "asc" },
         include: { predictions: { include: { user: true } } },
       },
+      groupCoupon: {
+        include: {
+          matches: {
+            orderBy: { match: { matchNumber: "asc" } },
+            include: { match: true },
+          },
+        },
+      },
     },
   });
 
   if (!round) notFound();
+
+  // Map Prisma groupCoupon to serialized shape for GroupCouponCard
+  const serializedGroupCoupon = round.groupCoupon
+    ? {
+        systemCode: round.groupCoupon.systemCode,
+        matches: round.groupCoupon.matches.map((m) => ({
+          id: m.id,
+          matchNumber: m.match.matchNumber,
+          homeTeam: m.match.homeTeam,
+          awayTeam: m.match.awayTeam,
+          outcomes: m.outcomes as ("HOME" | "DRAW" | "AWAY")[],
+          baseOutcome: m.baseOutcome as ("HOME" | "DRAW" | "AWAY") | null,
+        })),
+      }
+    : null;
 
   const users = await prisma.user.findMany();
   const usersWithPredictions = users.filter((u) =>
@@ -163,14 +182,14 @@ export default async function RoundDetailPage({
                   key={u.id}
                   className={`text-xs ${isCorrect ? "text-brand" : "text-muted-ghost"}`}
                 >
-                  {PICK_LABEL[pred.pick]}
+                  {PICK_LABEL[pred.pick as PickValue]}
                 </b>
               );
             })}
             <span className="flex justify-center">
               {match.result ? (
                 <span className="w-5 h-5 rounded-[5px] bg-result-ink text-white text-[11px] font-bold flex items-center justify-center">
-                  {PICK_LABEL[match.result]}
+                  {PICK_LABEL[match.result as PickValue]}
                 </span>
               ) : (
                 <span className="text-muted-ghost">—</span>
@@ -179,6 +198,14 @@ export default async function RoundDetailPage({
           </div>
         ))}
       </div>
+
+      {serializedGroupCoupon && round.groupCoupon?.status === "final" && (
+        <GroupCouponCard
+          coupon={serializedGroupCoupon}
+          roundNumber={round.roundNumber}
+          seasonName={round.season.name}
+        />
+      )}
     </div>
   );
 }
