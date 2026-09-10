@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { getLayoutWidthClass } from "@/lib/layout-width";
 import { useEffect, useRef, useState } from "react";
 import { Logo } from "@/components/Logo";
 import { LoginButton } from "@/components/LoginButton";
@@ -66,7 +67,7 @@ export function Navbar({
 
   return (
     <nav className="border-b border-line-card bg-surface/90 backdrop-blur-sm sticky top-0 z-50">
-      <div className="max-w-4xl mx-auto px-4">
+      <div className={`${getLayoutWidthClass(pathname)} mx-auto px-4`}>
         <div className="flex items-center justify-between h-14">
           <Logo />
 
