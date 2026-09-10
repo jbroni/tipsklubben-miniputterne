@@ -6,6 +6,7 @@ import { GroupCouponCard } from "@/components/GroupCouponCard";
 import { calcRoundFedt } from "@/lib/fedt";
 import { toFedtInput } from "@/lib/leaderboard";
 import { resolveRoundBackHref } from "@/lib/back-href";
+import { arePicksRevealed } from "@/lib/rounds";
 import { PICK_LABEL, type PickValue } from "@/lib/picks";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -86,7 +87,7 @@ export default async function RoundDetailPage({
     return a.fedt - b.fedt;
   });
 
-  const isRevealed = round.status !== "open";
+  const isRevealed = arePicksRevealed(round);
   const gridCols = `16px 1fr repeat(${usersWithPredictions.length}, 26px) 30px`;
   const backHref = resolveRoundBackHref(
     searchParams.from,
