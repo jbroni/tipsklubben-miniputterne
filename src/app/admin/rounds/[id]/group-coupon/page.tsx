@@ -547,7 +547,7 @@ function GroupCouponContent() {
       )}
 
       {/* Two-column grid */}
-      <div className="max-w-[1360px] mx-auto px-7 py-6 grid grid-cols-[320px_1fr] gap-5">
+      <div className="max-w-[1360px] mx-auto px-7 py-6 grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-5">
         {/* System list (sidebar) */}
         <div className="sticky top-[82px] h-fit">
           <div className="space-y-2">
@@ -595,7 +595,7 @@ function GroupCouponContent() {
           className="overflow-x-auto"
           style={{ minHeight: "fit-content" }}
         >
-          <div style={{ minWidth: "900px" }} className="space-y-0">
+          <div style={{ minWidth: "720px" }} className="space-y-0">
             {renderedMatches.map((match, idx) => {
               const matchDetails = suggestion.matches?.find(
                 (m) => m.matchNumber === match.matchNumber
@@ -621,7 +621,7 @@ function GroupCouponContent() {
                   </div>
 
                   {/* Teams and odds */}
-                  <div className="w-56 flex-shrink-0">
+                  <div className="w-40 flex-shrink-0">
                     <div className="font-medium text-ink mb-1">
                       {matchDetails?.homeTeam} – {matchDetails?.awayTeam}
                     </div>
@@ -636,7 +636,7 @@ function GroupCouponContent() {
                   </div>
 
                   {/* Vote split bar */}
-                  <div className="w-32 flex-shrink-0">
+                  <div className="w-24 flex-shrink-0">
                     <div className="flex h-4 rounded-sm overflow-hidden gap-0.5">
                       <div
                         className="bg-brand"
@@ -675,7 +675,7 @@ function GroupCouponContent() {
                         onClick={() =>
                           handleToggleOutcome(match.matchNumber, outcome)
                         }
-                        className={`w-10 h-10 rounded-lg font-mono font-bold text-sm flex items-center justify-center transition-colors ${
+                        className={`w-9 h-9 rounded-lg font-mono font-bold text-sm flex items-center justify-center transition-colors ${
                           match.outcomes.includes(outcome)
                             ? "bg-brand text-white"
                             : "bg-surface text-muted border border-line-pick"
@@ -688,7 +688,7 @@ function GroupCouponContent() {
 
                   {/* Base outcome for U-systems */}
                   {systemDef.requiresBaseRow && match.coverage !== "single" && (
-                    <div className="w-12 flex-shrink-0 text-center">
+                    <div className="w-10 flex-shrink-0 text-center">
                       <div className="text-xs text-muted mb-1">Uds.</div>
                       <div className="font-mono font-bold text-sm">
                         {match.baseOutcome
@@ -699,7 +699,7 @@ function GroupCouponContent() {
                   )}
 
                   {/* Rationale */}
-                  <div className="flex-1 text-xs text-muted line-clamp-2">
+                  <div className="flex-1 min-w-0 text-xs text-muted line-clamp-2">
                     {match.reasoning}
                   </div>
 
