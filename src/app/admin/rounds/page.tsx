@@ -2,6 +2,7 @@
 
 import { Suspense } from "react";
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { RoundStatusBadge } from "@/components/RoundStatusBadge";
 import { parseCouponText, resolveKickoff } from "@/lib/coupon-parser";
@@ -908,6 +909,12 @@ function AdminRoundsContent() {
 
                 {round.status === "locked" && (
                   <>
+                    <Link
+                      href={`/admin/rounds/${round.id}/group-coupon`}
+                      className="btn-secondary text-xs"
+                    >
+                      Fælleskupon
+                    </Link>
                     <button
                       onClick={() => startEnterResults(round)}
                       className="btn-secondary text-xs"
