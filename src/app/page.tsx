@@ -9,6 +9,8 @@ import {
   RevealedHero,
   LockedHero,
 } from "@/components/DashboardHero";
+import { GroupCouponCard } from "@/components/GroupCouponCard";
+import { PredictionGrid } from "@/components/PredictionGrid";
 import { calcRoundFedt } from "@/lib/fedt";
 import { computeLeaderboard, toFedtInput } from "@/lib/leaderboard";
 import { arePicksRevealed } from "@/lib/rounds";
@@ -42,6 +44,14 @@ export default async function DashboardPage() {
               orderBy: { matchNumber: "asc" },
               include: {
                 predictions: { select: { userId: true, pick: true } },
+              },
+            },
+            groupCoupon: {
+              include: {
+                matches: {
+                  orderBy: { match: { matchNumber: "asc" } },
+                  include: { match: true },
+                },
               },
             },
           },
@@ -220,7 +230,41 @@ export default async function DashboardPage() {
       )}
 
       {mode === "locked" && currentRound && (
-        <LockedHero roundNumber={currentRound.roundNumber} />
+        <>
+          <LockedHero roundNumber={currentRound.roundNumber} />
+          {currentRound.groupCoupon?.status === "final" && (
+            <GroupCouponCard
+              coupon={{
+                systemCode: currentRound.groupCoupon.systemCode,
+                matches: currentRound.groupCoupon.matches.map((m) => ({
+                  id: m.id,
+                  matchNumber: m.match.matchNumber,
+                  homeTeam: m.match.homeTeam,
+                  awayTeam: m.match.awayTeam,
+                  outcomes: m.outcomes as ("HOME" | "DRAW" | "AWAY")[],
+                  baseOutcome: m.baseOutcome as ("HOME" | "DRAW" | "AWAY") | null,
+                })),
+              }}
+              roundNumber={currentRound.roundNumber}
+              seasonName={season?.name ?? ""}
+            />
+          )}
+          <PredictionGrid
+            matches={currentRound.matches.map((m) => ({
+              id: m.id,
+              matchNumber: m.matchNumber,
+              homeTeam: m.homeTeam,
+              awayTeam: m.awayTeam,
+              result: m.result,
+              predictions: m.predictions.map((p) => ({
+                userId: p.userId,
+                pick: p.pick,
+              })),
+            }))}
+            users={users}
+            currentUserId={user.id}
+          />
+        </>
       )}
 
       {mode === "revealed" && currentRound && revealedInfo && (
