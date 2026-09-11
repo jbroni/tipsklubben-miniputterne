@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, getCurrentUser } from "@/lib/auth";
+import { createRound } from "@/lib/services/rounds";
+import { codeToStatus } from "@/lib/services/result";
 
 export async function GET(request: Request) {
   const user = await getCurrentUser();
@@ -31,21 +33,18 @@ export async function POST(request: Request) {
   const body = await request.json();
   const { seasonId, roundNumber, deadline } = body;
 
-  if (!seasonId || !roundNumber || !deadline) {
+  const result = await createRound({
+    seasonId,
+    roundNumber,
+    deadline,
+  });
+
+  if (!result.ok) {
     return NextResponse.json(
-      { error: "Season ID, round number, and deadline are required" },
-      { status: 400 }
+      { error: result.message },
+      { status: codeToStatus[result.code] }
     );
   }
 
-  const round = await prisma.round.create({
-    data: {
-      seasonId,
-      roundNumber,
-      deadline: new Date(deadline),
-      status: "open",
-    },
-  });
-
-  return NextResponse.json({ data: round }, { status: 201 });
+  return NextResponse.json({ data: result.data }, { status: 201 });
 }

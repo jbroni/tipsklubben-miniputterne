@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
+import { addMatches } from "@/lib/services/matches";
 
 export async function POST(
   request: Request,
@@ -11,42 +11,20 @@ export async function POST(
   const body = await request.json();
   const { matches } = body;
 
-  if (!Array.isArray(matches) || matches.length === 0) {
+  const result = await addMatches({
+    roundId: params.id,
+    matches: matches || [],
+  });
+
+  if (!result.ok) {
     return NextResponse.json(
-      { error: "Matches array is required" },
+      { error: result.message },
       { status: 400 }
     );
   }
 
-  const created = await prisma.match.createMany({
-    data: matches.map(
-      (
-        m: {
-          matchNumber: number;
-          homeTeam: string;
-          awayTeam: string;
-          league: string;
-          kickoff: string;
-          oddsHome: number;
-          oddsDraw: number;
-          oddsAway: number;
-          externalId?: string;
-        },
-        index: number
-      ) => ({
-        roundId: params.id,
-        matchNumber: m.matchNumber ?? index + 1,
-        homeTeam: m.homeTeam,
-        awayTeam: m.awayTeam,
-        league: m.league,
-        kickoff: new Date(m.kickoff),
-        oddsHome: m.oddsHome,
-        oddsDraw: m.oddsDraw,
-        oddsAway: m.oddsAway,
-        externalId: m.externalId ?? null,
-      })
-    ),
-  });
-
-  return NextResponse.json({ data: created }, { status: 201 });
+  return NextResponse.json(
+    { data: { count: result.data.count, warnings: result.data.warnings } },
+    { status: 201 }
+  );
 }

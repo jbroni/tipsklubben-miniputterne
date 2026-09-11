@@ -142,6 +142,47 @@ The free tier of football-data.org covers:
 
 Danish Superliga matches need to be entered manually.
 
+### MCP Server & API Tokens
+
+Tips 13 includes an MCP (Model Context Protocol) server that lets you interact with the game via Claude or Cursor:
+- Submit your coupon predictions by talking to Claude
+- Check the leaderboard and your stats
+- Admins can also set up matches and enter results
+
+**Creating a Token**
+
+1. Sign in to Tips 13
+2. Go to your **Profile**
+3. Scroll to **API-tokens** and enter a name (e.g., "Claude on my laptop")
+4. Click **Opret** (Create)
+5. A secret token will appear — copy the `claude mcp add …` command
+6. Save this command in a safe place (it won't be shown again)
+
+**Connecting to Claude Desktop or Cursor**
+
+Add the token to your Claude Desktop or Cursor configuration:
+
+```json
+"mcpServers": {
+  "tips13": {
+    "transport": "http",
+    "url": "https://tips13.app/api/mcp",
+    "headers": {
+      "Authorization": "Bearer <your-token>"
+    }
+  }
+}
+```
+
+Replace `<your-token>` with the token shown in your profile (starts with `t13_`).
+
+**Security Notes**
+
+- Your token is secret — treat it like a password and never share it
+- The token is shown only once; if you lose it, create a new one
+- Revoke any token you no longer use from the same API-tokens page
+- The token is independent of your Google login and works across devices
+
 ---
 
 ## Project Structure
