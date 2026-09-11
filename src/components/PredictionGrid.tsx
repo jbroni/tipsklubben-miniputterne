@@ -1,6 +1,7 @@
 import { PICK_LABEL, type PickValue } from "@/lib/picks";
 import { isShadedRow } from "@/lib/grid-shading";
 import { Avatar } from "./Avatar";
+import { MemberLegend } from "./MemberLegend";
 
 interface PredictionGridProps {
   matches: Array<{
@@ -30,6 +31,7 @@ export function PredictionGrid({
 
   return (
     <div className="card !p-3 font-mono overflow-x-auto">
+      <MemberLegend members={usersWithPredictions} currentUserId={currentUserId} />
       <div
         className="grid gap-0.5 text-[9px] text-muted-faint text-center pb-1.5 border-b border-line-divider"
         style={{ gridTemplateColumns: gridCols }}
@@ -46,6 +48,7 @@ export function PredictionGrid({
                   displayName={u.displayName}
                   size={20}
                   className={isCurrentUser ? "ring-1 ring-brand" : ""}
+                  label={u.displayName}
                 />
               </div>
             );
@@ -54,6 +57,7 @@ export function PredictionGrid({
             <span
               key={u.id}
               className={isCurrentUser ? "text-brand font-bold" : ""}
+              title={u.displayName}
             >
               {u.displayName.slice(0, 3).toUpperCase()}
             </span>

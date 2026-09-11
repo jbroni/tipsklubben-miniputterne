@@ -93,7 +93,7 @@ export default async function DashboardPage() {
   }
 
   // Members of the season = anyone who has ever predicted, for avatar rows
-  let members: { id: string; initial: string; submitted: boolean; avatarUrl?: string | null }[] = [];
+  let members: { id: string; initial: string; submitted: boolean; avatarUrl?: string | null; displayName: string }[] = [];
   if (currentRound) {
     const submittedIds = new Set(
       currentRound.matches
@@ -113,6 +113,7 @@ export default async function DashboardPage() {
       initial: u.displayName.charAt(0).toUpperCase(),
       submitted: submittedIds.has(u.id),
       avatarUrl: u.avatarUrl,
+      displayName: u.displayName,
     }));
   }
 

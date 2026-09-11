@@ -5,6 +5,7 @@ interface Member {
   initial: string;
   submitted: boolean;
   avatarUrl?: string | null;
+  displayName: string;
 }
 
 export function AvatarRow({ members, caption }: { members: Member[]; caption: string }) {
@@ -17,6 +18,7 @@ export function AvatarRow({ members, caption }: { members: Member[]; caption: st
             avatarUrl={m.avatarUrl}
             displayName={m.initial}
             size={26}
+            label={m.displayName}
           />
         ) : (
           <span
@@ -28,6 +30,7 @@ export function AvatarRow({ members, caption }: { members: Member[]; caption: st
               displayName={m.initial}
               size={22}
               className="opacity-40 grayscale"
+              label={m.displayName}
             />
           </span>
         )
