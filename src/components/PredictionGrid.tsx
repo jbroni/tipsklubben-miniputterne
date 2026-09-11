@@ -1,4 +1,7 @@
 import { PICK_LABEL, type PickValue } from "@/lib/picks";
+import { isShadedRow } from "@/lib/grid-shading";
+import { Avatar } from "./Avatar";
+import { MemberLegend } from "./MemberLegend";
 
 interface PredictionGridProps {
   matches: Array<{
@@ -9,7 +12,7 @@ interface PredictionGridProps {
     result: "HOME" | "DRAW" | "AWAY" | null;
     predictions: Array<{ userId: string; pick: "HOME" | "DRAW" | "AWAY" }>;
   }>;
-  users: Array<{ id: string; displayName: string }>;
+  users: Array<{ id: string; displayName: string; avatarUrl?: string | null }>;
   currentUserId: string;
 }
 
@@ -28,26 +31,46 @@ export function PredictionGrid({
 
   return (
     <div className="card !p-3 font-mono overflow-x-auto">
+      <MemberLegend members={usersWithPredictions} currentUserId={currentUserId} />
       <div
         className="grid gap-0.5 text-[9px] text-muted-faint text-center pb-1.5 border-b border-line-divider"
         style={{ gridTemplateColumns: gridCols }}
       >
         <span>#</span>
         <span className="text-left font-body text-[10px]">KAMP</span>
-        {usersWithPredictions.map((u) => (
-          <span
-            key={u.id}
-            className={u.id === currentUserId ? "text-brand font-bold" : ""}
-          >
-            {u.displayName.slice(0, 3).toUpperCase()}
-          </span>
-        ))}
+        {usersWithPredictions.map((u) => {
+          const isCurrentUser = u.id === currentUserId;
+          if (u.avatarUrl) {
+            return (
+              <div key={u.id} className="flex justify-center items-center">
+                <Avatar
+                  avatarUrl={u.avatarUrl}
+                  displayName={u.displayName}
+                  size={20}
+                  className={isCurrentUser ? "ring-1 ring-brand" : ""}
+                  label={u.displayName}
+                />
+              </div>
+            );
+          }
+          return (
+            <span
+              key={u.id}
+              className={isCurrentUser ? "text-brand font-bold" : ""}
+              title={u.displayName}
+            >
+              {u.displayName.slice(0, 3).toUpperCase()}
+            </span>
+          );
+        })}
         <span>RES</span>
       </div>
       {matches.map((match) => (
         <div
           key={match.id}
-          className="grid gap-0.5 items-center text-center py-1.5 border-b border-line-hairline last:border-0"
+          className={`grid gap-0.5 items-center text-center py-1.5 border-b border-line-hairline last:border-0 ${
+            isShadedRow(match.matchNumber) ? "bg-paper" : ""
+          }`}
           style={{ gridTemplateColumns: gridCols }}
         >
           <span className="text-[9.5px] text-muted-ghost">{match.matchNumber}</span>
