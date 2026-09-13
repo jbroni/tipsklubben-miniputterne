@@ -14,6 +14,7 @@ import { PredictionGrid } from "@/components/PredictionGrid";
 import { calcRoundFedt } from "@/lib/fedt";
 import { computeLeaderboard, toFedtInput } from "@/lib/leaderboard";
 import { arePicksRevealed } from "@/lib/rounds";
+import { settleFromPrisma } from "@/lib/group-coupon-settlement-data";
 import type { Pick as PickType, LeaderboardEntry } from "@/types";
 import { Logo } from "@/components/Logo";
 import { LoginButton } from "@/components/LoginButton";
@@ -181,6 +182,11 @@ export default async function DashboardPage() {
     userFedt = calcRoundFedt(picks);
   }
 
+  // Compute group coupon settlement
+  const settlement = currentRound && currentRound.groupCoupon
+    ? settleFromPrisma(currentRound.groupCoupon, currentRound.status)
+    : null;
+
   // Empty mode: full season leaderboard
   let leaderboardEntries: LeaderboardEntry[] = [];
   if (mode === "empty" && season) {
@@ -231,8 +237,21 @@ export default async function DashboardPage() {
       )}
 
       {mode === "locked" && currentRound && (
+        <LockedHero roundNumber={currentRound.roundNumber} />
+      )}
+
+      {mode === "revealed" && currentRound && revealedInfo && (
+        <RevealedHero
+          roundNumber={currentRound.roundNumber}
+          winnerName={revealedInfo.winnerName}
+          userScore={revealedInfo.userScore}
+          userRank={revealedInfo.userRank}
+          href={`/rounds/${currentRound.id}?from=hjem`}
+        />
+      )}
+
+      {(mode === "locked" || mode === "revealed") && currentRound && (
         <>
-          <LockedHero roundNumber={currentRound.roundNumber} />
           {currentRound.groupCoupon?.status === "final" && (
             <GroupCouponCard
               coupon={{
@@ -244,10 +263,12 @@ export default async function DashboardPage() {
                   awayTeam: m.match.awayTeam,
                   outcomes: m.outcomes as ("HOME" | "DRAW" | "AWAY")[],
                   baseOutcome: m.baseOutcome as ("HOME" | "DRAW" | "AWAY") | null,
+                  result: m.match.result as ("HOME" | "DRAW" | "AWAY") | null,
                 })),
               }}
               roundNumber={currentRound.roundNumber}
               seasonName={season?.name ?? ""}
+              settlement={settlement}
             />
           )}
           <PredictionGrid
@@ -266,16 +287,6 @@ export default async function DashboardPage() {
             currentUserId={user.id}
           />
         </>
-      )}
-
-      {mode === "revealed" && currentRound && revealedInfo && (
-        <RevealedHero
-          roundNumber={currentRound.roundNumber}
-          winnerName={revealedInfo.winnerName}
-          userScore={revealedInfo.userScore}
-          userRank={revealedInfo.userRank}
-          href={`/rounds/${currentRound.id}?from=hjem`}
-        />
       )}
 
       {mode === "empty" && (

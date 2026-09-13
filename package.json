@@ -14,7 +14,9 @@
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
     "db:check-rls": "tsx scripts/check-rls.ts",
-    "db:import-historic": "tsx scripts/import-historic-seasons.ts"
+    "db:import-historic": "tsx scripts/import-historic-seasons.ts",
+    "keys:generate": "tsx scripts/generate-system-keys.ts",
+    "keys:calibrate": "tsx scripts/calibrate-system-key.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/server": "^2.0.0",

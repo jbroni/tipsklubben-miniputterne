@@ -109,6 +109,7 @@ export interface SerializedGroupCouponMatch {
   baseOutcome: ("HOME" | "DRAW" | "AWAY") | null;
   reasoning: string;
   isOverridden: boolean;
+  result?: ("HOME" | "DRAW" | "AWAY") | null;
 }
 
 export interface SerializedGroupCoupon {
