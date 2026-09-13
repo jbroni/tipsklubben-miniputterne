@@ -8,6 +8,7 @@ import { calcRoundFedt } from "@/lib/fedt";
 import { toFedtInput } from "@/lib/leaderboard";
 import { resolveRoundBackHref } from "@/lib/back-href";
 import { arePicksRevealed } from "@/lib/rounds";
+import { settleFromPrisma } from "@/lib/group-coupon-settlement-data";
 import { PICK_LABEL, type PickValue } from "@/lib/picks";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -56,8 +57,14 @@ export default async function RoundDetailPage({
           awayTeam: m.match.awayTeam,
           outcomes: m.outcomes as ("HOME" | "DRAW" | "AWAY")[],
           baseOutcome: m.baseOutcome as ("HOME" | "DRAW" | "AWAY") | null,
+          result: m.match.result as ("HOME" | "DRAW" | "AWAY") | null,
         })),
       }
+    : null;
+
+  // Compute group coupon settlement
+  const settlement = round.groupCoupon
+    ? settleFromPrisma(round.groupCoupon, round.status)
     : null;
 
   const users = await prisma.user.findMany();
@@ -168,6 +175,7 @@ export default async function RoundDetailPage({
           coupon={serializedGroupCoupon}
           roundNumber={round.roundNumber}
           seasonName={round.season.name}
+          settlement={settlement}
         />
       )}
     </div>

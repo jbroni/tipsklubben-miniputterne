@@ -1,6 +1,8 @@
 import type { Pick } from "@prisma/client";
 import { PICK_LABEL, type PickValue, PICK_ORDER } from "@/lib/picks";
 import { getSystem } from "@/lib/coupon-systems";
+import type { SettlementResult } from "@/lib/group-coupon-settlement";
+import { GroupCouponResult } from "./GroupCouponResult";
 
 interface SerializedCouponMatch {
   id: string;
@@ -9,6 +11,7 @@ interface SerializedCouponMatch {
   awayTeam: string;
   outcomes: ("HOME" | "DRAW" | "AWAY")[];
   baseOutcome: ("HOME" | "DRAW" | "AWAY") | null;
+  result?: ("HOME" | "DRAW" | "AWAY") | null;
 }
 
 interface GroupCouponCardProps {
@@ -18,12 +21,14 @@ interface GroupCouponCardProps {
   };
   roundNumber?: number;
   seasonName: string;
+  settlement?: SettlementResult | null;
 }
 
 export function GroupCouponCard({
   coupon,
   roundNumber,
   seasonName,
+  settlement,
 }: GroupCouponCardProps) {
   const system = getSystem(coupon.systemCode);
 
@@ -95,16 +100,29 @@ export function GroupCouponCard({
                     );
                     const isBase =
                       couponMatch.baseOutcome === (pickValue as Pick);
+                    const isResult = couponMatch.result === pickValue;
+                    const resultWasCovered =
+                      couponMatch.result && isCovered && isResult;
+                    const resultWasNotCovered =
+                      couponMatch.result && !isCovered && isResult;
+
+                    // Six mutually distinguishable states:
+                    // 1. base + result: bg-result-ink + ring-brand
+                    // 2. result only (covered): bg-result-ink
+                    // 3. base only: bg-brand + ring-brand
+                    // 4. covered only: bg-brand
+                    // 5. result but uncovered: bg-line-divider + ring-signal
+                    // 6. uncovered: bg-line-divider
 
                     return (
                       <div
                         key={pickValue}
                         className={`w-[26px] h-[26px] rounded-[7px] flex items-center justify-center font-mono font-bold text-xs transition-colors ${
-                          isCovered
-                            ? isBase
-                              ? "bg-brand text-white ring-2 ring-offset-1 ring-brand"
-                              : "bg-brand text-white"
-                            : "bg-line-divider text-muted-ghost"
+                          resultWasCovered
+                            ? `bg-result-ink text-white ${isBase ? "ring-2 ring-offset-1 ring-brand" : ""}`
+                            : isCovered
+                              ? `${isBase ? "bg-brand text-white ring-2 ring-offset-1 ring-brand" : "bg-brand text-white"}`
+                              : `bg-line-divider text-muted-ghost ${resultWasNotCovered ? "ring-2 ring-offset-1 ring-signal" : ""}`
                         }`}
                       >
                         {PICK_LABEL[pickValue]}
@@ -119,10 +137,14 @@ export function GroupCouponCard({
           {/* Divider */}
           <div className="h-px bg-line-divider"></div>
 
-          {/* Closing note */}
-          <div className="text-xs text-muted leading-relaxed">
-            Resultatopgørelse for fælleskuponen kommer, når runden er afgjort.
-          </div>
+          {/* Settlement result or placeholder footer */}
+          {settlement ? (
+            <GroupCouponResult settlement={settlement} />
+          ) : (
+            <div className="text-xs text-muted leading-relaxed">
+              Resultatopgørelse for fælleskuponen kommer, når runden er afgjort.
+            </div>
+          )}
         </div>
       </div>
     </div>
