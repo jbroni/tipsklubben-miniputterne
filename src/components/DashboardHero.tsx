@@ -8,6 +8,7 @@ interface Member {
   initial: string;
   submitted: boolean;
   avatarUrl?: string | null;
+  displayName: string;
 }
 
 function formatDeadline(deadline: string): string {
