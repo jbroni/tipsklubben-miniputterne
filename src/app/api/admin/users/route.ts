@@ -6,6 +6,7 @@ export async function GET() {
   await requireAdmin();
 
   const users = await prisma.user.findMany({
+    include: { identities: { select: { id: true, authId: true, email: true } } },
     orderBy: { createdAt: "asc" },
   });
 

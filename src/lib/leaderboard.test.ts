@@ -523,5 +523,51 @@ describe("computeLeaderboard", () => {
       expect(bob!.totalPoints).toBe(0);
       expect(bob!.roundsPlayed).toBe(0);
     });
+
+    it("merges predictions from multiple rounds into single leaderboard entry for merged user", () => {
+      // Regression test: verify that a user merged from two accounts
+      // appears as a single entry with combined points and rounds played.
+      const users = [mockUser("user-merged", "Alice Merged")];
+
+      // Round 1: user plays and scores 2 points
+      const m1 = mockMatch("m1", 1, "HOME");
+      const m2 = mockMatch("m2", 2, "DRAW");
+      const round1Preds = [
+        mockPrediction("p1", "user-merged", m1, "HOME"), // correct: 1 point
+        mockPrediction("p2", "user-merged", m2, "DRAW"), // correct: 1 point
+      ];
+
+      // Round 2: user plays and scores 3 points
+      const m3 = mockMatch("m3", 1, "AWAY");
+      const m4 = mockMatch("m4", 2, "HOME");
+      const m5 = mockMatch("m5", 3, "DRAW");
+      const round2Preds = [
+        mockPrediction("p3", "user-merged", m3, "AWAY"), // correct: 1 point
+        mockPrediction("p4", "user-merged", m4, "HOME"), // correct: 1 point
+        mockPrediction("p5", "user-merged", m5, "DRAW"), // correct: 1 point
+      ];
+
+      const rounds = [
+        mockRound("round1", 1, [m1, m2], round1Preds),
+        mockRound("round2", 2, [m3, m4, m5], round2Preds),
+      ];
+
+      const leaderboard = computeLeaderboard(rounds, users);
+
+      // Should be exactly one entry in leaderboard
+      expect(leaderboard).toHaveLength(1);
+
+      const merged = leaderboard[0];
+      expect(merged.user.id).toBe("user-merged");
+
+      // Total points should be sum from both rounds: 2 + 3 = 5
+      expect(merged.totalPoints).toBe(5);
+
+      // Rounds played should be 2
+      expect(merged.roundsPlayed).toBe(2);
+
+      // Average score should be 5 / 2 = 2.5
+      expect(merged.avgScore).toBeCloseTo(2.5, 2);
+    });
   });
 });
