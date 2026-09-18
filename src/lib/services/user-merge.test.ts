@@ -1201,6 +1201,20 @@ describe("mergeUsers", () => {
       // Verify $queryRaw was called
       expect(mocks.txMock.$queryRaw).toHaveBeenCalledOnce();
 
+      // Inspect the actual call to verify it's the FOR UPDATE lock
+      const callArgs = mocks.txMock.$queryRaw.mock.calls[0];
+      expect(callArgs).toBeDefined();
+
+      // First arg is the TemplateStringsArray; join it to verify it contains FOR UPDATE
+      const templateStrings = callArgs[0] as any[];
+      const joinedTemplate = templateStrings.join("");
+      expect(joinedTemplate).toContain("FOR UPDATE");
+
+      // Second arg is the bound value (the sourceUserId), not the targetUserId
+      const boundValue = callArgs[1];
+      expect(boundValue).toBe("user-1");
+      expect(boundValue).not.toBe("user-2");
+
       // Verify lock precedes mutation by checking invocation call order
       const lockCallOrder = (mocks.txMock.$queryRaw.mock as any).invocationCallOrder[0];
       const updateCallOrder = (mocks.txMock.prediction.updateMany.mock as any).invocationCallOrder[0];
