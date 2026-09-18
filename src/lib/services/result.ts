@@ -20,7 +20,8 @@ export type ServiceErrorCode =
   | "VALIDATION"
   | "USER_NOT_FOUND"
   | "INVALID_MERGE"
-  | "MERGE_COLLISION";
+  | "MERGE_COLLISION"
+  | "MERGE_RACE";
 
 export type ServiceResult<T> =
   | { ok: true; data: T }
@@ -46,4 +47,5 @@ export const codeToStatus: Record<ServiceErrorCode, number> = {
   USER_NOT_FOUND: 404,
   INVALID_MERGE: 400,
   MERGE_COLLISION: 409,
+  MERGE_RACE: 409,
 };

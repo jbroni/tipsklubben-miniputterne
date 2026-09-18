@@ -67,22 +67,10 @@ export async function syncUser(authUser: {
     email.split("@")[0];
   const avatarUrl = authUser.user_metadata?.avatar_url ?? null;
 
-  // Try to find user by active authId
-  const existingUser = await prisma.user.findUnique({
-    where: { authId: authUser.id },
-  });
-  if (existingUser) {
-    return await prisma.user.update({
-      where: { authId: authUser.id },
-      data: {
-        email,
-        displayName,
-        avatarUrl,
-      },
-    });
-  }
-
-  // Try to find user via retired identity (authId alias)
+  // Check if this authId is a retired identity (aliased to another user).
+  // A merge creates a user_identity record first within a transaction, then deletes
+  // the source user's row, so auth_id is unique in user_identities. The two lookups
+  // below cannot both succeed, making this ordering safe and atomic.
   const identity = await prisma.userIdentity.findUnique({
     where: { authId: authUser.id },
     include: { user: true },
@@ -93,15 +81,12 @@ export async function syncUser(authUser: {
     return identity.user;
   }
 
-  // Create new user
-  const user = await prisma.user.create({
-    data: {
-      authId: authUser.id,
-      email,
-      displayName,
-      avatarUrl,
-    },
+  // Upsert the user atomically: update if exists by authId, otherwise create.
+  // This avoids a race condition where two concurrent first-logins for the same
+  // authId could both see no existing user and attempt to create.
+  return prisma.user.upsert({
+    where: { authId: authUser.id },
+    update: { email, displayName, avatarUrl },
+    create: { authId: authUser.id, email, displayName, avatarUrl },
   });
-
-  return user;
 }

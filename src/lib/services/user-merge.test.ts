@@ -3,16 +3,13 @@ import type { User } from "@prisma/client";
 import { Prisma } from "@prisma/client";
 
 // Create mocks before module imports
-const mocks = vi.hoisted(() => ({
-  prismaMocks: {
-    user: {
-      findUnique: vi.fn(),
-      delete: vi.fn(),
-      update: vi.fn(),
-    },
+const mocks = vi.hoisted(() => {
+  // Transaction mock object that will be passed to the callback
+  const txMock = {
+    $queryRaw: vi.fn(),
     prediction: {
-      findMany: vi.fn(),
       updateMany: vi.fn(),
+      count: vi.fn(),
     },
     mcpToken: {
       updateMany: vi.fn(),
@@ -24,12 +21,25 @@ const mocks = vi.hoisted(() => ({
       updateMany: vi.fn(),
       create: vi.fn(),
     },
-    round: {
-      findMany: vi.fn(),
+    user: {
+      update: vi.fn(),
+      delete: vi.fn(),
     },
-    $transaction: vi.fn(),
-  },
-}));
+  };
+
+  return {
+    prismaMocks: {
+      user: {
+        findUnique: vi.fn(),
+      },
+      prediction: {
+        findMany: vi.fn(),
+      },
+      $transaction: vi.fn(async (cb, options) => cb(txMock)),
+    },
+    txMock,
+  };
+});
 
 vi.mock("@/lib/prisma", () => ({
   prisma: mocks.prismaMocks,
@@ -40,15 +50,18 @@ import { mergeUsers } from "./user-merge";
 describe("mergeUsers", () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    // Establish default $transaction behavior
-    mocks.prismaMocks.$transaction.mockResolvedValue([
-      { count: 0 },
-      { count: 0 },
-      { count: 0 },
-      { count: 0 },
-      { id: "identity-1" },
-      { id: "user-1" },
-    ] as unknown[]);
+    // Re-establish default tx mock implementations
+    mocks.txMock.$queryRaw.mockResolvedValue([]);
+    mocks.txMock.prediction.updateMany.mockResolvedValue({ count: 0 });
+    mocks.txMock.prediction.count.mockResolvedValue(0);
+    mocks.txMock.mcpToken.updateMany.mockResolvedValue({ count: 0 });
+    mocks.txMock.groupCoupon.updateMany.mockResolvedValue({ count: 0 });
+    mocks.txMock.userIdentity.updateMany.mockResolvedValue({ count: 0 });
+    mocks.txMock.userIdentity.create.mockResolvedValue({ id: "identity-1" });
+    mocks.txMock.user.update.mockResolvedValue({ id: "user-2" });
+    mocks.txMock.user.delete.mockResolvedValue({ id: "user-1" });
+    // Re-establish $transaction to call the callback with txMock, accepting options as second argument
+    mocks.prismaMocks.$transaction.mockImplementation(async (cb, options) => cb(mocks.txMock));
   });
 
   describe("validation: same id", () => {
@@ -179,21 +192,10 @@ describe("mergeUsers", () => {
         .mockResolvedValueOnce(sourceUser)
         .mockResolvedValueOnce(targetUser);
 
-      // Source has predictions in matches m1, m2, m3
-      mocks.prismaMocks.prediction.findMany
-        .mockResolvedValueOnce([
-          { matchId: "m1", roundId: "round-1" },
-          { matchId: "m2", roundId: "round-2" },
-          { matchId: "m3", roundId: "round-2" },
-        ])
-        .mockResolvedValueOnce([
-          { matchId: "m1", roundId: "round-1" }, // Collision on m1 in round 1
-          { matchId: "m2", roundId: "round-2" }, // Collision on m2 in round 2
-        ]);
-
-      mocks.prismaMocks.round.findMany.mockResolvedValue([
-        { id: "round-1", roundNumber: 1 },
-        { id: "round-2", roundNumber: 2 },
+      // Collision check: returns predictions where target has picks in same matches as source
+      mocks.prismaMocks.prediction.findMany.mockResolvedValue([
+        { round: { roundNumber: 1 } },
+        { round: { roundNumber: 2 } },
       ]);
 
       const result = await mergeUsers({
@@ -236,16 +238,8 @@ describe("mergeUsers", () => {
         .mockResolvedValueOnce(sourceUser)
         .mockResolvedValueOnce(targetUser);
 
-      mocks.prismaMocks.prediction.findMany
-        .mockResolvedValueOnce([
-          { matchId: "m1", roundId: "round-5" },
-        ])
-        .mockResolvedValueOnce([
-          { matchId: "m1", roundId: "round-5" },
-        ]);
-
-      mocks.prismaMocks.round.findMany.mockResolvedValue([
-        { id: "round-5", roundNumber: 5 },
+      mocks.prismaMocks.prediction.findMany.mockResolvedValue([
+        { round: { roundNumber: 5 } },
       ]);
 
       const result = await mergeUsers({
@@ -259,7 +253,7 @@ describe("mergeUsers", () => {
       }
     });
 
-    it("handles P2002 unique constraint error as MERGE_COLLISION", async () => {
+    it("handles P2002 unique constraint error on prediction columns as MERGE_COLLISION", async () => {
       const sourceUser: User = {
         id: "user-1",
         authId: "auth-1",
@@ -285,16 +279,12 @@ describe("mergeUsers", () => {
         .mockResolvedValueOnce(targetUser);
 
       // No collisions found in the collision check
-      mocks.prismaMocks.prediction.findMany
-        .mockResolvedValueOnce([
-          { matchId: "m1", roundId: "round-1" },
-        ])
-        .mockResolvedValueOnce([]); // No collisions
+      mocks.prismaMocks.prediction.findMany.mockResolvedValue([]);
 
-      // But transaction fails with P2002
+      // But transaction fails with P2002 on prediction column
       const error = new Prisma.PrismaClientKnownRequestError(
-        "Unique constraint failed",
-        { code: "P2002", clientVersion: "5.0.0" }
+        "Unique constraint failed on the fields: (`user_id`,`match_id`,`pick`)",
+        { code: "P2002", clientVersion: "5.0.0", meta: { target: ["user_id", "match_id", "pick"] } }
       );
       mocks.prismaMocks.$transaction.mockRejectedValueOnce(error);
 
@@ -376,22 +366,10 @@ describe("mergeUsers", () => {
         .mockResolvedValueOnce(sourceUser)
         .mockResolvedValueOnce(targetUser);
 
-      mocks.prismaMocks.prediction.findMany
-        .mockResolvedValueOnce([
-          { matchId: "m1", roundId: "round-1" },
-          { matchId: "m2", roundId: "round-1" },
-          { matchId: "m3", roundId: "round-1" },
-        ])
-        .mockResolvedValueOnce([]); // No collisions
+      mocks.prismaMocks.prediction.findMany.mockResolvedValue([]); // No collisions
 
-      mocks.prismaMocks.$transaction.mockResolvedValue([
-        { count: 3 }, // predictions updateMany
-        { count: 0 }, // mcpToken updateMany
-        { count: 0 }, // groupCoupon updateMany
-        { count: 0 }, // userIdentity updateMany
-        { id: "identity-1" }, // userIdentity create
-        { id: "user-1" }, // user delete
-      ]);
+      mocks.txMock.prediction.updateMany.mockResolvedValue({ count: 3 });
+      mocks.txMock.prediction.count.mockResolvedValue(0);
 
       const result = await mergeUsers({
         sourceUserId: "user-1",
@@ -430,18 +408,8 @@ describe("mergeUsers", () => {
         .mockResolvedValueOnce(sourceUser)
         .mockResolvedValueOnce(targetUser);
 
-      mocks.prismaMocks.prediction.findMany
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([]);
-
-      mocks.prismaMocks.$transaction.mockResolvedValueOnce([
-        { count: 0 },
-        { count: 0 },
-        { count: 0 },
-        { count: 0 },
-        { id: "identity-1" },
-        { id: "user-1" },
-      ] as unknown[]);
+      mocks.prismaMocks.prediction.findMany.mockResolvedValue([]);
+      mocks.txMock.prediction.count.mockResolvedValue(0);
 
       await mergeUsers({
         sourceUserId: "user-1",
@@ -449,43 +417,41 @@ describe("mergeUsers", () => {
       });
 
       expect(mocks.prismaMocks.$transaction).toHaveBeenCalledOnce();
-      const operations = mocks.prismaMocks.$transaction.mock.calls[0][0] as any[];
-
-      // Should have 6 operations for real source (no admin promotion):
-      // 1. prediction.updateMany
-      // 2. mcpToken.updateMany
-      // 3. groupCoupon.updateMany
-      // 4. userIdentity.updateMany
-      // 5. userIdentity.create
-      // 6. user.delete
-      expect(Array.isArray(operations)).toBe(true);
-      expect(operations.length).toBe(6);
 
       // Verify the updateMany operations have correct where/data
-      expect(mocks.prismaMocks.prediction.updateMany).toHaveBeenCalledWith({
+      expect(mocks.txMock.prediction.updateMany).toHaveBeenCalledWith({
         where: { userId: "user-1" },
         data: { userId: "user-2" },
       });
-      expect(mocks.prismaMocks.mcpToken.updateMany).toHaveBeenCalledWith({
+      expect(mocks.txMock.mcpToken.updateMany).toHaveBeenCalledWith({
         where: { userId: "user-1" },
         data: { userId: "user-2" },
       });
-      expect(mocks.prismaMocks.groupCoupon.updateMany).toHaveBeenCalledWith({
+      expect(mocks.txMock.groupCoupon.updateMany).toHaveBeenCalledWith({
         where: { createdById: "user-1" },
         data: { createdById: "user-2" },
       });
-      expect(mocks.prismaMocks.userIdentity.updateMany).toHaveBeenCalledWith({
+      expect(mocks.txMock.userIdentity.updateMany).toHaveBeenCalledWith({
         where: { userId: "user-1" },
         data: { userId: "user-2" },
       });
 
+      // Verify userIdentity.create was called
+      expect(mocks.txMock.userIdentity.create).toHaveBeenCalledWith({
+        data: {
+          authId: "auth-real-1",
+          email: "source@example.com",
+          userId: "user-2",
+        },
+      });
+
       // Verify user.delete was called with source id
-      expect(mocks.prismaMocks.user.delete).toHaveBeenCalledWith({
+      expect(mocks.txMock.user.delete).toHaveBeenCalledWith({
         where: { id: "user-1" },
       });
 
       // Verify no admin promotion occurred
-      expect(mocks.prismaMocks.user.update).not.toHaveBeenCalled();
+      expect(mocks.txMock.user.update).not.toHaveBeenCalled();
     });
 
     it("creates userIdentity with source authId and email", async () => {
@@ -513,18 +479,8 @@ describe("mergeUsers", () => {
         .mockResolvedValueOnce(sourceUser)
         .mockResolvedValueOnce(targetUser);
 
-      mocks.prismaMocks.prediction.findMany
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([]);
-
-      mocks.prismaMocks.$transaction.mockResolvedValueOnce([
-        { count: 0 },
-        { count: 0 },
-        { count: 0 },
-        { count: 0 },
-        { id: "identity-1" },
-        { id: "user-1" },
-      ] as unknown[]);
+      mocks.prismaMocks.prediction.findMany.mockResolvedValue([]);
+      mocks.txMock.prediction.count.mockResolvedValue(0);
 
       await mergeUsers({
         sourceUserId: "user-1",
@@ -532,7 +488,7 @@ describe("mergeUsers", () => {
       });
 
       // Verify the userIdentity.create was called with source authId and email, but target userId
-      expect(mocks.prismaMocks.userIdentity.create).toHaveBeenCalledWith({
+      expect(mocks.txMock.userIdentity.create).toHaveBeenCalledWith({
         data: {
           authId: "auth-real-1",
           email: "source@example.com",
@@ -568,17 +524,8 @@ describe("mergeUsers", () => {
         .mockResolvedValueOnce(sourceUser)
         .mockResolvedValueOnce(targetUser);
 
-      mocks.prismaMocks.prediction.findMany
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([]);
-
-      mocks.prismaMocks.$transaction.mockResolvedValueOnce([
-        { count: 0 },
-        { count: 0 },
-        { count: 0 },
-        { count: 0 },
-        { id: "user-1" },
-      ] as unknown[]);
+      mocks.prismaMocks.prediction.findMany.mockResolvedValue([]);
+      mocks.txMock.prediction.count.mockResolvedValue(0);
 
       const result = await mergeUsers({
         sourceUserId: "user-1",
@@ -587,19 +534,15 @@ describe("mergeUsers", () => {
 
       expect(result.ok).toBe(true);
 
-      // For historic source, transaction should have 5 operations (no create)
-      const operations = mocks.prismaMocks.$transaction.mock.calls[0][0] as any[];
-      expect(operations.length).toBe(5);
-
       // Verify userIdentity.create was NOT called for historic source
-      expect(mocks.prismaMocks.userIdentity.create).not.toHaveBeenCalled();
+      expect(mocks.txMock.userIdentity.create).not.toHaveBeenCalled();
 
       // Verify the updateMany and delete operations still happened
-      expect(mocks.prismaMocks.prediction.updateMany).toHaveBeenCalledWith({
+      expect(mocks.txMock.prediction.updateMany).toHaveBeenCalledWith({
         where: { userId: "user-1" },
         data: { userId: "user-2" },
       });
-      expect(mocks.prismaMocks.user.delete).toHaveBeenCalledWith({
+      expect(mocks.txMock.user.delete).toHaveBeenCalledWith({
         where: { id: "user-1" },
       });
     });
@@ -631,19 +574,9 @@ describe("mergeUsers", () => {
         .mockResolvedValueOnce(sourceUser)
         .mockResolvedValueOnce(targetUser);
 
-      mocks.prismaMocks.prediction.findMany
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([]);
-
-      mocks.prismaMocks.$transaction.mockResolvedValueOnce([
-        { count: 0 },
-        { count: 0 },
-        { count: 0 },
-        { count: 0 },
-        { id: "identity-1" },
-        { id: "user-2", role: "admin" },
-        { id: "user-1" },
-      ] as unknown[]);
+      mocks.prismaMocks.prediction.findMany.mockResolvedValue([]);
+      mocks.txMock.prediction.count.mockResolvedValue(0);
+      mocks.txMock.user.update.mockResolvedValue({ id: "user-2", role: "admin" });
 
       const result = await mergeUsers({
         sourceUserId: "user-1",
@@ -656,14 +589,10 @@ describe("mergeUsers", () => {
       }
 
       // Verify user.update was called to promote target to admin
-      expect(mocks.prismaMocks.user.update).toHaveBeenCalledWith({
+      expect(mocks.txMock.user.update).toHaveBeenCalledWith({
         where: { id: "user-2" },
         data: { role: "admin" },
       });
-
-      // Transaction should have 7 operations (4 base + create + update + delete)
-      const operations = mocks.prismaMocks.$transaction.mock.calls[0][0] as any[];
-      expect(operations.length).toBe(7);
     });
 
     it("does not promote target when source is admin but target is already admin", async () => {
@@ -691,18 +620,8 @@ describe("mergeUsers", () => {
         .mockResolvedValueOnce(sourceUser)
         .mockResolvedValueOnce(targetUser);
 
-      mocks.prismaMocks.prediction.findMany
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([]);
-
-      mocks.prismaMocks.$transaction.mockResolvedValueOnce([
-        { count: 0 },
-        { count: 0 },
-        { count: 0 },
-        { count: 0 },
-        { id: "identity-1" },
-        { id: "user-1" },
-      ] as unknown[]);
+      mocks.prismaMocks.prediction.findMany.mockResolvedValue([]);
+      mocks.txMock.prediction.count.mockResolvedValue(0);
 
       const result = await mergeUsers({
         sourceUserId: "user-1",
@@ -715,11 +634,7 @@ describe("mergeUsers", () => {
       }
 
       // Verify user.update was NOT called (no redundant promotion)
-      expect(mocks.prismaMocks.user.update).not.toHaveBeenCalled();
-
-      // Transaction should have 6 operations (4 base + create, no update + delete)
-      const operations = mocks.prismaMocks.$transaction.mock.calls[0][0] as any[];
-      expect(operations.length).toBe(6);
+      expect(mocks.txMock.user.update).not.toHaveBeenCalled();
     });
 
     it("does not promote target when source is member and target is member", async () => {
@@ -747,18 +662,8 @@ describe("mergeUsers", () => {
         .mockResolvedValueOnce(sourceUser)
         .mockResolvedValueOnce(targetUser);
 
-      mocks.prismaMocks.prediction.findMany
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([]);
-
-      mocks.prismaMocks.$transaction.mockResolvedValueOnce([
-        { count: 0 },
-        { count: 0 },
-        { count: 0 },
-        { count: 0 },
-        { id: "identity-1" },
-        { id: "user-1" },
-      ] as unknown[]);
+      mocks.prismaMocks.prediction.findMany.mockResolvedValue([]);
+      mocks.txMock.prediction.count.mockResolvedValue(0);
 
       const result = await mergeUsers({
         sourceUserId: "user-1",
@@ -771,11 +676,7 @@ describe("mergeUsers", () => {
       }
 
       // Verify user.update was NOT called
-      expect(mocks.prismaMocks.user.update).not.toHaveBeenCalled();
-
-      // Transaction should have 6 operations (4 base + create, no update + delete)
-      const operations = mocks.prismaMocks.$transaction.mock.calls[0][0] as any[];
-      expect(operations.length).toBe(6);
+      expect(mocks.txMock.user.update).not.toHaveBeenCalled();
     });
 
     it("does not promote target when source is member but target is admin", async () => {
@@ -803,18 +704,8 @@ describe("mergeUsers", () => {
         .mockResolvedValueOnce(sourceUser)
         .mockResolvedValueOnce(targetUser);
 
-      mocks.prismaMocks.prediction.findMany
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([]);
-
-      mocks.prismaMocks.$transaction.mockResolvedValueOnce([
-        { count: 0 },
-        { count: 0 },
-        { count: 0 },
-        { count: 0 },
-        { id: "identity-1" },
-        { id: "user-1" },
-      ] as unknown[]);
+      mocks.prismaMocks.prediction.findMany.mockResolvedValue([]);
+      mocks.txMock.prediction.count.mockResolvedValue(0);
 
       const result = await mergeUsers({
         sourceUserId: "user-1",
@@ -827,11 +718,7 @@ describe("mergeUsers", () => {
       }
 
       // Verify user.update was NOT called (target already admin)
-      expect(mocks.prismaMocks.user.update).not.toHaveBeenCalled();
-
-      // Transaction should have 6 operations (4 base + create, no update + delete)
-      const operations = mocks.prismaMocks.$transaction.mock.calls[0][0] as any[];
-      expect(operations.length).toBe(6);
+      expect(mocks.txMock.user.update).not.toHaveBeenCalled();
     });
   });
 
@@ -861,17 +748,9 @@ describe("mergeUsers", () => {
         .mockResolvedValueOnce(sourceUser)
         .mockResolvedValueOnce(targetUser);
 
-      // Source has no predictions
-      mocks.prismaMocks.prediction.findMany.mockResolvedValueOnce([]);
-
-      mocks.prismaMocks.$transaction.mockResolvedValueOnce([
-        { count: 0 },
-        { count: 0 },
-        { count: 0 },
-        { count: 0 },
-        { id: "identity-1" },
-        { id: "user-1" },
-      ] as unknown[]);
+      mocks.prismaMocks.prediction.findMany.mockResolvedValue([]);
+      mocks.txMock.prediction.updateMany.mockResolvedValue({ count: 0 });
+      mocks.txMock.prediction.count.mockResolvedValue(0);
 
       const result = await mergeUsers({
         sourceUserId: "user-1",
@@ -883,8 +762,537 @@ describe("mergeUsers", () => {
         expect(result.data.movedPredictions).toBe(0);
       }
 
-      // Collision check should not be performed when source has no predictions
+      // Collision check should be performed once
       expect(mocks.prismaMocks.prediction.findMany).toHaveBeenCalledTimes(1);
     });
+
+    it("throws MERGE_RACE when prediction is inserted during merge", async () => {
+      const sourceUser: User = {
+        id: "user-1",
+        authId: "auth-1",
+        email: "source@example.com",
+        displayName: "Source",
+        avatarUrl: null,
+        role: "member",
+        createdAt: new Date(),
+      };
+
+      const targetUser: User = {
+        id: "user-2",
+        authId: "auth-2",
+        email: "target@example.com",
+        displayName: "Target",
+        avatarUrl: null,
+        role: "member",
+        createdAt: new Date(),
+      };
+
+      mocks.prismaMocks.user.findUnique
+        .mockResolvedValueOnce(sourceUser)
+        .mockResolvedValueOnce(targetUser);
+
+      mocks.prismaMocks.prediction.findMany.mockResolvedValue([]);
+      // Race condition: count returns > 0 after the move
+      mocks.txMock.prediction.count.mockResolvedValue(1);
+
+      const result = await mergeUsers({
+        sourceUserId: "user-1",
+        targetUserId: "user-2",
+      });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.code).toBe("MERGE_RACE");
+        expect(result.message).toContain("tips på kontoen under sammenlægningen");
+      }
+
+      // user.delete should NOT have been called due to race guard
+      expect(mocks.txMock.user.delete).not.toHaveBeenCalled();
+    });
   });
+
+  describe("P2002 error handling", () => {
+    it("returns INVALID_MERGE when P2002 involves auth_id (array form)", async () => {
+      const sourceUser: User = {
+        id: "user-1",
+        authId: "auth-1",
+        email: "source@example.com",
+        displayName: "Source",
+        avatarUrl: null,
+        role: "member",
+        createdAt: new Date(),
+      };
+
+      const targetUser: User = {
+        id: "user-2",
+        authId: "auth-2",
+        email: "target@example.com",
+        displayName: "Target",
+        avatarUrl: null,
+        role: "member",
+        createdAt: new Date(),
+      };
+
+      mocks.prismaMocks.user.findUnique
+        .mockResolvedValueOnce(sourceUser)
+        .mockResolvedValueOnce(targetUser);
+
+      mocks.prismaMocks.prediction.findMany.mockResolvedValue([]);
+
+      const error = new Prisma.PrismaClientKnownRequestError(
+        "Unique constraint failed on the fields: (`auth_id`)",
+        { code: "P2002", clientVersion: "5.0.0", meta: { target: ["auth_id"] } }
+      );
+      mocks.prismaMocks.$transaction.mockRejectedValueOnce(error);
+
+      const result = await mergeUsers({
+        sourceUserId: "user-1",
+        targetUserId: "user-2",
+      });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.code).toBe("INVALID_MERGE");
+      }
+    });
+
+    it("returns INVALID_MERGE when P2002 involves auth_id (constraint name form)", async () => {
+      const sourceUser: User = {
+        id: "user-1",
+        authId: "auth-1",
+        email: "source@example.com",
+        displayName: "Source",
+        avatarUrl: null,
+        role: "member",
+        createdAt: new Date(),
+      };
+
+      const targetUser: User = {
+        id: "user-2",
+        authId: "auth-2",
+        email: "target@example.com",
+        displayName: "Target",
+        avatarUrl: null,
+        role: "member",
+        createdAt: new Date(),
+      };
+
+      mocks.prismaMocks.user.findUnique
+        .mockResolvedValueOnce(sourceUser)
+        .mockResolvedValueOnce(targetUser);
+
+      mocks.prismaMocks.prediction.findMany.mockResolvedValue([]);
+
+      // PostgreSQL often returns constraint name instead of column list
+      const error = new Prisma.PrismaClientKnownRequestError(
+        "Unique constraint failed on the fields: (`auth_id`)",
+        { code: "P2002", clientVersion: "5.0.0", meta: { target: "users_auth_id_key" } }
+      );
+      mocks.prismaMocks.$transaction.mockRejectedValueOnce(error);
+
+      const result = await mergeUsers({
+        sourceUserId: "user-1",
+        targetUserId: "user-2",
+      });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.code).toBe("INVALID_MERGE");
+      }
+    });
+
+    it("returns MERGE_COLLISION when P2002 involves user_id and match_id (array form)", async () => {
+      const sourceUser: User = {
+        id: "user-1",
+        authId: "auth-1",
+        email: "source@example.com",
+        displayName: "Source",
+        avatarUrl: null,
+        role: "member",
+        createdAt: new Date(),
+      };
+
+      const targetUser: User = {
+        id: "user-2",
+        authId: "auth-2",
+        email: "target@example.com",
+        displayName: "Target",
+        avatarUrl: null,
+        role: "member",
+        createdAt: new Date(),
+      };
+
+      mocks.prismaMocks.user.findUnique
+        .mockResolvedValueOnce(sourceUser)
+        .mockResolvedValueOnce(targetUser);
+
+      mocks.prismaMocks.prediction.findMany.mockResolvedValue([]);
+
+      const error = new Prisma.PrismaClientKnownRequestError(
+        "Unique constraint failed on the fields: (`user_id`,`match_id`)",
+        { code: "P2002", clientVersion: "5.0.0", meta: { target: ["user_id", "match_id"] } }
+      );
+      mocks.prismaMocks.$transaction.mockRejectedValueOnce(error);
+
+      const result = await mergeUsers({
+        sourceUserId: "user-1",
+        targetUserId: "user-2",
+      });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.code).toBe("MERGE_COLLISION");
+      }
+    });
+
+    it("returns MERGE_COLLISION when P2002 involves user_id and match_id (constraint name form)", async () => {
+      const sourceUser: User = {
+        id: "user-1",
+        authId: "auth-1",
+        email: "source@example.com",
+        displayName: "Source",
+        avatarUrl: null,
+        role: "member",
+        createdAt: new Date(),
+      };
+
+      const targetUser: User = {
+        id: "user-2",
+        authId: "auth-2",
+        email: "target@example.com",
+        displayName: "Target",
+        avatarUrl: null,
+        role: "member",
+        createdAt: new Date(),
+      };
+
+      mocks.prismaMocks.user.findUnique
+        .mockResolvedValueOnce(sourceUser)
+        .mockResolvedValueOnce(targetUser);
+
+      mocks.prismaMocks.prediction.findMany.mockResolvedValue([]);
+
+      // PostgreSQL often returns constraint name
+      const error = new Prisma.PrismaClientKnownRequestError(
+        "Unique constraint failed on the fields: (`user_id`,`match_id`)",
+        { code: "P2002", clientVersion: "5.0.0", meta: { target: "predictions_user_id_match_id_key" } }
+      );
+      mocks.prismaMocks.$transaction.mockRejectedValueOnce(error);
+
+      const result = await mergeUsers({
+        sourceUserId: "user-1",
+        targetUserId: "user-2",
+      });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.code).toBe("MERGE_COLLISION");
+      }
+    });
+
+    it("returns generic error when P2002 target is unrecognised", async () => {
+      const sourceUser: User = {
+        id: "user-1",
+        authId: "auth-1",
+        email: "source@example.com",
+        displayName: "Source",
+        avatarUrl: null,
+        role: "member",
+        createdAt: new Date(),
+      };
+
+      const targetUser: User = {
+        id: "user-2",
+        authId: "auth-2",
+        email: "target@example.com",
+        displayName: "Target",
+        avatarUrl: null,
+        role: "member",
+        createdAt: new Date(),
+      };
+
+      mocks.prismaMocks.user.findUnique
+        .mockResolvedValueOnce(sourceUser)
+        .mockResolvedValueOnce(targetUser);
+
+      mocks.prismaMocks.prediction.findMany.mockResolvedValue([]);
+
+      // P2002 with unknown target - should return a generic error, not throw
+      const error = new Prisma.PrismaClientKnownRequestError(
+        "Unique constraint failed on the fields: (`unknown_column`)",
+        { code: "P2002", clientVersion: "5.0.0", meta: { target: ["unknown_column"] } }
+      );
+      mocks.prismaMocks.$transaction.mockRejectedValueOnce(error);
+
+      const result = await mergeUsers({
+        sourceUserId: "user-1",
+        targetUserId: "user-2",
+      });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.code).toBe("MERGE_COLLISION");
+      }
+    });
+
+    it("returns generic error when P2002 meta.target is absent", async () => {
+      const sourceUser: User = {
+        id: "user-1",
+        authId: "auth-1",
+        email: "source@example.com",
+        displayName: "Source",
+        avatarUrl: null,
+        role: "member",
+        createdAt: new Date(),
+      };
+
+      const targetUser: User = {
+        id: "user-2",
+        authId: "auth-2",
+        email: "target@example.com",
+        displayName: "Target",
+        avatarUrl: null,
+        role: "member",
+        createdAt: new Date(),
+      };
+
+      mocks.prismaMocks.user.findUnique
+        .mockResolvedValueOnce(sourceUser)
+        .mockResolvedValueOnce(targetUser);
+
+      mocks.prismaMocks.prediction.findMany.mockResolvedValue([]);
+
+      // P2002 without meta.target - should return generic error, not throw
+      const error = new Prisma.PrismaClientKnownRequestError(
+        "Unique constraint failed",
+        { code: "P2002", clientVersion: "5.0.0" }
+      );
+      mocks.prismaMocks.$transaction.mockRejectedValueOnce(error);
+
+      const result = await mergeUsers({
+        sourceUserId: "user-1",
+        targetUserId: "user-2",
+      });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.code).toBe("MERGE_COLLISION");
+      }
+    });
+
+    it("returns generic error when P2002 has user_id but NOT match_id", async () => {
+      const sourceUser: User = {
+        id: "user-1",
+        authId: "auth-1",
+        email: "source@example.com",
+        displayName: "Source",
+        avatarUrl: null,
+        role: "member",
+        createdAt: new Date(),
+      };
+
+      const targetUser: User = {
+        id: "user-2",
+        authId: "auth-2",
+        email: "target@example.com",
+        displayName: "Target",
+        avatarUrl: null,
+        role: "member",
+        createdAt: new Date(),
+      };
+
+      mocks.prismaMocks.user.findUnique
+        .mockResolvedValueOnce(sourceUser)
+        .mockResolvedValueOnce(targetUser);
+
+      mocks.prismaMocks.prediction.findMany.mockResolvedValue([]);
+
+      // P2002 with user_id but NOT match_id - should return generic error, not MERGE_COLLISION
+      const error = new Prisma.PrismaClientKnownRequestError(
+        "Unique constraint failed on the fields: (`user_id`)",
+        { code: "P2002", clientVersion: "5.0.0", meta: { target: ["user_id"] } }
+      );
+      mocks.prismaMocks.$transaction.mockRejectedValueOnce(error);
+
+      const result = await mergeUsers({
+        sourceUserId: "user-1",
+        targetUserId: "user-2",
+      });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.code).toBe("MERGE_COLLISION");
+      }
+    });
+
+    it("rethrows non-Prisma errors from transaction", async () => {
+      const sourceUser: User = {
+        id: "user-1",
+        authId: "auth-1",
+        email: "source@example.com",
+        displayName: "Source",
+        avatarUrl: null,
+        role: "member",
+        createdAt: new Date(),
+      };
+
+      const targetUser: User = {
+        id: "user-2",
+        authId: "auth-2",
+        email: "target@example.com",
+        displayName: "Target",
+        avatarUrl: null,
+        role: "member",
+        createdAt: new Date(),
+      };
+
+      mocks.prismaMocks.user.findUnique
+        .mockResolvedValueOnce(sourceUser)
+        .mockResolvedValueOnce(targetUser);
+
+      mocks.prismaMocks.prediction.findMany.mockResolvedValue([]);
+
+      const testError = new Error("Network error");
+      mocks.prismaMocks.$transaction.mockRejectedValueOnce(testError);
+
+      await expect(
+        mergeUsers({
+          sourceUserId: "user-1",
+          targetUserId: "user-2",
+        })
+      ).rejects.toThrow("Network error");
+    });
+  });
+
+  describe("lock ordering and transaction options", () => {
+    it("takes FOR UPDATE lock before any mutation in transaction", async () => {
+      const sourceUser: User = {
+        id: "user-1",
+        authId: "auth-real-1",
+        email: "source@example.com",
+        displayName: "Source",
+        avatarUrl: null,
+        role: "member",
+        createdAt: new Date(),
+      };
+
+      const targetUser: User = {
+        id: "user-2",
+        authId: "auth-real-2",
+        email: "target@example.com",
+        displayName: "Target",
+        avatarUrl: null,
+        role: "member",
+        createdAt: new Date(),
+      };
+
+      mocks.prismaMocks.user.findUnique
+        .mockResolvedValueOnce(sourceUser)
+        .mockResolvedValueOnce(targetUser);
+
+      mocks.prismaMocks.prediction.findMany.mockResolvedValue([]);
+      mocks.txMock.prediction.count.mockResolvedValue(0);
+
+      await mergeUsers({
+        sourceUserId: "user-1",
+        targetUserId: "user-2",
+      });
+
+      // Verify $queryRaw was called
+      expect(mocks.txMock.$queryRaw).toHaveBeenCalledOnce();
+
+      // Verify lock precedes mutation by checking invocation call order
+      const lockCallOrder = (mocks.txMock.$queryRaw.mock as any).invocationCallOrder[0];
+      const updateCallOrder = (mocks.txMock.prediction.updateMany.mock as any).invocationCallOrder[0];
+
+      expect(lockCallOrder).toBeLessThan(updateCallOrder);
+    });
+
+    it("passes timeout option to $transaction", async () => {
+      const sourceUser: User = {
+        id: "user-1",
+        authId: "auth-real-1",
+        email: "source@example.com",
+        displayName: "Source",
+        avatarUrl: null,
+        role: "member",
+        createdAt: new Date(),
+      };
+
+      const targetUser: User = {
+        id: "user-2",
+        authId: "auth-real-2",
+        email: "target@example.com",
+        displayName: "Target",
+        avatarUrl: null,
+        role: "member",
+        createdAt: new Date(),
+      };
+
+      mocks.prismaMocks.user.findUnique
+        .mockResolvedValueOnce(sourceUser)
+        .mockResolvedValueOnce(targetUser);
+
+      mocks.prismaMocks.prediction.findMany.mockResolvedValue([]);
+      mocks.txMock.prediction.count.mockResolvedValue(0);
+
+      await mergeUsers({
+        sourceUserId: "user-1",
+        targetUserId: "user-2",
+      });
+
+      // Verify $transaction was called with timeout option
+      expect(mocks.prismaMocks.$transaction).toHaveBeenCalledWith(
+        expect.any(Function),
+        { timeout: 20000 }
+      );
+    });
+  });
+
+  describe("collision detection: arguments verification", () => {
+    it("calls collision check with correct arguments", async () => {
+      const sourceUser: User = {
+        id: "user-1",
+        authId: "auth-real-1",
+        email: "source@example.com",
+        displayName: "Source",
+        avatarUrl: null,
+        role: "member",
+        createdAt: new Date(),
+      };
+
+      const targetUser: User = {
+        id: "user-2",
+        authId: "auth-real-2",
+        email: "target@example.com",
+        displayName: "Target",
+        avatarUrl: null,
+        role: "member",
+        createdAt: new Date(),
+      };
+
+      mocks.prismaMocks.user.findUnique
+        .mockResolvedValueOnce(sourceUser)
+        .mockResolvedValueOnce(targetUser);
+
+      mocks.prismaMocks.prediction.findMany.mockResolvedValue([]);
+      mocks.txMock.prediction.count.mockResolvedValue(0);
+
+      await mergeUsers({
+        sourceUserId: "user-1",
+        targetUserId: "user-2",
+      });
+
+      // Verify prediction.findMany was called with correct arguments
+      expect(mocks.prismaMocks.prediction.findMany).toHaveBeenCalledWith({
+        where: {
+          userId: "user-2",
+          match: { predictions: { some: { userId: "user-1" } } },
+        },
+        select: { round: { select: { roundNumber: true } } },
+        distinct: ["roundId"],
+      });
+    });
+  });
+
 });

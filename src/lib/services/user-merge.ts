@@ -2,6 +2,15 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import type { User } from "@prisma/client";
 import type { ServiceResult } from "./result";
+import { isHistoricPlaceholder } from "@/lib/historic-users";
+
+/** Raised when a prediction is inserted for the source user between the move and delete. */
+class MergeRaceError extends Error {
+  constructor() {
+    super("Prediction inserted during merge window");
+    this.name = "MergeRaceError";
+  }
+}
 
 export async function mergeUsers(input: {
   sourceUserId: string;
@@ -42,105 +51,100 @@ export async function mergeUsers(input: {
   }
 
   // 3. Check if target user is a historic placeholder
-  if (targetUser.authId.startsWith("historic-")) {
+  if (isHistoricPlaceholder(targetUser.authId)) {
     return {
       ok: false,
       code: "INVALID_MERGE",
-      message: "Målbrugeren kan ikke være en historisk placeringsholder",
+      message: "Målbrugeren kan ikke være en historisk pladsholderkonto",
     };
   }
 
   // 4. Collision check: ensure both accounts don't have picks in the same matches
-  const sourcePredictions = await prisma.prediction.findMany({
-    where: { userId: input.sourceUserId },
-    select: { matchId: true, roundId: true },
+  const collisions = await prisma.prediction.findMany({
+    where: {
+      userId: input.targetUserId,
+      match: { predictions: { some: { userId: input.sourceUserId } } },
+    },
+    select: { round: { select: { roundNumber: true } } },
+    distinct: ["roundId"],
   });
 
-  if (sourcePredictions.length > 0) {
-    const matchIds = sourcePredictions.map((p) => p.matchId);
-    const targetCollisions = await prisma.prediction.findMany({
-      where: {
-        userId: input.targetUserId,
-        matchId: { in: matchIds },
-      },
-      select: { roundId: true },
-    });
+  if (collisions.length > 0) {
+    const sortedRoundNumbers = collisions
+      .map((c) => c.round.roundNumber)
+      .sort((a, b) => a - b);
 
-    if (targetCollisions.length > 0) {
-      // Get distinct round numbers where collisions exist
-      const collisionRoundIds = Array.from(
-        new Set(targetCollisions.map((p) => p.roundId))
-      );
-
-      const roundNumbers = await prisma.round.findMany({
-        where: { id: { in: collisionRoundIds } },
-        select: { roundNumber: true },
-      });
-
-      const sortedRoundNumbers = roundNumbers
-        .map((r) => r.roundNumber)
-        .sort((a, b) => a - b);
-
-      const roundsText = sortedRoundNumbers.join(", ");
-      return {
-        ok: false,
-        code: "MERGE_COLLISION",
-        message: `Begge konti har tips i runde ${roundsText}. Slet den ene kupon først.`,
-      };
-    }
+    const roundsText = sortedRoundNumbers.join(", ");
+    return {
+      ok: false,
+      code: "MERGE_COLLISION",
+      message: `Begge konti har tips i runde ${roundsText}. Slet den ene kupon først.`,
+    };
   }
 
-  // 5. Transaction: reassign records and delete source user
+  // 5. Interactive transaction: reassign records and delete source user
   try {
-    // Build operations array with conditional identity creation and admin promotion
-    const operations: Prisma.PrismaPromise<unknown>[] = [
-      prisma.prediction.updateMany({
-        where: { userId: input.sourceUserId },
-        data: { userId: input.targetUserId },
-      }),
-      prisma.mcpToken.updateMany({
-        where: { userId: input.sourceUserId },
-        data: { userId: input.targetUserId },
-      }),
-      prisma.groupCoupon.updateMany({
-        where: { createdById: input.sourceUserId },
-        data: { createdById: input.targetUserId },
-      }),
-      prisma.userIdentity.updateMany({
-        where: { userId: input.sourceUserId },
-        data: { userId: input.targetUserId },
-      }),
-      ...(sourceUser.authId.startsWith("historic-")
-        ? []
-        : [
-            prisma.userIdentity.create({
-              data: {
-                authId: sourceUser.authId,
-                email: sourceUser.email,
-                userId: input.targetUserId,
-              },
-            }),
-          ]),
-      // Promote target to admin if source is admin and target is not.
-      // A merge must never destroy an admin role.
-      ...(sourceUser.role === "admin" && targetUser.role !== "admin"
-        ? [
-            prisma.user.update({
-              where: { id: input.targetUserId },
-              data: { role: "admin" },
-            }),
-          ]
-        : []),
-      prisma.user.delete({
-        where: { id: input.sourceUserId },
-      }),
-    ];
+    const movedPredictions = await prisma.$transaction(
+      async (tx) => {
+        // Lock the source user row to prevent concurrent inserts that reference it via FK.
+        // Concurrent insert operations that take a FOR KEY SHARE lock will block until
+        // this transaction commits, then fail their FK check if the row is gone.
+        await tx.$queryRaw`SELECT id FROM users WHERE id = ${input.sourceUserId}::uuid FOR UPDATE`;
 
-    const result = await prisma.$transaction(operations);
+        const moved = await tx.prediction.updateMany({
+          where: { userId: input.sourceUserId },
+          data: { userId: input.targetUserId },
+        });
 
-    // prediction.updateMany must remain the first operation
-    const predictionUpdateResult = result[0] as Prisma.BatchPayload;
-    const movedPredictions = predictionUpdateResult.count;
+        await tx.mcpToken.updateMany({
+          where: { userId: input.sourceUserId },
+          data: { userId: input.targetUserId },
+        });
+
+        await tx.groupCoupon.updateMany({
+          where: { createdById: input.sourceUserId },
+          data: { createdById: input.targetUserId },
+        });
+
+        await tx.userIdentity.updateMany({
+          where: { userId: input.sourceUserId },
+          data: { userId: input.targetUserId },
+        });
+
+        if (!isHistoricPlaceholder(sourceUser.authId)) {
+          await tx.userIdentity.create({
+            data: {
+              authId: sourceUser.authId,
+              email: sourceUser.email,
+              userId: input.targetUserId,
+            },
+          });
+        }
+
+        // A merge must never destroy an admin role.
+        if (sourceUser.role === "admin" && targetUser.role !== "admin") {
+          await tx.user.update({
+            where: { id: input.targetUserId },
+            data: { role: "admin" },
+          });
+        }
+
+        // Guard: a coupon submitted for the source between the move above and the
+        // delete below would be cascade-deleted silently. Abort instead. The FOR UPDATE
+        // lock above is what actually closes this window; this count is a backstop.
+        const straggling = await tx.prediction.count({
+          where: { userId: input.sourceUserId },
+        });
+        if (straggling > 0) throw new MergeRaceError();
+
+        await tx.user.delete({
+          where: { id: input.sourceUserId },
+        });
+
+        return moved.count;
+      },
+      { timeout: 20000 }
+    );
 
     // Reflect any admin promotion in the response
     const finalUser =
@@ -156,17 +160,56 @@ export async function mergeUsers(input: {
       },
     };
   } catch (error) {
-    // Detect Prisma unique-constraint violation (P2002) and return collision response
+    // Handle race condition: prediction inserted during merge window
+    if (error instanceof MergeRaceError) {
+      return {
+        ok: false,
+        code: "MERGE_RACE",
+        message: "Der blev afgivet tips på kontoen under sammenlægningen. Intet blev ændret — prøv igen.",
+      };
+    }
+
+    // Detect Prisma unique-constraint violation (P2002) and narrow the mapping.
+    // error.meta.target can be either an array of column names or a constraint name string.
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === "P2002"
     ) {
+      const target = error.meta?.target;
+      const targetText = Array.isArray(target)
+        ? target.join(",")
+        : String(target ?? "");
+
+      // Check if the violation involves auth_id (user_identities unique constraint)
+      if (targetText.includes("auth_id")) {
+        return {
+          ok: false,
+          code: "INVALID_MERGE",
+          message: "Det tidligere login er allerede registreret på et andet medlem, så sammenlægningen blev ikke fuldført.",
+        };
+      }
+
+      // Check if the violation involves prediction columns (unique constraint is on user_id, match_id).
+      // Require both to be present to avoid mis-mapping a future unique constraint on different columns.
+      if (
+        targetText.includes("user_id") &&
+        targetText.includes("match_id")
+      ) {
+        return {
+          ok: false,
+          code: "MERGE_COLLISION",
+          message: "Begge konti har tips på nogle af de samme kampe. Slet den ene kupon først.",
+        };
+      }
+
+      // Unknown P2002: return a generic error message without rethrowing
       return {
         ok: false,
         code: "MERGE_COLLISION",
-        message: "Begge konti har tips på nogle af de samme kampe. Slet den ene kupon først.",
+        message: "Sammenlægningen kunne ikke gennemføres på grund af en konflikt i databasen. Intet blev ændret.",
       };
     }
+
     // Rethrow any other error
     throw error;
   }

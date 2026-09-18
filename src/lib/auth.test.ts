@@ -6,8 +6,7 @@ const mocks = vi.hoisted(() => ({
   prismaMocks: {
     user: {
       findUnique: vi.fn(),
-      update: vi.fn(),
-      create: vi.fn(),
+      upsert: vi.fn(),
     },
     userIdentity: {
       findUnique: vi.fn(),
@@ -208,17 +207,7 @@ describe("auth functions", () => {
 
   describe("syncUser", () => {
     describe("with known active authId", () => {
-      it("updates email and displayName for existing user", async () => {
-        const existingUser: User = {
-          id: "user-1",
-          authId: "auth-1",
-          email: "old@example.com",
-          displayName: "Old Name",
-          avatarUrl: "http://old-avatar.jpg",
-          role: "member",
-          createdAt: new Date(),
-        };
-
+      it("upserts email and displayName for existing user", async () => {
         const updatedUser: User = {
           id: "user-1",
           authId: "auth-1",
@@ -229,8 +218,8 @@ describe("auth functions", () => {
           createdAt: new Date(),
         };
 
-        mocks.prismaMocks.user.findUnique.mockResolvedValue(existingUser);
-        mocks.prismaMocks.user.update.mockResolvedValue(updatedUser);
+        mocks.prismaMocks.userIdentity.findUnique.mockResolvedValue(null);
+        mocks.prismaMocks.user.upsert.mockResolvedValue(updatedUser);
 
         const result = await syncUser({
           id: "auth-1",
@@ -244,9 +233,15 @@ describe("auth functions", () => {
         expect(result.id).toBe("user-1");
         expect(result.email).toBe("new@example.com");
         expect(result.displayName).toBe("New Name");
-        expect(mocks.prismaMocks.user.update).toHaveBeenCalledWith({
+        expect(mocks.prismaMocks.user.upsert).toHaveBeenCalledWith({
           where: { authId: "auth-1" },
-          data: {
+          update: {
+            email: "new@example.com",
+            displayName: "New Name",
+            avatarUrl: "http://new-avatar.jpg",
+          },
+          create: {
+            authId: "auth-1",
             email: "new@example.com",
             displayName: "New Name",
             avatarUrl: "http://new-avatar.jpg",
@@ -259,14 +254,14 @@ describe("auth functions", () => {
           id: "user-1",
           authId: "auth-1",
           email: "user@example.com",
-          displayName: "User",
+          displayName: "Full Name",
           avatarUrl: null,
           role: "member",
           createdAt: new Date(),
         };
 
-        mocks.prismaMocks.user.findUnique.mockResolvedValue(user);
-        mocks.prismaMocks.user.update.mockResolvedValue(user);
+        mocks.prismaMocks.userIdentity.findUnique.mockResolvedValue(null);
+        mocks.prismaMocks.user.upsert.mockResolvedValue(user);
 
         await syncUser({
           id: "auth-1",
@@ -276,9 +271,12 @@ describe("auth functions", () => {
           },
         });
 
-        expect(mocks.prismaMocks.user.update).toHaveBeenCalledWith(
+        expect(mocks.prismaMocks.user.upsert).toHaveBeenCalledWith(
           expect.objectContaining({
-            data: expect.objectContaining({
+            update: expect.objectContaining({
+              displayName: "Full Name",
+            }),
+            create: expect.objectContaining({
               displayName: "Full Name",
             }),
           })
@@ -290,14 +288,14 @@ describe("auth functions", () => {
           id: "user-1",
           authId: "auth-1",
           email: "user@example.com",
-          displayName: "User",
+          displayName: "Name Only",
           avatarUrl: null,
           role: "member",
           createdAt: new Date(),
         };
 
-        mocks.prismaMocks.user.findUnique.mockResolvedValue(user);
-        mocks.prismaMocks.user.update.mockResolvedValue(user);
+        mocks.prismaMocks.userIdentity.findUnique.mockResolvedValue(null);
+        mocks.prismaMocks.user.upsert.mockResolvedValue(user);
 
         await syncUser({
           id: "auth-1",
@@ -307,9 +305,12 @@ describe("auth functions", () => {
           },
         });
 
-        expect(mocks.prismaMocks.user.update).toHaveBeenCalledWith(
+        expect(mocks.prismaMocks.user.upsert).toHaveBeenCalledWith(
           expect.objectContaining({
-            data: expect.objectContaining({
+            update: expect.objectContaining({
+              displayName: "Name Only",
+            }),
+            create: expect.objectContaining({
               displayName: "Name Only",
             }),
           })
@@ -320,15 +321,15 @@ describe("auth functions", () => {
         const user: User = {
           id: "user-1",
           authId: "auth-1",
-          email: "user@example.com",
-          displayName: "User",
+          email: "john@example.com",
+          displayName: "john",
           avatarUrl: null,
           role: "member",
           createdAt: new Date(),
         };
 
-        mocks.prismaMocks.user.findUnique.mockResolvedValue(user);
-        mocks.prismaMocks.user.update.mockResolvedValue(user);
+        mocks.prismaMocks.userIdentity.findUnique.mockResolvedValue(null);
+        mocks.prismaMocks.user.upsert.mockResolvedValue(user);
 
         await syncUser({
           id: "auth-1",
@@ -336,9 +337,12 @@ describe("auth functions", () => {
           user_metadata: {},
         });
 
-        expect(mocks.prismaMocks.user.update).toHaveBeenCalledWith(
+        expect(mocks.prismaMocks.user.upsert).toHaveBeenCalledWith(
           expect.objectContaining({
-            data: expect.objectContaining({
+            update: expect.objectContaining({
+              displayName: "john",
+            }),
+            create: expect.objectContaining({
               displayName: "john",
             }),
           })
@@ -349,7 +353,7 @@ describe("auth functions", () => {
     describe("with retired authId", () => {
       it("returns surviving user unchanged when authId is retired identity", async () => {
         const survivingUser: User = {
-          id: "user-2",
+          id: "user-surviving",
           authId: "auth-active",
           email: "surviving@example.com",
           displayName: "Original Name",
@@ -358,11 +362,13 @@ describe("auth functions", () => {
           createdAt: new Date(),
         };
 
+        // No active user with the retired authId
         mocks.prismaMocks.user.findUnique.mockResolvedValue(null);
 
+        // But a retired identity exists
         mocks.prismaMocks.userIdentity.findUnique.mockResolvedValue({
           id: "identity-1",
-          userId: "user-2",
+          userId: "user-surviving",
           authId: "auth-retired",
           email: "retired@example.com",
           createdAt: new Date(),
@@ -378,14 +384,13 @@ describe("auth functions", () => {
           },
         });
 
-        expect(result.id).toBe("user-2");
+        expect(result.id).toBe("user-surviving");
         expect(result.email).toBe("surviving@example.com"); // Unchanged
         expect(result.displayName).toBe("Original Name"); // Unchanged
         expect(result.avatarUrl).toBe("http://original-avatar.jpg"); // Unchanged
 
-        // Should not call update or create
-        expect(mocks.prismaMocks.user.update).not.toHaveBeenCalled();
-        expect(mocks.prismaMocks.user.create).not.toHaveBeenCalled();
+        // Should not call upsert
+        expect(mocks.prismaMocks.user.upsert).not.toHaveBeenCalled();
       });
 
       it("does not overwrite survivor profile with retired account data", async () => {
@@ -399,8 +404,10 @@ describe("auth functions", () => {
           createdAt: new Date(),
         };
 
+        // No active user with the retired authId
         mocks.prismaMocks.user.findUnique.mockResolvedValue(null);
 
+        // But a retired identity exists
         mocks.prismaMocks.userIdentity.findUnique.mockResolvedValue({
           id: "identity-1",
           userId: "user-2",
@@ -419,13 +426,13 @@ describe("auth functions", () => {
           },
         });
 
-        // No updates should happen
-        expect(mocks.prismaMocks.user.update).not.toHaveBeenCalled();
+        // No upsert should happen
+        expect(mocks.prismaMocks.user.upsert).not.toHaveBeenCalled();
       });
     });
 
     describe("with unknown authId", () => {
-      it("creates new user with email, full_name, and avatar_url", async () => {
+      it("upserts new user with email, full_name, and avatar_url", async () => {
         const newUser: User = {
           id: "user-3",
           authId: "auth-new",
@@ -436,9 +443,8 @@ describe("auth functions", () => {
           createdAt: new Date(),
         };
 
-        mocks.prismaMocks.user.findUnique.mockResolvedValue(null);
         mocks.prismaMocks.userIdentity.findUnique.mockResolvedValue(null);
-        mocks.prismaMocks.user.create.mockResolvedValue(newUser);
+        mocks.prismaMocks.user.upsert.mockResolvedValue(newUser);
 
         const result = await syncUser({
           id: "auth-new",
@@ -454,8 +460,14 @@ describe("auth functions", () => {
         expect(result.displayName).toBe("New User");
         expect(result.avatarUrl).toBe("http://new-avatar.jpg");
 
-        expect(mocks.prismaMocks.user.create).toHaveBeenCalledWith({
-          data: {
+        expect(mocks.prismaMocks.user.upsert).toHaveBeenCalledWith({
+          where: { authId: "auth-new" },
+          update: {
+            email: "new@example.com",
+            displayName: "New User",
+            avatarUrl: "http://new-avatar.jpg",
+          },
+          create: {
             authId: "auth-new",
             email: "new@example.com",
             displayName: "New User",
@@ -464,7 +476,7 @@ describe("auth functions", () => {
         });
       });
 
-      it("creates new user with email local-part as displayName fallback", async () => {
+      it("upserts new user with email local-part as displayName fallback", async () => {
         const newUser: User = {
           id: "user-3",
           authId: "auth-new",
@@ -475,9 +487,8 @@ describe("auth functions", () => {
           createdAt: new Date(),
         };
 
-        mocks.prismaMocks.user.findUnique.mockResolvedValue(null);
         mocks.prismaMocks.userIdentity.findUnique.mockResolvedValue(null);
-        mocks.prismaMocks.user.create.mockResolvedValue(newUser);
+        mocks.prismaMocks.user.upsert.mockResolvedValue(newUser);
 
         const result = await syncUser({
           id: "auth-new",
@@ -486,9 +497,9 @@ describe("auth functions", () => {
         });
 
         expect(result.displayName).toBe("alice");
-        expect(mocks.prismaMocks.user.create).toHaveBeenCalledWith(
+        expect(mocks.prismaMocks.user.upsert).toHaveBeenCalledWith(
           expect.objectContaining({
-            data: expect.objectContaining({
+            create: expect.objectContaining({
               displayName: "alice",
             }),
           })
@@ -506,9 +517,8 @@ describe("auth functions", () => {
           createdAt: new Date(),
         };
 
-        mocks.prismaMocks.user.findUnique.mockResolvedValue(null);
         mocks.prismaMocks.userIdentity.findUnique.mockResolvedValue(null);
-        mocks.prismaMocks.user.create.mockResolvedValue(newUser);
+        mocks.prismaMocks.user.upsert.mockResolvedValue(newUser);
 
         await syncUser({
           id: "auth-new",
@@ -517,9 +527,9 @@ describe("auth functions", () => {
           },
         });
 
-        expect(mocks.prismaMocks.user.create).toHaveBeenCalledWith(
+        expect(mocks.prismaMocks.user.upsert).toHaveBeenCalledWith(
           expect.objectContaining({
-            data: expect.objectContaining({
+            create: expect.objectContaining({
               email: "",
               displayName: "name-from-metadata",
             }),
