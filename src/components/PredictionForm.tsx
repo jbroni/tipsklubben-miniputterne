@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { MatchRow } from "@/components/MatchRow";
 import { calcRoundFedt, getFedtLabel } from "@/lib/fedt";
 import { arePicksStillOpen } from "@/lib/rounds";
+import { formatInAppZone } from "@/lib/time";
 import type { Match, Pick as PickType } from "@prisma/client";
 
 interface RoundData {
@@ -137,12 +138,12 @@ export function PredictionForm({
     }
   };
 
-  const deadlineDate = new Date(round.deadline);
-  const dayLabel = deadlineDate
-    .toLocaleDateString("da-DK", { weekday: "short" })
+  const dayLabel = formatInAppZone(round.deadline, {
+    weekday: "short",
+  })
     .toUpperCase()
     .replace(".", "");
-  const timeLabel = deadlineDate.toLocaleTimeString("da-DK", {
+  const timeLabel = formatInAppZone(round.deadline, {
     hour: "2-digit",
     minute: "2-digit",
   });

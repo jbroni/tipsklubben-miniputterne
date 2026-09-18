@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { formatInAppZone } from "@/lib/time";
 import type { McpToken } from "@prisma/client";
 
 type TokenListItem = Pick<
@@ -100,7 +101,7 @@ export function McpTokenManager() {
   }
 
   function formatDate(date: Date | string) {
-    return new Date(date).toLocaleDateString("da-DK", {
+    return formatInAppZone(date, {
       year: "numeric",
       month: "long",
       day: "numeric",

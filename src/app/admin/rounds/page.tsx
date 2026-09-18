@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { RoundStatusBadge } from "@/components/RoundStatusBadge";
 import { parseCouponText, resolveKickoff } from "@/lib/coupon-parser";
+import { parseAppZonedDateTime, toDatetimeLocalValue, formatInAppZone } from "@/lib/time";
 import type { RoundStatus, Match, Pick as PickType } from "@prisma/client";
 
 interface RoundData {
@@ -83,7 +84,7 @@ function AdminRoundsContent() {
 
   // Helper functions
   const formatDeadline = (deadline: string): string => {
-    return new Date(deadline).toLocaleString("da-DK", {
+    return formatInAppZone(deadline, {
       weekday: "long",
       day: "numeric",
       month: "long",
@@ -97,9 +98,7 @@ function AdminRoundsContent() {
   };
 
   const convertToLocalDatetimeLocal = (isoString: string): string => {
-    const date = new Date(isoString);
-    const pad = (n: number) => String(n).padStart(2, "0");
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    return toDatetimeLocalValue(isoString);
   };
 
   const fetchRounds = () => {
@@ -314,9 +313,9 @@ function AdminRoundsContent() {
     const matches = matchEntries.map((m, i) => {
       let kickoff: string;
       if (matchDate && m.kickoff) {
-        kickoff = new Date(`${matchDate}T${m.kickoff}`).toISOString();
+        kickoff = parseAppZonedDateTime(`${matchDate}T${m.kickoff}`).toISOString();
       } else if (matchDate) {
-        kickoff = new Date(`${matchDate}T00:00`).toISOString();
+        kickoff = parseAppZonedDateTime(`${matchDate}T00:00`).toISOString();
       } else {
         kickoff = new Date().toISOString();
       }
@@ -816,7 +815,7 @@ function AdminRoundsContent() {
                         setActionError("Vælg venligst en gyldig deadline");
                         return;
                       }
-                      const isoString = new Date(deadlineInputValue).toISOString();
+                      const isoString = parseAppZonedDateTime(deadlineInputValue).toISOString();
                       updateDeadline(round.id, isoString);
                     }}
                     className="btn-primary !px-3 !py-1.5 text-xs"
@@ -856,7 +855,7 @@ function AdminRoundsContent() {
                         setActionError("Vælg venligst en gyldig deadline");
                         return;
                       }
-                      const isoString = new Date(deadlineInputValue).toISOString();
+                      const isoString = parseAppZonedDateTime(deadlineInputValue).toISOString();
                       updateDeadline(round.id, isoString, true);
                     }}
                     className="btn-primary !px-3 !py-1.5 text-xs"

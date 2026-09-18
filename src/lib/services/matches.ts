@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { parseAppZonedDateTime } from "@/lib/time";
 import { fetchResults } from "@/lib/football-api";
 import type { Pick } from "@prisma/client";
 import type { ServiceResult } from "./result";
@@ -27,14 +28,29 @@ export async function addMatches(input: {
 
   const warnings: string[] = [];
 
+  // Parse and validate all kickoff times
+  const parsed: { m: typeof input.matches[0]; kickoff: Date; index: number }[] = [];
+  for (let index = 0; index < input.matches.length; index += 1) {
+    const m = input.matches[index];
+    const kickoff = parseAppZonedDateTime(m.kickoff);
+    if (isNaN(kickoff.getTime())) {
+      return {
+        ok: false,
+        code: "VALIDATION",
+        message: `Kamp ${index + 1}: Ugyldigt kickoff-format`,
+      };
+    }
+    parsed.push({ m, kickoff, index });
+  }
+
   const created = await prisma.match.createMany({
-    data: input.matches.map((m, index) => ({
+    data: parsed.map(({ m, kickoff, index }) => ({
       roundId: input.roundId,
       matchNumber: m.matchNumber ?? index + 1,
       homeTeam: m.homeTeam,
       awayTeam: m.awayTeam,
       league: m.league,
-      kickoff: new Date(m.kickoff),
+      kickoff,
       oddsHome: m.oddsHome,
       oddsDraw: m.oddsDraw,
       oddsAway: m.oddsAway,

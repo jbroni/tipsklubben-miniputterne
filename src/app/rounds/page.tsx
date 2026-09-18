@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import Link from "next/link";
 import { arePicksStillOpen } from "@/lib/rounds";
+import { formatInAppZone } from "@/lib/time";
 
 export default async function RoundsPage() {
   const currentUser = await requireUser();
@@ -98,7 +99,7 @@ export default async function RoundsPage() {
                   </div>
                   <div className="text-[13px] text-muted mt-0.5">
                     {round.matches.length} kampe · lukker{" "}
-                    {new Date(round.deadline).toLocaleString("da-DK", {
+                    {formatInAppZone(round.deadline, {
                       weekday: "long",
                       hour: "2-digit",
                       minute: "2-digit",

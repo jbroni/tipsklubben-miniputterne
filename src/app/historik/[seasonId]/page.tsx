@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { computeLeaderboard } from "@/lib/leaderboard";
 import { LeaderboardTable } from "@/components/LeaderboardTable";
+import { formatInAppZone } from "@/lib/time";
 
 export default async function SeasonDetailPage({
   params,
@@ -79,8 +80,7 @@ export default async function SeasonDetailPage({
             : [];
           const winner = roundEntries.length > 0 ? roundEntries[0] : null;
 
-          const deadline = new Date(round.deadline);
-          const dateStr = deadline.toLocaleDateString("da-DK", {
+          const dateStr = formatInAppZone(round.deadline, {
             weekday: "short",
             month: "short",
             day: "numeric",

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
+import { formatInAppZone } from "@/lib/time";
 
 interface Season {
   id: string;
@@ -127,7 +128,11 @@ export default function AdminPage() {
                   {season.name}
                 </h3>
                 <p className="text-xs text-muted">
-                  {new Date(season.startDate).toLocaleDateString("da-DK")} ·{" "}
+                  {formatInAppZone(season.startDate, {
+                    year: "numeric",
+                    month: "numeric",
+                    day: "numeric",
+                  })} ·{" "}
                   {season.numRounds} runder
                   {season.isActive && <span className="text-brand ml-2">Aktiv</span>}
                 </p>
