@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CountdownPill } from "@/components/Countdown";
 import { AvatarRow } from "@/components/AvatarRow";
+import { formatInAppZone } from "@/lib/time";
 
 interface Member {
   id: string;
@@ -11,7 +12,7 @@ interface Member {
 }
 
 function formatDeadline(deadline: string): string {
-  return new Date(deadline).toLocaleString("da-DK", {
+  return formatInAppZone(deadline, {
     weekday: "long",
     hour: "2-digit",
     minute: "2-digit",

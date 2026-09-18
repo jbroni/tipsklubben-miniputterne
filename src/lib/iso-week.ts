@@ -1,7 +1,10 @@
+import { parseAppZonedDateTime } from "@/lib/time";
+
 /**
  * Calculate the Saturday of a given ISO week.
  * ISO week 1 is the week containing January 4 (Monday-based).
- * Returns the Saturday at 13:00 UTC.
+ * Returns the Saturday at 15:00 Europe/Copenhagen wall-clock time
+ * (14:00 UTC in winter / CET, 13:00 UTC in summer / CEST).
  */
 export function isoWeekSaturday(year: number, week: number): Date {
   // Find January 4 of the given year
@@ -29,8 +32,13 @@ export function isoWeekSaturday(year: number, week: number): Date {
   const saturday = new Date(targetMonday);
   saturday.setUTCDate(targetMonday.getUTCDate() + 5);
 
-  // Set time to 13:00 UTC (~15:00 Copenhagen time, Tips 13 lørdag)
-  saturday.setUTCHours(13, 0, 0, 0);
+  // Build a naive wall-clock string for Saturday at 15:00 Copenhagen time,
+  // then parse it to get the correct UTC instant accounting for DST
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const isoYear = saturday.getUTCFullYear();
+  const isoMonth = pad(saturday.getUTCMonth() + 1);
+  const isoDay = pad(saturday.getUTCDate());
+  const isoString = `${isoYear}-${isoMonth}-${isoDay}T15:00`;
 
-  return saturday;
+  return parseAppZonedDateTime(isoString);
 }

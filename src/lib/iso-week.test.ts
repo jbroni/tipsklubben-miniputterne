@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { isoWeekSaturday } from "./iso-week";
+import { formatInAppZone } from "./time";
 
 describe("isoWeekSaturday", () => {
   describe("basic functionality", () => {
@@ -13,12 +14,26 @@ describe("isoWeekSaturday", () => {
       expect(result.getUTCDay()).toBe(6);
     });
 
-    it("sets time to 13:00 UTC", () => {
-      const result = isoWeekSaturday(2024, 1);
-      expect(result.getUTCHours()).toBe(13);
-      expect(result.getUTCMinutes()).toBe(0);
-      expect(result.getUTCSeconds()).toBe(0);
-      expect(result.getUTCMilliseconds()).toBe(0);
+    it("sets Copenhagen wall-clock time to 15:00 (regardless of DST)", () => {
+      // Test a winter week (UTC offset = +1)
+      const winterWeek = isoWeekSaturday(2024, 1); // January 6
+      const winterHour = parseInt(
+        formatInAppZone(winterWeek, { hour: "2-digit", hourCycle: "h23" })
+      );
+      expect(winterHour).toBe(15);
+      expect(winterWeek.getUTCMinutes()).toBe(0);
+      expect(winterWeek.getUTCSeconds()).toBe(0);
+      expect(winterWeek.getUTCMilliseconds()).toBe(0);
+
+      // Test a summer week (UTC offset = +2)
+      const summerWeek = isoWeekSaturday(2024, 26); // June 29
+      const summerHour = parseInt(
+        formatInAppZone(summerWeek, { hour: "2-digit", hourCycle: "h23" })
+      );
+      expect(summerHour).toBe(15);
+      expect(summerWeek.getUTCMinutes()).toBe(0);
+      expect(summerWeek.getUTCSeconds()).toBe(0);
+      expect(summerWeek.getUTCMilliseconds()).toBe(0);
     });
   });
 
@@ -174,7 +189,16 @@ describe("isoWeekSaturday", () => {
       expect(result1.getUTCFullYear()).toBe(result2.getUTCFullYear());
       expect(result1.getUTCMonth()).toBe(result2.getUTCMonth());
       expect(result1.getUTCDate()).toBe(result2.getUTCDate());
-      expect(result1.getUTCHours()).toBe(result2.getUTCHours());
+
+      // Check that the Copenhagen wall-clock hour is consistent
+      const hour1 = parseInt(
+        formatInAppZone(result1, { hour: "2-digit", hourCycle: "h23" })
+      );
+      const hour2 = parseInt(
+        formatInAppZone(result2, { hour: "2-digit", hourCycle: "h23" })
+      );
+      expect(hour1).toBe(15);
+      expect(hour2).toBe(15);
     });
   });
 
@@ -182,7 +206,8 @@ describe("isoWeekSaturday", () => {
     it("returns correct date for 2024 week 1 (Jan 6, 2024)", () => {
       const result = isoWeekSaturday(2024, 1);
       // January 6, 2024 is the Saturday of ISO week 1
-      expect(result.toISOString()).toContain("2024-01-06T13:00:00");
+      // In winter (CET), 15:00 Copenhagen = 14:00 UTC
+      expect(result.toISOString()).toContain("2024-01-06T14:00:00");
     });
 
     it("returns correct date for 2024 week 20 (May 18, 2024)", () => {
@@ -190,6 +215,38 @@ describe("isoWeekSaturday", () => {
       expect(result.getUTCFullYear()).toBe(2024);
       expect(result.getUTCMonth()).toBe(4); // May
       expect(result.getUTCDate()).toBe(18);
+    });
+
+    it("returns correct UTC time for winter week (2024 week 1)", () => {
+      const result = isoWeekSaturday(2024, 1);
+      // January 6, 2024 is a Saturday
+      expect(result.getUTCDay()).toBe(6);
+      // Winter (CET = UTC+1): 15:00 CET = 14:00 UTC
+      expect(result.toISOString()).toContain("2024-01-06T14:00:00");
+      expect(result.getUTCHours()).toBe(14);
+      expect(result.getUTCMinutes()).toBe(0);
+
+      // Verify Copenhagen wall-clock hour is 15:00
+      const copenhagenHour = parseInt(
+        formatInAppZone(result, { hour: "2-digit", hourCycle: "h23" })
+      );
+      expect(copenhagenHour).toBe(15);
+    });
+
+    it("returns correct UTC time for summer week (2024 week 26)", () => {
+      const result = isoWeekSaturday(2024, 26);
+      // June 29, 2024 is a Saturday
+      expect(result.getUTCDay()).toBe(6);
+      // Summer (CEST = UTC+2): 15:00 CEST = 13:00 UTC
+      expect(result.toISOString()).toContain("2024-06-29T13:00:00");
+      expect(result.getUTCHours()).toBe(13);
+      expect(result.getUTCMinutes()).toBe(0);
+
+      // Verify Copenhagen wall-clock hour is 15:00
+      const copenhagenHour = parseInt(
+        formatInAppZone(result, { hour: "2-digit", hourCycle: "h23" })
+      );
+      expect(copenhagenHour).toBe(15);
     });
   });
 });

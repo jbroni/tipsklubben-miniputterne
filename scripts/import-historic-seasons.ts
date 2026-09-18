@@ -3,6 +3,7 @@ import * as path from "path";
 import { prisma } from "../src/lib/prisma";
 import { isoWeekSaturday } from "../src/lib/iso-week";
 import { computeLeaderboard } from "../src/lib/leaderboard";
+import { HISTORIC_AUTH_PREFIX } from "../src/lib/historic-users";
 import type { User, Pick as PickType } from "@prisma/client";
 
 // Type definitions for the historic data JSON
@@ -82,8 +83,8 @@ async function upsertPlaceholderUsers(seasons: SeasonJSON[]): Promise<Map<string
   const users = new Map<string, User>();
 
   for (const initials of Array.from(allInitials)) {
-    const authId = `historic-${initials}`;
-    const email = `historic-${initials.toLowerCase()}@miniputterne.invalid`;
+    const authId = `${HISTORIC_AUTH_PREFIX}${initials}`;
+    const email = `${HISTORIC_AUTH_PREFIX}${initials.toLowerCase()}@miniputterne.invalid`;
 
     const user = await prisma.user.upsert({
       where: { authId },

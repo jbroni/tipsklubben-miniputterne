@@ -47,8 +47,21 @@ model User {
   predictions  Prediction[]
   groupCoupons GroupCoupon[]
   mcpTokens    McpToken[]
+  identities   UserIdentity[]
 
   @@map("users")
+}
+
+model UserIdentity {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  authId    String   @unique @map("auth_id")
+  email     String
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("user_identities")
 }
 
 model Season {

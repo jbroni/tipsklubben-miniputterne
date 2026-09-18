@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { parseAppZonedDateTime } from "@/lib/time";
 import { Prisma } from "@prisma/client";
 import type { Round } from "@prisma/client";
 import type { ServiceResult } from "./result";
@@ -17,11 +18,20 @@ export async function createRound(input: {
   }
 
   try {
+    const deadline = parseAppZonedDateTime(input.deadline);
+    if (isNaN(deadline.getTime())) {
+      return {
+        ok: false,
+        code: "VALIDATION",
+        message: "Ugyldigt deadline-format",
+      };
+    }
+
     const round = await prisma.round.create({
       data: {
         seasonId: input.seasonId,
         roundNumber: input.roundNumber,
-        deadline: new Date(input.deadline),
+        deadline,
         status: "open",
       },
     });
@@ -53,7 +63,7 @@ export async function updateRound(input: {
 }): Promise<ServiceResult<Round>> {
   // Validate deadline if provided
   if (input.deadline) {
-    const deadlineDate = new Date(input.deadline);
+    const deadlineDate = parseAppZonedDateTime(input.deadline);
     if (isNaN(deadlineDate.getTime())) {
       return {
         ok: false,
@@ -79,7 +89,7 @@ export async function updateRound(input: {
 
     // Determine effective deadline: use provided deadline or current round's deadline
     const effectiveDeadline = input.deadline
-      ? new Date(input.deadline)
+      ? parseAppZonedDateTime(input.deadline)
       : new Date(round.deadline);
 
     if (effectiveDeadline <= new Date()) {
@@ -94,7 +104,7 @@ export async function updateRound(input: {
 
   const updateData: Record<string, unknown> = {};
   if (input.status) updateData.status = input.status;
-  if (input.deadline) updateData.deadline = new Date(input.deadline);
+  if (input.deadline) updateData.deadline = parseAppZonedDateTime(input.deadline);
 
   const round = await prisma.round.update({
     where: { id: input.roundId },
