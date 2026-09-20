@@ -1,5 +1,5 @@
 import { LeaderboardTable } from "@/components/LeaderboardTable";
-import { PointsProgressChart, POINTS_PROGRESS_MIN_ROUNDS } from "@/components/PointsProgressChart";
+import { PointProgress } from "@/components/PointProgress";
 import { requireUser } from "@/lib/auth";
 import { getLeaderboardEntries } from "@/lib/leaderboard-data";
 
@@ -77,10 +77,9 @@ export default async function LeaderboardPage() {
       )}
 
       {/* Cumulative points chart */}
-      {entries.length > 0 && entries[0].roundScores.length >= POINTS_PROGRESS_MIN_ROUNDS && (
+      {entries.length > 0 && (
         <div className="card">
-          <h2 className="font-display font-semibold text-ink mb-4">Pointudvikling</h2>
-          <PointsProgressChart entries={entries} currentUserId={user.id} />
+          <PointProgress entries={entries} currentUserId={user.id} />
         </div>
       )}
     </div>

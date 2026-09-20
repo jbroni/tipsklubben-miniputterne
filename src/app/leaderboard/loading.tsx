@@ -34,7 +34,8 @@ export default function LeaderboardLoading() {
       {/* Points progress chart skeleton */}
       <div className="card">
         <div className="h-4 w-40 bg-line-card rounded animate-pulse mb-4" />
-        <div className="h-40 bg-line-card rounded animate-pulse" />
+        {/* Approximates the real component: 266px SVG + mode switch + standings list */}
+        <div className="h-[600px] bg-line-card rounded animate-pulse" />
       </div>
     </div>
   );
