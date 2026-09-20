@@ -1,9 +1,10 @@
 import { LeaderboardTable } from "@/components/LeaderboardTable";
+import { PointsProgressChart, POINTS_PROGRESS_MIN_ROUNDS } from "@/components/PointsProgressChart";
 import { requireUser } from "@/lib/auth";
 import { getLeaderboardEntries } from "@/lib/leaderboard-data";
 
 export default async function LeaderboardPage() {
-  await requireUser();
+  const user = await requireUser();
   const entries = await getLeaderboardEntries();
 
   return (
@@ -72,6 +73,14 @@ export default async function LeaderboardPage() {
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {/* Cumulative points chart */}
+      {entries.length > 0 && entries[0].roundScores.length >= POINTS_PROGRESS_MIN_ROUNDS && (
+        <div className="card">
+          <h2 className="font-display font-semibold text-ink mb-4">Pointudvikling</h2>
+          <PointsProgressChart entries={entries} currentUserId={user.id} />
         </div>
       )}
     </div>

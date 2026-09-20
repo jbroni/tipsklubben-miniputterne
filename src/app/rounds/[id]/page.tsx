@@ -1,20 +1,15 @@
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { RoundStatusBadge } from "@/components/RoundStatusBadge";
-import { FedtBadge } from "@/components/FedtBadge";
 import { GroupCouponCard } from "@/components/GroupCouponCard";
 import { PredictionGrid } from "@/components/PredictionGrid";
-import { calcRoundFedt } from "@/lib/fedt";
-import { toFedtInput } from "@/lib/leaderboard";
+import { RoundScoreboard } from "@/components/RoundScoreboard";
 import { resolveRoundBackHref } from "@/lib/back-href";
 import { arePicksRevealed } from "@/lib/rounds";
 import { settleFromPrisma } from "@/lib/group-coupon-settlement-data";
-import { PICK_LABEL, type PickValue } from "@/lib/picks";
+import { computeRoundScores } from "@/lib/round-scores";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import type { Pick as PickType } from "@prisma/client";
-
-const RANK_COLORS = ["text-rank-1", "text-rank-2", "text-rank-3"];
 
 export default async function RoundDetailPage({
   params,
@@ -72,28 +67,7 @@ export default async function RoundDetailPage({
     round.matches.some((m) => m.predictions.some((p) => p.userId === u.id))
   );
 
-  const userScores = usersWithPredictions.map((u) => {
-    const picks = round.matches.map((m) => {
-      const pred = m.predictions.find((p) => p.userId === u.id);
-      return {
-        match: m,
-        pick: pred?.pick as PickType,
-        correct: pred && m.result ? pred.pick === m.result : false,
-      };
-    });
-
-    const points = picks.filter((p) => p.correct).length;
-    const fedt = calcRoundFedt(
-      picks.filter((p) => p.pick).map((p) => ({ match: toFedtInput(p.match), pick: p.pick }))
-    );
-
-    return { user: u, points, fedt };
-  });
-
-  userScores.sort((a, b) => {
-    if (b.points !== a.points) return b.points - a.points;
-    return a.fedt - b.fedt;
-  });
+  const userScores = computeRoundScores(round.matches, users);
 
   const isRevealed = arePicksRevealed(round);
   const backHref = resolveRoundBackHref(
@@ -118,39 +92,7 @@ export default async function RoundDetailPage({
 
       {isRevealed && userScores.length > 0 && (
         <div className="card">
-          <div className="kicker mb-2.5">RUNDENS SCORER</div>
-          <div className="flex flex-col gap-1.5">
-            {userScores.map((us, i) => {
-              const isMe = us.user.id === currentUser.id;
-              return (
-                <div
-                  key={us.user.id}
-                  className={`flex items-center gap-2.5 ${
-                    isMe ? "bg-brand-tint rounded-lg px-1 -mx-1" : ""
-                  }`}
-                >
-                  <span
-                    className={`font-mono font-bold text-xs w-3 text-right shrink-0 ${
-                      RANK_COLORS[i] ?? "text-muted-ghost"
-                    }`}
-                  >
-                    {i + 1}
-                  </span>
-                  <span
-                    className={`flex-1 text-[14.5px] ${
-                      isMe ? "font-bold text-brand-text" : "font-medium text-ink"
-                    }`}
-                  >
-                    {us.user.displayName}
-                  </span>
-                  <FedtBadge score={us.fedt} size="sm" showLabel={false} />
-                  <span className="font-mono font-bold text-brand text-sm">
-                    {us.points}/13
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+          <RoundScoreboard scores={userScores} currentUserId={currentUser.id} kicker="RUNDENS SCORER" />
         </div>
       )}
 
