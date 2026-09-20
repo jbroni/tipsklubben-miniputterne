@@ -30,6 +30,12 @@ export default function LeaderboardLoading() {
           ))}
         </div>
       </div>
+
+      {/* Points progress chart skeleton */}
+      <div className="card">
+        <div className="h-4 w-40 bg-line-card rounded animate-pulse mb-4" />
+        <div className="h-40 bg-line-card rounded animate-pulse" />
+      </div>
     </div>
   );
 }

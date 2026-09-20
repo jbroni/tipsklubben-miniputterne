@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { Decimal } from "@prisma/client/runtime/library";
-import { computeLeaderboard, toFedtInput } from "./leaderboard";
+import { computeLeaderboard, toFedtInput, computeMovements } from "./leaderboard";
 import type { User, Round, Match, Prediction, Role, Pick as PickType } from "@prisma/client";
 
 type RoundWithMatches = Round & {
@@ -568,6 +568,187 @@ describe("computeLeaderboard", () => {
 
       // Average score should be 5 / 2 = 2.5
       expect(merged.avgScore).toBeCloseTo(2.5, 2);
+    });
+  });
+
+  describe("computeMovements", () => {
+    it("returns undefined movement when no history (no roundScores)", () => {
+      const users = [mockUser("user1", "Alice"), mockUser("user2", "Bob")];
+      const leaderboard = computeLeaderboard([], users);
+
+      const movements = computeMovements(leaderboard);
+
+      expect(movements["user1"]).toBeUndefined();
+      expect(movements["user2"]).toBeUndefined();
+    });
+
+    it("detects a player who climbed", () => {
+      const users = [mockUser("user1", "Alice"), mockUser("user2", "Bob")];
+
+      // Round 1: Alice has 2 points, Bob has 1 point
+      const m1 = mockMatch("m1", 1, "HOME");
+      const m2 = mockMatch("m2", 2, "DRAW");
+      const round1Preds = [
+        mockPrediction("p1", "user1", m1, "HOME"), // Alice: correct
+        mockPrediction("p2", "user1", m2, "DRAW"), // Alice: correct
+        mockPrediction("p3", "user2", m1, "HOME"), // Bob: correct
+        mockPrediction("p4", "user2", m2, "HOME"), // Bob: wrong
+      ];
+
+      // Round 2: Alice has 0 points, Bob has 2 points
+      // Now Bob should be ahead (3 vs 2), but was behind (1 vs 2)
+      const m4 = mockMatch("m4", 1, "HOME");
+      const m5 = mockMatch("m5", 2, "DRAW");
+      const round2Preds = [
+        mockPrediction("p5", "user1", m4, "AWAY"), // Alice: wrong
+        mockPrediction("p6", "user1", m5, "HOME"), // Alice: wrong
+        mockPrediction("p7", "user2", m4, "HOME"), // Bob: correct
+        mockPrediction("p8", "user2", m5, "DRAW"), // Bob: correct
+      ];
+
+      const rounds = [
+        mockRound("round1", 1, [m1, m2], round1Preds),
+        mockRound("round2", 2, [m4, m5], round2Preds),
+      ];
+
+      const leaderboard = computeLeaderboard(rounds, users);
+      const movements = computeMovements(leaderboard);
+
+      // Bob should have climbed (was 2nd, now 1st)
+      expect(movements["user2"]).toBeGreaterThan(0);
+      // Alice should have dropped (was 1st, now 2nd)
+      expect(movements["user1"]).toBeLessThan(0);
+    });
+
+    it("detects a player who stayed the same rank", () => {
+      const users = [mockUser("user1", "Alice"), mockUser("user2", "Bob")];
+
+      // Round 1: Alice 3, Bob 1
+      const m1 = mockMatch("m1", 1, "HOME");
+      const m2 = mockMatch("m2", 2, "DRAW");
+      const m3 = mockMatch("m3", 3, "AWAY");
+      const round1Preds = [
+        mockPrediction("p1", "user1", m1, "HOME"), // correct
+        mockPrediction("p2", "user1", m2, "DRAW"), // correct
+        mockPrediction("p3", "user1", m3, "AWAY"), // correct
+        mockPrediction("p4", "user2", m1, "HOME"), // correct
+      ];
+
+      // Round 2: Alice 1, Bob 2
+      // Totals: Alice 4, Bob 3 (Alice still ahead)
+      const m4 = mockMatch("m4", 1, "HOME");
+      const m5 = mockMatch("m5", 2, "DRAW");
+      const round2Preds = [
+        mockPrediction("p5", "user1", m4, "HOME"), // correct
+        mockPrediction("p6", "user1", m5, "HOME"), // wrong
+        mockPrediction("p7", "user2", m4, "HOME"), // correct
+        mockPrediction("p8", "user2", m5, "DRAW"), // correct
+      ];
+
+      const rounds = [
+        mockRound("round1", 1, [m1, m2, m3], round1Preds),
+        mockRound("round2", 2, [m4, m5], round2Preds),
+      ];
+
+      const leaderboard = computeLeaderboard(rounds, users);
+      const movements = computeMovements(leaderboard);
+
+      expect(movements["user1"]).toBe(0);
+      expect(movements["user2"]).toBe(0);
+    });
+
+    it("breaks ties using seasonFedt (bolder player ranked higher)", () => {
+      const users = [mockUser("user1", "Alice"), mockUser("user2", "Bob")];
+
+      // Both players score same points in both rounds, but different fedt
+      // Round 1: both get 2 points, but Alice bolder (lower fedt)
+      const m1 = mockMatch("m1", 1, "HOME", 60, 20, 20);
+      const m2 = mockMatch("m2", 2, "DRAW", 50, 30, 20);
+      const round1Preds = [
+        mockPrediction("p1", "user1", m1, "HOME"), // Alice: 60
+        mockPrediction("p2", "user1", m2, "DRAW"), // Alice: 30 (bolder avg)
+        mockPrediction("p3", "user2", m1, "HOME"), // Bob: 60
+        mockPrediction("p4", "user2", m2, "HOME"), // Bob: 50 (safer avg)
+      ];
+
+      // Round 2: both get 2 points again, same fedt pattern
+      const m3 = mockMatch("m3", 1, "HOME", 60, 20, 20);
+      const m4 = mockMatch("m4", 2, "DRAW", 50, 30, 20);
+      const round2Preds = [
+        mockPrediction("p5", "user1", m3, "HOME"), // Alice: 60
+        mockPrediction("p6", "user1", m4, "DRAW"), // Alice: 30
+        mockPrediction("p7", "user2", m3, "HOME"), // Bob: 60
+        mockPrediction("p8", "user2", m4, "HOME"), // Bob: 50
+      ];
+
+      const rounds = [
+        mockRound("round1", 1, [m1, m2], round1Preds),
+        mockRound("round2", 2, [m3, m4], round2Preds),
+      ];
+
+      const leaderboard = computeLeaderboard(rounds, users);
+      const movements = computeMovements(leaderboard);
+
+      // Both have 4 points, but Alice is bolder, so she should be ranked first
+      // Movement should be 0 since Alice was already first in round 1
+      expect(movements["user1"]).toBe(0);
+      expect(movements["user2"]).toBe(0);
+    });
+
+    it("handles single entry", () => {
+      const users = [mockUser("user1", "Alice")];
+
+      const m1 = mockMatch("m1", 1, "HOME");
+      const m2 = mockMatch("m2", 2, "DRAW");
+      const round1Preds = [
+        mockPrediction("p1", "user1", m1, "HOME"),
+        mockPrediction("p2", "user1", m2, "DRAW"),
+      ];
+
+      const rounds = [mockRound("round1", 1, [m1, m2], round1Preds)];
+
+      const leaderboard = computeLeaderboard(rounds, users);
+      const movements = computeMovements(leaderboard);
+
+      expect(movements["user1"]).toBe(0);
+    });
+
+    it("ranks a player who sat out the final round using all actually-played rounds", () => {
+      // A sat out R3; B played it but scored 0. Both totals and both PREVIOUS totals
+      // tie at 10, so the fedt tiebreak decides each standing.
+      // Correct prev fedt: A = avg(20, 80) = 50, B = avg(30, 30) = 30 -> B first,
+      // which is also the current order, so nobody moves.
+      // Dropping the last *played* round instead gives A = avg(20) = 20 -> A first,
+      // inventing a swap between the two standings.
+      const entryA = {
+        user: { id: "a", displayName: "Anders", avatarUrl: null },
+        totalPoints: 10,
+        roundsPlayed: 2,
+        avgScore: 5,
+        seasonFedt: 50,
+        roundScores: [
+          { roundNumber: 1, points: 5, fedt: 20, played: true },
+          { roundNumber: 2, points: 5, fedt: 80, played: true },
+          { roundNumber: 3, points: 0, fedt: 0, played: false },
+        ],
+      };
+      const entryB = {
+        user: { id: "b", displayName: "Bo", avatarUrl: null },
+        totalPoints: 10,
+        roundsPlayed: 3,
+        avgScore: 10 / 3,
+        seasonFedt: 30,
+        roundScores: [
+          { roundNumber: 1, points: 5, fedt: 30, played: true },
+          { roundNumber: 2, points: 5, fedt: 30, played: true },
+          { roundNumber: 3, points: 0, fedt: 30, played: true },
+        ],
+      };
+
+      const movements = computeMovements([entryA, entryB]);
+
+      expect(movements["a"]).toBe(0);
+      expect(movements["b"]).toBe(0);
     });
   });
 });

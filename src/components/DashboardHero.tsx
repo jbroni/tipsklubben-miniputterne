@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { CountdownPill } from "@/components/Countdown";
 import { AvatarRow } from "@/components/AvatarRow";
+import { RoundScoreboard } from "@/components/RoundScoreboard";
 import { formatInAppZone } from "@/lib/time";
+import type { RoundScore } from "@/lib/round-scores";
 
 interface Member {
   id: string;
@@ -110,17 +112,20 @@ export function SubmittedHero({
 
 export function RevealedHero({
   roundNumber,
-  winnerName,
-  userScore,
-  userRank,
+  scores,
+  currentUserId,
   href,
 }: {
   roundNumber: number;
-  winnerName: string | null;
-  userScore: number;
-  userRank: number;
+  scores: RoundScore[];
+  currentUserId: string;
   href: string;
 }) {
+  const winnerName = scores[0]?.user.displayName.split(" ")[0] ?? null;
+  const userScore = scores.find((s) => s.user.id === currentUserId)?.points ?? 0;
+  const userRankIndex = scores.findIndex((s) => s.user.id === currentUserId);
+  const userRank = userRankIndex >= 0 ? userRankIndex + 1 : null;
+
   return (
     <div className="card">
       <div className="flex justify-between items-center">
@@ -132,10 +137,17 @@ export function RevealedHero({
       <div className="font-display font-bold text-[23px] mt-2 mb-0.5 text-ink">
         {winnerName ? `${winnerName} vandt runden` : "Runden er afgjort"}
       </div>
-      <div className="text-sm text-muted">
-        Du fik <span className="font-mono font-bold text-brand">{userScore}/13</span> og
-        blev nr. {userRank}
-      </div>
+      {userRank !== null && (
+        <div className="text-sm text-muted">
+          Du fik <span className="font-mono font-bold text-brand">{userScore}</span> og
+          blev nr. {userRank}
+        </div>
+      )}
+      {scores.length > 0 && (
+        <div className="my-3.5">
+          <RoundScoreboard scores={scores} currentUserId={currentUserId} />
+        </div>
+      )}
       <Link href={href} className="btn-secondary w-full block text-center mt-3.5">
         Se resultat
       </Link>

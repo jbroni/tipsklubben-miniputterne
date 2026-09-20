@@ -62,7 +62,7 @@ export default async function SeasonDetailPage({
       {entries.length > 0 && (
         <div className="card !p-3">
           <div className="kicker mb-2.5">ENDELIG STILLING</div>
-          <LeaderboardTable entries={entries} />
+          <LeaderboardTable entries={entries} showRounds={true} showMovement={false} />
         </div>
       )}
 

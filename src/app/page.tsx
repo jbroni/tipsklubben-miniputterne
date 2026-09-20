@@ -2,7 +2,6 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import Link from "next/link";
 import { LeaderboardTable } from "@/components/LeaderboardTable";
-import { DashboardSidebar } from "@/components/DashboardSidebar";
 import {
   PredictHero,
   SubmittedHero,
@@ -12,10 +11,12 @@ import {
 import { GroupCouponCard } from "@/components/GroupCouponCard";
 import { PredictionGrid } from "@/components/PredictionGrid";
 import { calcRoundFedt } from "@/lib/fedt";
-import { computeLeaderboard, toFedtInput } from "@/lib/leaderboard";
+import { toFedtInput } from "@/lib/leaderboard";
+import { computeRoundScores } from "@/lib/round-scores";
+import { getLeaderboardEntries } from "@/lib/leaderboard-data";
 import { arePicksRevealed } from "@/lib/rounds";
 import { settleFromPrisma } from "@/lib/group-coupon-settlement-data";
-import type { Pick as PickType, LeaderboardEntry } from "@/types";
+import type { Pick as PickType } from "@/types";
 import { Logo } from "@/components/Logo";
 import { LoginButton } from "@/components/LoginButton";
 
@@ -33,13 +34,13 @@ export default async function DashboardPage() {
     );
   }
 
-  const [season, users] = await Promise.all([
+  const [season, users, leaderboardEntries] = await Promise.all([
     prisma.season.findFirst({
       where: { isActive: true },
       include: {
         rounds: {
           orderBy: { roundNumber: "desc" },
-          take: 2,
+          take: 1,
           include: {
             matches: {
               orderBy: { matchNumber: "asc" },
@@ -60,10 +61,10 @@ export default async function DashboardPage() {
       },
     }),
     prisma.user.findMany(),
+    getLeaderboardEntries(),
   ]);
 
   const currentRound = season?.rounds[0] ?? null;
-  const previousRound = season?.rounds[1] ?? null;
 
   const userPredictions: Record<string, PickType> = {};
   if (currentRound) {
@@ -118,56 +119,17 @@ export default async function DashboardPage() {
     }));
   }
 
-  // Round recap (previous completed round)
-  let recap: {
-    roundNumber: number;
-    winnerName: string;
-    winnerScore: number;
-    userScore: number;
-    userRank: number;
-    roundId: string;
-  } | null = null;
-  if (previousRound && previousRound.status === "completed") {
-    const scores = users.map((u) => {
-      const points = previousRound.matches.filter((m) => {
-        const pred = m.predictions.find((p) => p.userId === u.id);
-        return pred && m.result && pred.pick === m.result;
-      }).length;
-      return { user: u, points };
-    });
-    scores.sort((a, b) => b.points - a.points);
-    const winner = scores[0];
-    const myIndex = scores.findIndex((s) => s.user.id === user.id);
-    if (winner && myIndex >= 0) {
-      recap = {
-        roundNumber: previousRound.roundNumber,
-        winnerName: winner.user.displayName.split(" ")[0],
-        winnerScore: winner.points,
-        userScore: scores[myIndex].points,
-        userRank: myIndex + 1,
-        roundId: previousRound.id,
-      };
-    }
-  }
-
-  // Revealed mode: winner + user's score/rank for the current (completed) round
-  let revealedInfo: { winnerName: string | null; userScore: number; userRank: number } | null =
-    null;
+  // Revealed mode: compute round scores using the imported utility
+  let roundScores: Awaited<ReturnType<typeof computeRoundScores>> = [];
   if (mode === "revealed" && currentRound) {
-    const scores = users.map((u) => {
-      const points = currentRound.matches.filter((m) => {
-        const pred = m.predictions.find((p) => p.userId === u.id);
-        return pred && m.result && pred.pick === m.result;
-      }).length;
-      return { user: u, points };
-    });
-    scores.sort((a, b) => b.points - a.points);
-    const myIndex = scores.findIndex((s) => s.user.id === user.id);
-    revealedInfo = {
-      winnerName: scores[0]?.user.displayName.split(" ")[0] ?? null,
-      userScore: myIndex >= 0 ? scores[myIndex].points : 0,
-      userRank: myIndex + 1,
-    };
+    roundScores = computeRoundScores(
+      currentRound.matches,
+      users.map((u) => ({
+        id: u.id,
+        displayName: u.displayName,
+        avatarUrl: u.avatarUrl,
+      }))
+    );
   }
 
   // Submitted mode: user's own live fedt score
@@ -186,21 +148,6 @@ export default async function DashboardPage() {
   const settlement = currentRound && currentRound.groupCoupon
     ? settleFromPrisma(currentRound.groupCoupon, currentRound.status)
     : null;
-
-  // Empty mode: full season leaderboard
-  let leaderboardEntries: LeaderboardEntry[] = [];
-  if (mode === "empty" && season) {
-    const completedRounds = await prisma.round.findMany({
-      where: { seasonId: season.id, status: "completed" },
-      include: {
-        matches: true,
-        predictions: { include: { match: true } },
-      },
-      orderBy: { roundNumber: "asc" },
-    });
-
-    leaderboardEntries = computeLeaderboard(completedRounds, users);
-  }
 
   return (
     <div className="max-w-lg mx-auto space-y-2.5">
@@ -240,12 +187,11 @@ export default async function DashboardPage() {
         <LockedHero roundNumber={currentRound.roundNumber} />
       )}
 
-      {mode === "revealed" && currentRound && revealedInfo && (
+      {mode === "revealed" && currentRound && (
         <RevealedHero
           roundNumber={currentRound.roundNumber}
-          winnerName={revealedInfo.winnerName}
-          userScore={revealedInfo.userScore}
-          userRank={revealedInfo.userRank}
+          scores={roundScores}
+          currentUserId={user.id}
           href={`/rounds/${currentRound.id}?from=hjem`}
         />
       )}
@@ -298,33 +244,8 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {recap && (
-        <div className="card">
-          <div className="kicker mb-2.5">
-            RUNDE {recap.roundNumber} · AFGJORT
-          </div>
-          <div className="flex justify-between items-baseline">
-            <span className="text-[15px] font-semibold text-ink">
-              {recap.winnerName} vandt runden
-            </span>
-            <span className="font-mono font-bold text-brand text-[15px]">
-              {recap.winnerScore}/13
-            </span>
-          </div>
-          <div className="flex justify-between items-baseline mt-1 text-muted">
-            <span className="text-sm">Du blev nr. {recap.userRank}</span>
-            <span className="font-mono font-medium text-sm">{recap.userScore}/13</span>
-          </div>
-          <Link
-            href={`/rounds/${recap.roundId}?from=hjem`}
-            className="text-[13.5px] font-semibold text-brand mt-2.5 inline-block"
-          >
-            Se resultat →
-          </Link>
-        </div>
-      )}
-
-      {mode === "empty" && leaderboardEntries.length > 0 ? (
+      {/* Season table - always show if entries exist */}
+      {leaderboardEntries.length > 0 && (
         <div className="card">
           <div className="flex items-center justify-between mb-3">
             <span className="kicker">TABELLEN</span>
@@ -334,8 +255,6 @@ export default async function DashboardPage() {
           </div>
           <LeaderboardTable entries={leaderboardEntries} />
         </div>
-      ) : (
-        <DashboardSidebar currentUserId={user.id} />
       )}
     </div>
   );

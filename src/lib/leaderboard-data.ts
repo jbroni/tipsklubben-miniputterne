@@ -44,5 +44,6 @@ export async function getLeaderboardEntries(seasonId?: string): Promise<Leaderbo
   // Build leaderboard using shared utility
   const entries = computeLeaderboard(rounds, users);
 
-  return entries;
+  // Filter to only include players who have participated in at least one round
+  return entries.filter((e) => e.roundsPlayed > 0);
 }
