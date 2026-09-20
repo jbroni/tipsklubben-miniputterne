@@ -18,7 +18,7 @@ export function RoundScoreboard({
   return (
     <>
       {kicker && <div className="kicker mb-2.5">{kicker}</div>}
-      <div className="grid items-center mb-1.5 px-1" style={{ gridTemplateColumns: GRID_TEMPLATE }}>
+      <div className="grid items-center mb-1.5 px-1" style={{ gridTemplateColumns: GRID_TEMPLATE, columnGap: "8px" }}>
         <div />
         <div />
         <div className="kicker text-center">FEDT</div>
@@ -33,7 +33,7 @@ export function RoundScoreboard({
               className={`grid items-center ${
                 isMe ? "px-1 -mx-1 bg-brand-tint rounded-lg" : ""
               }`}
-              style={{ gridTemplateColumns: GRID_TEMPLATE }}
+              style={{ gridTemplateColumns: GRID_TEMPLATE, columnGap: "8px" }}
             >
               <span
                 className={`font-mono font-bold text-xs text-right shrink-0 ${
