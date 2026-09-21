@@ -7,13 +7,14 @@ import { codeToStatus } from "@/lib/services/result";
 
 export async function GET(
   _request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const round = await prisma.round.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       matches: {
         orderBy: { matchNumber: "asc" },
@@ -44,15 +45,16 @@ export async function GET(
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   await requireAdmin();
 
   const body = await request.json();
   const { status, deadline } = body;
 
   const result = await updateRound({
-    roundId: params.id,
+    roundId: id,
     status,
     deadline,
   });

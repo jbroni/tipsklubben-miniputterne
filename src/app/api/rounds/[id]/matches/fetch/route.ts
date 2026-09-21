@@ -4,8 +4,9 @@ import { fetchFixtures } from "@/lib/football-api";
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  await params;
   await requireAdmin();
 
   const body = await request.json();

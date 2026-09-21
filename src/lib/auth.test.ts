@@ -25,7 +25,7 @@ vi.mock("@/lib/prisma", () => ({
 }));
 
 vi.mock("./supabase-server", () => ({
-  createSupabaseServerClient: () => ({
+  createSupabaseServerClient: async () => ({
     auth: mocks.supabaseMocks.auth,
   }),
 }));

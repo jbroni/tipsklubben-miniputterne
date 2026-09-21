@@ -9,12 +9,13 @@ import { formatInAppZone } from "@/lib/time";
 export default async function SeasonDetailPage({
   params,
 }: {
-  params: { seasonId: string };
+  params: Promise<{ seasonId: string }>;
 }) {
+  const { seasonId } = await params;
   await requireUser();
 
   const season = await prisma.season.findUnique({
-    where: { id: params.seasonId },
+    where: { id: seasonId },
     include: {
       rounds: {
         orderBy: { roundNumber: "asc" },

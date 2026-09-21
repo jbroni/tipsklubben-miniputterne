@@ -36,13 +36,14 @@ type GroupCouponWithMatches = Prisma.GroupCouponGetPayload<{
  */
 export async function GET(
   _request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const user = await requireUser();
 
   // Load round with matches and season
   const round = await prisma.round.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       matches: {
         orderBy: { matchNumber: "asc" },
@@ -57,7 +58,7 @@ export async function GET(
 
   // Load the saved coupon if it exists
   const savedCoupon = await prisma.groupCoupon.findUnique({
-    where: { roundId: params.id },
+    where: { roundId: id },
     include: {
       matches: {
         orderBy: { match: { matchNumber: "asc" } },
@@ -118,7 +119,7 @@ export async function GET(
     });
 
     const currentRoundPredictions = await prisma.prediction.findMany({
-      where: { roundId: params.id },
+      where: { roundId: id },
       select: {
         userId: true,
         match: { select: { matchNumber: true } },
@@ -237,8 +238,9 @@ export async function GET(
  */
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const user = await requireAdmin();
 
   const body = await request.json();
@@ -246,7 +248,7 @@ export async function POST(
 
   // Load round to verify it exists
   const round = await prisma.round.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: { matches: true, season: true },
   });
 
@@ -474,13 +476,13 @@ export async function POST(
     await prisma.$transaction(async (tx) => {
       // Upsert the group coupon
       const coupon = await tx.groupCoupon.upsert({
-        where: { roundId: params.id },
+        where: { roundId: id },
         update: {
           systemCode,
           status: status as "draft" | "final",
         },
         create: {
-          roundId: params.id,
+          roundId: id,
           systemCode,
           status: status as "draft" | "final",
           createdById: user.id,
@@ -521,7 +523,7 @@ export async function POST(
 
   // Fetch and return the created/updated coupon
   const result = await prisma.groupCoupon.findUnique({
-    where: { roundId: params.id },
+    where: { roundId: id },
     include: {
       matches: {
         orderBy: { match: { matchNumber: "asc" } },
