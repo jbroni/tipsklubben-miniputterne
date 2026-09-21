@@ -18,32 +18,32 @@
     "keys:generate": "tsx scripts/generate-system-keys.ts",
     "keys:calibrate": "tsx scripts/calibrate-system-key.ts"
   },
-  "dependencies": {
-    "@modelcontextprotocol/server": "^2.0.0",
-    "@prisma/client": "^5.20.0",
-    "@supabase/ssr": "^0.5.2",
-    "@supabase/supabase-js": "^2.47.0",
-    "@vercel/analytics": "^2.0.1",
-    "@vercel/speed-insights": "^2.0.0",
-    "mcp-handler": "^2.1.1",
-    "next": "^14.2.0",
-    "react": "^18.3.0",
-    "react-dom": "^18.3.0",
-    "zod": "^4.6.2"
-  },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"
   },
+  "dependencies": {
+    "@modelcontextprotocol/server": "^2.0.0",
+    "@prisma/client": "^6.19.3",
+    "@supabase/ssr": "^0.5.2",
+    "@supabase/supabase-js": "^2.116.0",
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
+    "mcp-handler": "^2.2.0",
+    "next": "^14.2.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "zod": "^4.6.5"
+  },
   "devDependencies": {
-    "@types/node": "^22.0.0",
-    "@types/react": "^18.3.0",
-    "@types/react-dom": "^18.3.0",
-    "autoprefixer": "^10.4.20",
-    "postcss": "^8.4.47",
-    "prisma": "^5.20.0",
-    "tailwindcss": "^3.4.0",
-    "tsx": "^4.21.0",
-    "typescript": "^5.6.0",
+    "@types/node": "^22.20.4",
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
+    "autoprefixer": "^10.6.1",
+    "postcss": "^8.5.28",
+    "prisma": "^6.19.3",
+    "tailwindcss": "^3.4.19",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
     "vitest": "^2.1.9"
   }
 }
