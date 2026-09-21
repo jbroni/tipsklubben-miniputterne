@@ -3,7 +3,7 @@ import path from "path";
 
 export default defineConfig({
   test: {
-    exclude: ["node_modules", ".claude", "dist"],
+    exclude: ["**/node_modules/**", "**/.claude/**", "**/dist/**"],
   },
   resolve: {
     alias: {
