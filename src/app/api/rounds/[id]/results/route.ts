@@ -4,8 +4,9 @@ import { setResults, resolveResultsAuto } from "@/lib/services/matches";
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   await requireAdmin();
 
   const body = await request.json();
@@ -13,7 +14,7 @@ export async function POST(
 
   if (mode === "auto") {
     const result = await resolveResultsAuto({
-      roundId: params.id,
+      roundId: id,
     });
 
     if (!result.ok) {
@@ -33,7 +34,7 @@ export async function POST(
 
   // Manual results entry
   const result = await setResults({
-    roundId: params.id,
+    roundId: id,
     results: results || [],
   });
 

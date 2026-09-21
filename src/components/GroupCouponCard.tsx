@@ -39,7 +39,7 @@ export function GroupCouponCard({
 
   return (
     <div className="max-w-[560px] mx-auto">
-      <div className="card !p-0 overflow-hidden">
+      <div className="card p-0! overflow-hidden">
         {/* Header with tear-line */}
         <div className="px-[22px] py-5 border-b-2 border-dashed border-line-tear flex justify-between items-baseline">
           <span className="kicker">
@@ -83,7 +83,7 @@ export function GroupCouponCard({
                 className="flex items-center gap-2.5 py-1.5"
               >
                 {/* Match number */}
-                <span className="font-mono text-[10px] text-muted-ghost w-4 text-right flex-shrink-0">
+                <span className="font-mono text-[10px] text-muted-ghost w-4 text-right shrink-0">
                   {couponMatch.matchNumber}
                 </span>
 
@@ -93,7 +93,7 @@ export function GroupCouponCard({
                 </span>
 
                 {/* Outcome chips */}
-                <div className="flex gap-1 flex-shrink-0">
+                <div className="flex gap-1 shrink-0">
                   {PICK_ORDER.map((pickValue) => {
                     const isCovered = couponMatch.outcomes.includes(
                       pickValue as Pick

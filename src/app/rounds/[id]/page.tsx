@@ -15,13 +15,15 @@ export default async function RoundDetailPage({
   params,
   searchParams,
 }: {
-  params: { id: string };
-  searchParams: { from?: string | string[] };
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ from?: string | string[] }>;
 }) {
+  const { id } = await params;
+  const awaitedSearchParams = await searchParams;
   const currentUser = await requireUser();
 
   const round = await prisma.round.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       season: true,
       matches: {
@@ -71,7 +73,7 @@ export default async function RoundDetailPage({
 
   const isRevealed = arePicksRevealed(round);
   const backHref = resolveRoundBackHref(
-    searchParams.from,
+    awaitedSearchParams.from,
     round.seasonId,
     round.season.isActive
   );

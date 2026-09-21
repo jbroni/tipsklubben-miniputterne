@@ -15,7 +15,7 @@ async function findUserByAuthId(authId: string): Promise<User | null> {
 }
 
 export async function getCurrentUserFromHeaders(): Promise<User | null> {
-  const authId = headers().get("x-auth-user-id");
+  const authId = (await headers()).get("x-auth-user-id");
   if (!authId) return null;
 
   // The x-auth-user-id header is set by middleware from a network-verified
@@ -29,7 +29,7 @@ export async function getCurrentUserFromHeaders(): Promise<User | null> {
 }
 
 export async function getCurrentUser(): Promise<User | null> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const {
     data: { user: authUser },
   } = await supabase.auth.getUser();

@@ -1,18 +1,22 @@
 "use client";
 
+import { use } from "react";
 import { PredictionForm } from "@/components/PredictionForm";
 
 export default function PredictPage({
   params,
   searchParams,
 }: {
-  params: { id: string };
-  searchParams: { from?: string };
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ from?: string }>;
 }) {
+  const { id } = use(params);
+  const { from } = use(searchParams);
+
   return (
     <PredictionForm
-      roundId={params.id}
-      backHref={searchParams.from === "rounds" ? "/rounds" : "/"}
+      roundId={id}
+      backHref={from === "rounds" ? "/rounds" : "/"}
     />
   );
 }

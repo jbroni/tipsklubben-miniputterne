@@ -1,63 +1,163 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
-@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap");
+@import 'tailwindcss';
+
+@theme {
+  --color-pitch-50: #f0fdf4;
+  --color-pitch-100: #dcfce7;
+  --color-pitch-200: #bbf7d0;
+  --color-pitch-300: #86efac;
+  --color-pitch-400: #22c55e;
+  --color-pitch-500: #16a34a;
+  --color-pitch-600: #15803d;
+  --color-pitch-700: #166534;
+  --color-pitch-800: #14532d;
+  --color-pitch-900: #052e16;
+
+  --color-amber-50: #fffbeb;
+  --color-amber-100: #fef3c7;
+  --color-amber-200: #fde68a;
+  --color-amber-300: #fcd34d;
+  --color-amber-400: #fbbf24;
+  --color-amber-500: #f59e0b;
+  --color-amber-600: #d97706;
+  --color-amber-700: #b45309;
+
+  --color-coral-50: #fff1f2;
+  --color-coral-100: #ffe4e6;
+  --color-coral-200: #fecdd3;
+  --color-coral-300: #fda4af;
+  --color-coral-400: #fb7185;
+  --color-coral-500: #f43f5e;
+  --color-coral-600: #e11d48;
+
+  --color-paper: #f5f1e6;
+  --color-paper-deep: #eae5d6;
+
+  --color-surface: #fffdf8;
+  --color-surface-coupon: #fffdf6;
+  --color-surface-edited: #fefaf0;
+
+  --color-ink: #221f18;
+  --color-ink-secondary: #443f33;
+  --color-ink-tertiary: #5d5849;
+
+  --color-muted: #96907e;
+  --color-muted-faint: #b6ae97;
+  --color-muted-ghost: #c6bfa9;
+
+  --color-line-card: #e8e1cd;
+  --color-line-divider: #efe9d8;
+  --color-line-hairline: #f4efe0;
+  --color-line-pick: #ddd5c0;
+  --color-line-tear: #ddd5c0;
+
+  --color-brand: #17703c;
+  --color-brand-pressed: #0e4423;
+  --color-brand-text: #125c31;
+  --color-brand-tint: #e9f1e5;
+  --color-brand-tintBorder: #cfdccb;
+  --color-brand-tintBorder2: #d5e0cf;
+
+  --color-signal: #c23a2c;
+  --color-signal-soft: #f8e9e4;
+
+  --color-gold: #b07c15;
+
+  --color-info: #3a6ea5;
+  --color-info-soft: #e7eef6;
+
+  --color-result-ink: #2e2a20;
+
+  --color-rank-1: #b07c15;
+  --color-rank-2: #9a9483;
+  --color-rank-3: #a06b30;
+  --color-rank-4: #c6bfa9;
+
+  --font-display: 'Bricolage Grotesque', sans-serif;
+  --font-body: 'Outfit', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --radius-phone: 22px;
+  --radius-card: 16px;
+  --radius-card-sm: 14px;
+
+  --shadow-card: 0 2px 6px rgba(60, 50, 20, 0.07);
+  --shadow-screen: 0 4px 18px rgba(60, 50, 20, 0.14);
+  --shadow-btn-primary: 0 2px 0 #0e4423;
+  --shadow-submit-bar: 0 -3px 10px rgba(60, 50, 20, 0.06);
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
+@utility btn-primary {
+  @apply bg-brand hover:bg-brand text-white font-semibold px-5 py-3 rounded-xl
+      shadow-btn-primary transition-all duration-200 active:scale-95 active:translate-y-px active:shadow-none
+      disabled:bg-line-pick disabled:text-muted-ghost disabled:shadow-none disabled:active:translate-y-0 disabled:cursor-not-allowed;
+}
+
+@utility btn-secondary {
+  @apply bg-surface hover:bg-[#f9f6ec] text-ink-tertiary font-semibold px-5 py-3 rounded-xl
+      border-[1.5px] border-[#d9d2bf] transition-all duration-200 active:scale-95;
+}
+
+@utility btn-danger {
+  @apply text-signal font-medium hover:underline transition-all duration-200;
+}
+
+@utility card {
+  @apply bg-surface border border-line-card rounded-card p-4 shadow-card;
+}
+
+@utility kicker {
+  @apply font-mono text-[10px] tracking-[1.2px] text-muted uppercase;
+}
+
+@utility input {
+  @apply bg-white border border-line-pick rounded-lg px-4 py-2.5 text-ink
+      placeholder:text-muted-faint focus:outline-hidden focus:ring-2 focus:ring-brand/20
+      focus:border-brand transition-colors w-full;
+}
+
+@utility label {
+  @apply block text-sm font-medium text-ink-tertiary mb-1.5;
+}
+
+@utility pick-btn {
+  @apply h-[42px] rounded-[9px] font-mono font-bold text-sm transition-all duration-200
+      flex flex-col items-center justify-center cursor-pointer select-none;
+}
+
+@utility pick-btn-unselected {
+  @apply pick-btn border-[1.5px] border-line-pick text-muted-faint;
+}
+
+@utility pick-btn-selected {
+  @apply pick-btn bg-brand text-white;
+}
+
+@utility tear-line {
+  @apply border-t-2 border-dashed border-line-tear;
+}
 
 @layer base {
   body {
     @apply bg-paper text-ink font-body antialiased;
-  }
-}
-
-@layer components {
-  .btn-primary {
-    @apply bg-brand hover:bg-brand text-white font-semibold px-5 py-3 rounded-xl
-      shadow-btn-primary transition-all duration-200 active:scale-95 active:translate-y-px active:shadow-none
-      disabled:bg-line-pick disabled:text-muted-ghost disabled:shadow-none disabled:active:translate-y-0 disabled:cursor-not-allowed;
-  }
-
-  .btn-secondary {
-    @apply bg-surface hover:bg-[#f9f6ec] text-ink-tertiary font-semibold px-5 py-3 rounded-xl
-      border-[1.5px] border-[#d9d2bf] transition-all duration-200 active:scale-95;
-  }
-
-  .btn-danger {
-    @apply text-signal font-medium hover:underline transition-all duration-200;
-  }
-
-  .card {
-    @apply bg-surface border border-line-card rounded-card p-4 shadow-card;
-  }
-
-  .kicker {
-    @apply font-mono text-[10px] tracking-[1.2px] text-muted uppercase;
-  }
-
-  .input {
-    @apply bg-white border border-line-pick rounded-lg px-4 py-2.5 text-ink
-      placeholder:text-muted-faint focus:outline-none focus:ring-2 focus:ring-brand/20
-      focus:border-brand transition-colors w-full;
-  }
-
-  .label {
-    @apply block text-sm font-medium text-ink-tertiary mb-1.5;
-  }
-
-  .pick-btn {
-    @apply h-[42px] rounded-[9px] font-mono font-bold text-sm transition-all duration-200
-      flex flex-col items-center justify-center cursor-pointer select-none;
-  }
-
-  .pick-btn-unselected {
-    @apply pick-btn border-[1.5px] border-line-pick text-muted-faint;
-  }
-
-  .pick-btn-selected {
-    @apply pick-btn bg-brand text-white;
-  }
-
-  .tear-line {
-    @apply border-t-2 border-dashed border-line-tear;
   }
 }

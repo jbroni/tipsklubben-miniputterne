@@ -129,7 +129,7 @@ export default async function HistorikPage() {
   }
 
   // Convert to array and filter to users with ≥1 prediction
-  let allTimeLeaderboard = Array.from(allTimeStatsMap.values())
+  const allTimeLeaderboard = Array.from(allTimeStatsMap.values())
     .filter((stats) => stats.roundsPlayed > 0)
     .map((stats) => ({
       user: users.find((u) => u.id === stats.userId)!,

@@ -66,7 +66,7 @@ export function Navbar({
   };
 
   return (
-    <nav className="border-b border-line-card bg-surface/90 backdrop-blur-sm sticky top-0 z-50">
+    <nav className="border-b border-line-card bg-surface/90 backdrop-blur-xs sticky top-0 z-50">
       <div className={`${getLayoutWidthClass(pathname)} mx-auto px-4`}>
         <div className="flex items-center justify-between h-14">
           <Logo />

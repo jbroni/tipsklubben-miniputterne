@@ -196,9 +196,9 @@ export default function AdminUsersPage() {
                   {historicLinkState.sourceUserId === user.id && historicLinkState.confirming && (
                     <div className="bg-signal-soft border border-[#eed7d0] rounded-lg p-3 text-sm text-signal">
                       <p className="font-medium mb-2">
-                        Advarsel: Historisk spiller "{user.displayName}" bliver tilknyttet "{
+                        Advarsel: Historisk spiller &quot;{user.displayName}&quot; bliver tilknyttet &quot;{
                           users.find((u) => u.id === selectedTarget)?.displayName
-                        }".
+                        }&quot;.
                       </p>
                       <p>
                         Den historiske spillers tips flyttes til medlemmet, og den historiske pladsholderkonto bliver derefter slettet permanent.
@@ -299,14 +299,14 @@ export default function AdminUsersPage() {
               <div className="space-y-3">
                 <div className="bg-signal-soft border border-[#eed7d0] rounded-lg p-3 text-sm text-signal">
                   <p className="font-medium mb-2">
-                    Advarsel: Konto "{
+                    Advarsel: Konto &quot;{
                       users.find((u) => u.id === mergeState.sourceUserId)?.displayName
-                    }" bliver slettet permanent.
+                    }&quot; bliver slettet permanent.
                   </p>
                   <p className="mb-2">
-                    Alle tips og kuponer flyttes til "{
+                    Alle tips og kuponer flyttes til &quot;{
                       users.find((u) => u.id === mergeState.targetUserId)?.displayName
-                    }" og kontoen bliver derefter slettet.
+                    }&quot; og kontoen bliver derefter slettet.
                   </p>
                   {users.find((u) => u.id === mergeState.sourceUserId)?.role === "admin" && (
                     <p>

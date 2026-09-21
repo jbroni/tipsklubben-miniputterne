@@ -9,12 +9,13 @@ import { formatInAppZone } from "@/lib/time";
 export default async function SeasonDetailPage({
   params,
 }: {
-  params: { seasonId: string };
+  params: Promise<{ seasonId: string }>;
 }) {
+  const { seasonId } = await params;
   await requireUser();
 
   const season = await prisma.season.findUnique({
-    where: { id: params.seasonId },
+    where: { id: seasonId },
     include: {
       rounds: {
         orderBy: { roundNumber: "asc" },
@@ -60,7 +61,7 @@ export default async function SeasonDetailPage({
 
       {/* Final standings */}
       {entries.length > 0 && (
-        <div className="card !p-3">
+        <div className="card p-3!">
           <div className="kicker mb-2.5">ENDELIG STILLING</div>
           <LeaderboardTable entries={entries} showRounds={true} showMovement={false} />
         </div>

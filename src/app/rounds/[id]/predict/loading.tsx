@@ -4,15 +4,15 @@ export default function PredictLoading() {
       {/* Header */}
       <div className="flex items-center justify-between px-0.5">
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 bg-line-card rounded animate-pulse" />
-          <div className="h-6 w-48 bg-line-card rounded animate-pulse" />
+          <div className="w-6 h-6 bg-line-card rounded-sm animate-pulse" />
+          <div className="h-6 w-48 bg-line-card rounded-sm animate-pulse" />
         </div>
       </div>
 
       {/* Match rows (13 matches) */}
       {Array.from({ length: 13 }).map((_, i) => (
         <div key={i} className="card space-y-2">
-          <div className="h-4 w-3/4 bg-line-card rounded animate-pulse" />
+          <div className="h-4 w-3/4 bg-line-card rounded-sm animate-pulse" />
           <div className="flex gap-2">
             {Array.from({ length: 3 }).map((_, j) => (
               <div

@@ -133,7 +133,7 @@ export function McpTokenManager() {
             <button
               onClick={handleCreateToken}
               disabled={!name.trim() || creating}
-              className="btn-primary !px-6 whitespace-nowrap"
+              className="btn-primary px-6! whitespace-nowrap"
             >
               {creating ? "Opretter..." : "Opret"}
             </button>
@@ -210,7 +210,7 @@ export function McpTokenManager() {
                         <div className="flex items-center gap-2">
                           <p className="font-medium text-ink">{token.name}</p>
                           {isRevoked && (
-                            <span className="text-[10px] font-semibold text-muted-faint uppercase bg-line-divider px-2 py-0.5 rounded">
+                            <span className="text-[10px] font-semibold text-muted-faint uppercase bg-line-divider px-2 py-0.5 rounded-sm">
                               Tilbagekaldt
                             </span>
                           )}

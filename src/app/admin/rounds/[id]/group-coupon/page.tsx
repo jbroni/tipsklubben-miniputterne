@@ -636,8 +636,8 @@ function GroupCouponContent() {
                     </div>
 
                     {/* Vote split bar */}
-                    <div className="w-24 flex-shrink-0">
-                      <div className="flex h-4 rounded-sm overflow-hidden gap-0.5">
+                    <div className="w-24 shrink-0">
+                      <div className="flex h-4 rounded-xs overflow-hidden gap-0.5">
                         <div
                           className="bg-brand"
                           style={{
@@ -668,7 +668,7 @@ function GroupCouponContent() {
                     </div>
 
                     {/* Outcome buttons */}
-                    <div className="flex gap-1.5 flex-shrink-0">
+                    <div className="flex gap-1.5 shrink-0">
                       {(["HOME", "DRAW", "AWAY"] as const).map((outcome) => (
                         <button
                           key={outcome}
@@ -688,7 +688,7 @@ function GroupCouponContent() {
 
                     {/* Base outcome for U-systems */}
                     {systemDef.requiresBaseRow && match.coverage !== "single" && (
-                      <div className="w-10 flex-shrink-0 text-center">
+                      <div className="w-10 shrink-0 text-center">
                         <div className="text-xs text-muted mb-1">Uds.</div>
                         <div className="font-mono font-bold text-sm">
                           {match.baseOutcome
@@ -700,8 +700,8 @@ function GroupCouponContent() {
 
                     {/* Override badge and reset */}
                     {isOverridden && (
-                      <div className="flex-shrink-0 flex items-center gap-2">
-                        <span className="px-2 py-1 rounded text-xs font-medium bg-gold text-white">
+                      <div className="shrink-0 flex items-center gap-2">
+                        <span className="px-2 py-1 rounded-sm text-xs font-medium bg-gold text-white">
                           redigeret
                         </span>
                         <button

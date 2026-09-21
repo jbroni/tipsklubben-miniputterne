@@ -30,7 +30,7 @@ export function PredictionGrid({
   const gridCols = `16px 1fr repeat(${usersWithPredictions.length}, 26px) 30px`;
 
   return (
-    <div className="card !p-3 font-mono overflow-x-auto">
+    <div className="card p-3! font-mono overflow-x-auto">
       <MemberLegend members={usersWithPredictions} currentUserId={currentUserId} />
       <div
         className="grid gap-0.5 text-[9px] text-muted-faint text-center pb-1.5 border-b border-line-divider"

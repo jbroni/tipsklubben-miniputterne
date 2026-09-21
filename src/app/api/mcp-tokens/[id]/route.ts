@@ -4,14 +4,15 @@ import { prisma } from "@/lib/prisma";
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   // Verify ownership: fetch token to check it belongs to this user
   const token = await prisma.mcpToken.findUnique({
-    where: { id: params.id },
+    where: { id },
   });
 
   // Return 404 in both cases (not found or wrong owner) so the endpoint
@@ -22,9 +23,9 @@ export async function DELETE(
 
   // Soft revoke: set revokedAt timestamp
   await prisma.mcpToken.update({
-    where: { id: params.id },
+    where: { id },
     data: { revokedAt: new Date() },
   });
 
-  return NextResponse.json({ data: { id: params.id } });
+  return NextResponse.json({ data: { id } });
 }

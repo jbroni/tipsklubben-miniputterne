@@ -4,15 +4,16 @@ import { addMatches } from "@/lib/services/matches";
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   await requireAdmin();
 
   const body = await request.json();
   const { matches } = body;
 
   const result = await addMatches({
-    roundId: params.id,
+    roundId: id,
     matches: matches || [],
   });
 

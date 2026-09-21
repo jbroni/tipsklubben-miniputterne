@@ -25,7 +25,7 @@ vi.mock("@/lib/prisma", () => ({
 }));
 
 vi.mock("./supabase-server", () => ({
-  createSupabaseServerClient: () => ({
+  createSupabaseServerClient: async () => ({
     auth: mocks.supabaseMocks.auth,
   }),
 }));
@@ -138,7 +138,7 @@ describe("auth functions", () => {
 
       const headersList = new Map();
       headersList.set("x-auth-user-id", "auth-1");
-      mocks.headersMocks.mockReturnValue(headersList);
+      mocks.headersMocks.mockResolvedValue(headersList);
 
       mocks.prismaMocks.user.findUnique.mockResolvedValue(user);
 
@@ -160,7 +160,7 @@ describe("auth functions", () => {
 
       const headersList = new Map();
       headersList.set("x-auth-user-id", "auth-retired");
-      mocks.headersMocks.mockReturnValue(headersList);
+      mocks.headersMocks.mockResolvedValue(headersList);
 
       // No active user
       mocks.prismaMocks.user.findUnique.mockResolvedValue(null);
@@ -182,7 +182,7 @@ describe("auth functions", () => {
 
     it("returns null when header is missing", async () => {
       const headersList = new Map();
-      mocks.headersMocks.mockReturnValue(headersList);
+      mocks.headersMocks.mockResolvedValue(headersList);
 
       const result = await getCurrentUserFromHeaders();
 
@@ -194,7 +194,7 @@ describe("auth functions", () => {
     it("returns null when authId in header does not match any user", async () => {
       const headersList = new Map();
       headersList.set("x-auth-user-id", "unknown-auth");
-      mocks.headersMocks.mockReturnValue(headersList);
+      mocks.headersMocks.mockResolvedValue(headersList);
 
       mocks.prismaMocks.user.findUnique.mockResolvedValue(null);
       mocks.prismaMocks.userIdentity.findUnique.mockResolvedValue(null);
