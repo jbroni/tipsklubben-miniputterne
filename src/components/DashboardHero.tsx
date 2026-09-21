@@ -85,7 +85,7 @@ export function SubmittedHero({
 
   return (
     <div className="card relative">
-      <span className="absolute top-3.5 right-3.5 font-mono text-[10px] font-bold text-brand border-2 border-brand rounded-md px-2 py-0.5 -rotate-[5deg] bg-surface">
+      <span className="absolute top-3.5 right-3.5 font-mono text-[10px] font-bold text-brand border-2 border-brand rounded-md px-2 py-0.5 rotate-[-5deg] bg-surface">
         AFLEVERET ✓
       </span>
       <span className="kicker">

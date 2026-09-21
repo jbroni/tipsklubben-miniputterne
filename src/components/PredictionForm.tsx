@@ -225,7 +225,7 @@ export function PredictionForm({
                   }}
                 />
                 <span
-                  className="absolute -top-[3px] w-[2px] h-3 bg-ink rounded-sm"
+                  className="absolute top-[-3px] w-[2px] h-3 bg-ink rounded-xs"
                   style={{ left: `${liveFedt}%` }}
                 />
               </div>
@@ -233,7 +233,7 @@ export function PredictionForm({
             <button
               onClick={handleSubmit}
               disabled={!allPicked || saving}
-              className="btn-primary whitespace-nowrap !py-3 !px-4.5"
+              className="btn-primary whitespace-nowrap py-3! px-4.5!"
             >
               {saving ? "Gemmer..." : success ? "Gemt!" : "Indlevér"}
             </button>

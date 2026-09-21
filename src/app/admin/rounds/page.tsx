@@ -460,10 +460,10 @@ function AdminRoundsContent() {
             </div>
           </div>
           <div className="flex gap-2">
-            <button onClick={createRound} className="btn-primary !px-3 !py-1.5 text-sm">
+            <button onClick={createRound} className="btn-primary px-3! py-1.5! text-sm">
               Opret
             </button>
-            <button onClick={() => setShowCreate(false)} className="btn-secondary !px-3 !py-1.5 text-sm">
+            <button onClick={() => setShowCreate(false)} className="btn-secondary px-3! py-1.5! text-sm">
               Annullér
             </button>
           </div>
@@ -483,13 +483,13 @@ function AdminRoundsContent() {
               <label className="label">Dato</label>
               <input
                 type="date"
-                className="input !py-1.5 text-sm"
+                className="input py-1.5! text-sm"
                 value={matchDate}
                 onChange={(e) => setMatchDate(e.target.value)}
               />
             </div>
             <textarea
-              className="input !py-1.5 text-sm font-mono"
+              className="input py-1.5! text-sm font-mono"
               rows={8}
               placeholder="Kopiér kampene fra kupon-siden og indsæt her"
               value={couponText}
@@ -535,7 +535,7 @@ function AdminRoundsContent() {
                 <div>
                   <label className="label">Liga</label>
                   <select
-                    className="input !py-1.5 text-sm"
+                    className="input py-1.5! text-sm"
                     value={fixtureLeague}
                     onChange={(e) => setFixtureLeague(e.target.value)}
                   >
@@ -548,7 +548,7 @@ function AdminRoundsContent() {
                   <label className="label">Fra dato</label>
                   <input
                     type="date"
-                    className="input !py-1.5 text-sm"
+                    className="input py-1.5! text-sm"
                     value={fixtureDateFrom}
                     onChange={(e) => setFixtureDateFrom(e.target.value)}
                   />
@@ -557,7 +557,7 @@ function AdminRoundsContent() {
                   <label className="label">Til dato</label>
                   <input
                     type="date"
-                    className="input !py-1.5 text-sm"
+                    className="input py-1.5! text-sm"
                     value={fixtureDateTo}
                     onChange={(e) => setFixtureDateTo(e.target.value)}
                   />
@@ -616,19 +616,19 @@ function AdminRoundsContent() {
                   {i + 1}
                 </span>
                 <input
-                  className="input !py-1.5 text-sm"
+                  className="input py-1.5! text-sm"
                   placeholder="Hjemme"
                   value={m.homeTeam}
                   onChange={(e) => updateMatchEntry(i, "homeTeam", e.target.value)}
                 />
                 <input
-                  className="input !py-1.5 text-sm"
+                  className="input py-1.5! text-sm"
                   placeholder="Ude"
                   value={m.awayTeam}
                   onChange={(e) => updateMatchEntry(i, "awayTeam", e.target.value)}
                 />
                 <input
-                  className="input !py-1.5 text-sm"
+                  className="input py-1.5! text-sm"
                   placeholder="Liga"
                   list="league-list"
                   value={m.league}
@@ -636,14 +636,14 @@ function AdminRoundsContent() {
                 />
                 <input
                   type="time"
-                  className="input !py-1.5 !px-1 text-sm [&::-webkit-calendar-picker-indicator]:hidden"
+                  className="input py-1.5! px-1! text-sm [&::-webkit-calendar-picker-indicator]:hidden"
                   value={m.kickoff}
                   onChange={(e) => updateMatchEntry(i, "kickoff", e.target.value)}
                 />
                 <input
                   type="text"
                   inputMode="decimal"
-                  className="input !py-1.5 !px-1 text-sm text-center w-14"
+                  className="input py-1.5! px-1! text-sm text-center w-14"
                   placeholder="1"
                   value={m.oddsHome}
                   onChange={(e) => {
@@ -655,7 +655,7 @@ function AdminRoundsContent() {
                 <input
                   type="text"
                   inputMode="decimal"
-                  className="input !py-1.5 !px-1 text-sm text-center w-14"
+                  className="input py-1.5! px-1! text-sm text-center w-14"
                   placeholder="X"
                   value={m.oddsDraw}
                   onChange={(e) => {
@@ -667,7 +667,7 @@ function AdminRoundsContent() {
                 <input
                   type="text"
                   inputMode="decimal"
-                  className="input !py-1.5 !px-1 text-sm text-center w-14"
+                  className="input py-1.5! px-1! text-sm text-center w-14"
                   placeholder="2"
                   value={m.oddsAway}
                   onChange={(e) => {
@@ -678,7 +678,7 @@ function AdminRoundsContent() {
                 />
                 {fetchedFixtures.length > 0 && (
                   <select
-                    className={`input !py-1.5 text-xs ${
+                    className={`input py-1.5! text-xs ${
                       m.externalId ? "border-green-600 text-green-700" : ""
                     }`}
                     value={m.externalId ?? ""}
@@ -696,10 +696,10 @@ function AdminRoundsContent() {
             ))}
           </div>
           <div className="flex gap-2">
-            <button onClick={saveMatches} className="btn-primary !px-3 !py-1.5 text-sm">
+            <button onClick={saveMatches} className="btn-primary px-3! py-1.5! text-sm">
               Gem kampe
             </button>
-            <button onClick={() => setEditingRound(null)} className="btn-secondary !px-3 !py-1.5 text-sm">
+            <button onClick={() => setEditingRound(null)} className="btn-secondary px-3! py-1.5! text-sm">
               Annullér
             </button>
           </div>
@@ -740,10 +740,10 @@ function AdminRoundsContent() {
               </div>
             ))}
           <div className="flex gap-2">
-            <button onClick={saveResults} className="btn-primary !px-3 !py-1.5 text-sm">
+            <button onClick={saveResults} className="btn-primary px-3! py-1.5! text-sm">
               Gem resultater
             </button>
-            <button onClick={() => setResultsRound(null)} className="btn-secondary !px-3 !py-1.5 text-sm">
+            <button onClick={() => setResultsRound(null)} className="btn-secondary px-3! py-1.5! text-sm">
               Annullér
             </button>
           </div>
@@ -758,7 +758,7 @@ function AdminRoundsContent() {
           const isEditingDeadline = editingDeadlineRound === round.id;
 
           return (
-            <div key={round.id} className="card !p-4">
+            <div key={round.id} className="card p-4!">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
                   <span className="font-display font-semibold text-ink">
@@ -804,7 +804,7 @@ function AdminRoundsContent() {
                   <div className="flex-1">
                     <input
                       type="datetime-local"
-                      className="input !py-1.5 text-sm"
+                      className="input py-1.5! text-sm"
                       value={deadlineInputValue}
                       onChange={(e) => setDeadlineInputValue(e.target.value)}
                     />
@@ -818,7 +818,7 @@ function AdminRoundsContent() {
                       const isoString = parseAppZonedDateTime(deadlineInputValue).toISOString();
                       updateDeadline(round.id, isoString);
                     }}
-                    className="btn-primary !px-3 !py-1.5 text-xs"
+                    className="btn-primary px-3! py-1.5! text-xs"
                     disabled={!deadlineInputValue || isNaN(Date.parse(deadlineInputValue))}
                   >
                     Gem
@@ -828,7 +828,7 @@ function AdminRoundsContent() {
                       setEditingDeadlineRound(null);
                       setDeadlineInputValue("");
                     }}
-                    className="btn-secondary !px-3 !py-1.5 text-xs"
+                    className="btn-secondary px-3! py-1.5! text-xs"
                   >
                     Annullér
                   </button>
@@ -844,7 +844,7 @@ function AdminRoundsContent() {
                     </label>
                     <input
                       type="datetime-local"
-                      className="input !py-1.5 text-sm"
+                      className="input py-1.5! text-sm"
                       value={deadlineInputValue}
                       onChange={(e) => setDeadlineInputValue(e.target.value)}
                     />
@@ -858,7 +858,7 @@ function AdminRoundsContent() {
                       const isoString = parseAppZonedDateTime(deadlineInputValue).toISOString();
                       updateDeadline(round.id, isoString, true);
                     }}
-                    className="btn-primary !px-3 !py-1.5 text-xs"
+                    className="btn-primary px-3! py-1.5! text-xs"
                     disabled={!deadlineInputValue || isNaN(Date.parse(deadlineInputValue))}
                   >
                     Gem og genåbn
@@ -868,7 +868,7 @@ function AdminRoundsContent() {
                       setReopeningRound(null);
                       setDeadlineInputValue("");
                     }}
-                    className="btn-secondary !px-3 !py-1.5 text-xs"
+                    className="btn-secondary px-3! py-1.5! text-xs"
                   >
                     Annullér
                   </button>
