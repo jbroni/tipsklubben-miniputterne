@@ -163,7 +163,7 @@ export const DEFAULT_CONVENTION: KeyConvention = {
     const glyphsForSlot: KeyGlyph[] = slot.coverage === "full" ? ["1", "X", "2"] : ["1", "X"];
 
     // Step 3: Create outcomes array where outcomes[i] is for glyph glyphsForSlot[i]
-    let outcomes = [...outcomesSorted];
+    const outcomes = [...outcomesSorted];
 
     // Step 4: For U-systems with covered slots, transpose the outcomes
     // so baseOutcome lands on glyph 1
