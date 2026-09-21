@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { computeLeaderboard } from "@/lib/leaderboard";
 import { LeaderboardTable } from "@/components/LeaderboardTable";
+import { PointProgress } from "@/components/PointProgress";
 import { formatInAppZone } from "@/lib/time";
 
 export default async function SeasonDetailPage({
@@ -12,7 +13,7 @@ export default async function SeasonDetailPage({
   params: Promise<{ seasonId: string }>;
 }) {
   const { seasonId } = await params;
-  await requireUser();
+  const user = await requireUser();
 
   const season = await prisma.season.findUnique({
     where: { id: seasonId },
@@ -64,6 +65,17 @@ export default async function SeasonDetailPage({
         <div className="card p-3!">
           <div className="kicker mb-2.5">ENDELIG STILLING</div>
           <LeaderboardTable entries={entries} showRounds={true} showMovement={false} />
+        </div>
+      )}
+
+      {/* Point progress chart */}
+      {entries.length > 0 && (
+        <div className="card p-3!">
+          <PointProgress
+            entries={entries}
+            currentUserId={user.id}
+            totalRounds={season.rounds.length}
+          />
         </div>
       )}
 
