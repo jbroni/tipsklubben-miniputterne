@@ -16,7 +16,7 @@ function clearAuthCookies(response: NextResponse, request: NextRequest): void {
   });
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let response = NextResponse.next({
     request: { headers: request.headers },
   });

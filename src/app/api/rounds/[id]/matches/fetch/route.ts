@@ -6,7 +6,6 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  await params;
   await requireAdmin();
 
   const body = await request.json();
