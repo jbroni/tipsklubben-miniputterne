@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser, requireAdmin } from "@/lib/auth";
 import { buildBallots, rankSystems } from "@/lib/group-coupon";
 import { getSystem, COUPON_SIZE } from "@/lib/coupon-systems";
+import { carryOverMissingCoupons } from "@/lib/services/carry-over";
 import type { Prisma, User } from "@prisma/client";
 import type {
   SerializedGroupCoupon,
@@ -111,6 +112,9 @@ export async function GET(
     return NextResponse.json(couponResponse);
   }
 
+  // Deadline has passed, apply carry-overs first
+  await carryOverMissingCoupons();
+
   // Deadline has passed, compute suggestion
   try {
     // Fetch all users and their predictions for current round
@@ -124,6 +128,7 @@ export async function GET(
         userId: true,
         match: { select: { matchNumber: true } },
         pick: true,
+        carriedFromRoundNumber: true,
       },
     });
 
@@ -156,6 +161,7 @@ export async function GET(
         userId: p.userId,
         matchNumber: p.match.matchNumber,
         pick: p.pick as PickValue,
+        carriedFromRoundNumber: p.carriedFromRoundNumber,
       })),
     };
 

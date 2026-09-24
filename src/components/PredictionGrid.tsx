@@ -10,7 +10,11 @@ interface PredictionGridProps {
     homeTeam: string;
     awayTeam: string;
     result: "HOME" | "DRAW" | "AWAY" | null;
-    predictions: Array<{ userId: string; pick: "HOME" | "DRAW" | "AWAY" }>;
+    predictions: Array<{
+      userId: string;
+      pick: "HOME" | "DRAW" | "AWAY";
+      carriedFromRoundNumber?: number | null;
+    }>;
   }>;
   users: Array<{ id: string; displayName: string; avatarUrl?: string | null }>;
   currentUserId: string;
@@ -26,6 +30,24 @@ export function PredictionGrid({
     matches.some((m) => m.predictions.some((p) => p.userId === u.id))
   );
 
+  // Derive per-user carried state: user is "carried" if all their predictions share one non-null carriedFromRoundNumber
+  const userCarriedFromRound = new Map<string, number | null>();
+  for (const user of usersWithPredictions) {
+    const userPreds = matches.flatMap((m) => m.predictions.filter((p) => p.userId === user.id));
+    if (userPreds.length === 0) {
+      userCarriedFromRound.set(user.id, null);
+      continue;
+    }
+
+    // Only mark as carried if all predictions have the same non-null carriedFromRoundNumber
+    const first = userPreds[0]?.carriedFromRoundNumber;
+    const allCarried =
+      userPreds.length > 0 &&
+      first != null &&
+      userPreds.every((p) => p.carriedFromRoundNumber === first);
+    userCarriedFromRound.set(user.id, allCarried ? first : null);
+  }
+
   // Build grid template columns
   const gridCols = `16px 1fr repeat(${usersWithPredictions.length}, 26px) 30px`;
 
@@ -40,9 +62,10 @@ export function PredictionGrid({
         <span className="text-left font-body text-[10px]">KAMP</span>
         {usersWithPredictions.map((u) => {
           const isCurrentUser = u.id === currentUserId;
+          const carriedFrom = userCarriedFromRound.get(u.id);
           if (u.avatarUrl) {
             return (
-              <div key={u.id} className="flex justify-center items-center">
+              <div key={u.id} className="flex flex-col justify-center items-center gap-0.5 relative">
                 <Avatar
                   avatarUrl={u.avatarUrl}
                   displayName={u.displayName}
@@ -50,17 +73,36 @@ export function PredictionGrid({
                   className={isCurrentUser ? "ring-1 ring-brand" : ""}
                   label={u.displayName}
                 />
+                {carriedFrom != null && (
+                  <span
+                    className="text-[9px] text-muted-faint"
+                    title={`genbrugt fra runde ${carriedFrom}`}
+                    aria-label={`genbrugt fra runde ${carriedFrom}`}
+                  >
+                    ↻R{carriedFrom}
+                  </span>
+                )}
               </div>
             );
           }
           return (
-            <span
-              key={u.id}
-              className={isCurrentUser ? "text-brand font-bold" : ""}
-              title={u.displayName}
-            >
-              {u.displayName.slice(0, 3).toUpperCase()}
-            </span>
+            <div key={u.id} className="flex flex-col justify-center items-center gap-0.5">
+              <span
+                className={isCurrentUser ? "text-brand font-bold" : ""}
+                title={u.displayName}
+              >
+                {u.displayName.slice(0, 3).toUpperCase()}
+              </span>
+              {carriedFrom != null && (
+                <span
+                  className="text-[9px] text-muted-faint"
+                  title={`genbrugt fra runde ${carriedFrom}`}
+                  aria-label={`genbrugt fra runde ${carriedFrom}`}
+                >
+                  ↻R{carriedFrom}
+                </span>
+              )}
+            </div>
           );
         })}
         <span>RES</span>

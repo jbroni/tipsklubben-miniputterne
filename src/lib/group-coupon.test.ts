@@ -13,6 +13,7 @@ import {
   Ballot,
   RoundPredictions,
   VoteTally,
+  PredictionInput,
 } from "./group-coupon";
 import { SYSTEMS, getSystem } from "./coupon-systems";
 import { PickValue, PICK_ORDER } from "./picks";
@@ -241,6 +242,125 @@ describe("buildBallots", () => {
 
       const bobBallot = ballots.find((b) => b.displayName === "Bob");
       expect(bobBallot?.sourceRoundNumber).toBe(9);
+    });
+
+    it("marks ballot as 'current' when predictions have mixed or null carriedFromRoundNumber", () => {
+      const users = make6Users();
+      const currentRound: RoundPredictions = {
+        roundNumber: 10,
+        predictions: [
+          { userId: "user-0", matchNumber: 1, pick: "HOME", carriedFromRoundNumber: 8 },
+          { userId: "user-0", matchNumber: 2, pick: "DRAW", carriedFromRoundNumber: null },
+        ],
+      };
+
+      const ballots = buildBallots({
+        users,
+        currentRound,
+        priorRounds: [],
+      });
+
+      const aliceBallot = ballots.find((b) => b.displayName === "Alice");
+      // When not ALL predictions have non-null carriedFromRoundNumber, ballot is marked as "current"
+      expect(aliceBallot?.source).toBe("current");
+      expect(aliceBallot?.sourceRoundNumber).toBe(10);
+    });
+
+    it("marks ballot as 'current' when predictions have different carriedFromRoundNumbers", () => {
+      const users = make6Users();
+      const currentRound: RoundPredictions = {
+        roundNumber: 10,
+        predictions: [
+          { userId: "user-0", matchNumber: 1, pick: "HOME", carriedFromRoundNumber: 8 },
+          { userId: "user-0", matchNumber: 2, pick: "DRAW", carriedFromRoundNumber: 7 },
+        ],
+      };
+
+      const ballots = buildBallots({
+        users,
+        currentRound,
+        priorRounds: [],
+      });
+
+      const aliceBallot = ballots.find((b) => b.displayName === "Alice");
+      expect(aliceBallot?.source).toBe("current");
+      expect(aliceBallot?.sourceRoundNumber).toBe(10);
+    });
+
+    it("marks all-null carriedFromRoundNumber as 'current' source", () => {
+      const users = make6Users();
+      const currentRound: RoundPredictions = {
+        roundNumber: 10,
+        predictions: [
+          { userId: "user-0", matchNumber: 1, pick: "HOME", carriedFromRoundNumber: null },
+          { userId: "user-0", matchNumber: 2, pick: "DRAW", carriedFromRoundNumber: null },
+        ],
+      };
+
+      const ballots = buildBallots({
+        users,
+        currentRound,
+        priorRounds: [],
+      });
+
+      const aliceBallot = ballots.find((b) => b.displayName === "Alice");
+      expect(aliceBallot?.source).toBe("current");
+      expect(aliceBallot?.sourceRoundNumber).toBe(10);
+    });
+
+    it("marks ballot as 'carried' when all 13 predictions have same carriedFromRoundNumber", () => {
+      const users = make6Users();
+      const currentRound: RoundPredictions = {
+        roundNumber: 10,
+        predictions: Array.from({ length: 13 }, (_, i) => ({
+          userId: "user-0",
+          matchNumber: i + 1,
+          pick: "HOME" as PickValue,
+          carriedFromRoundNumber: 7,
+        })),
+      };
+
+      const ballots = buildBallots({
+        users,
+        currentRound,
+        priorRounds: [],
+      });
+
+      const aliceBallot = ballots.find((b) => b.displayName === "Alice");
+      expect(aliceBallot?.source).toBe("carried");
+      expect(aliceBallot?.sourceRoundNumber).toBe(7);
+    });
+
+    it("marks ballot as 'current' when 12 predictions carried but 1 is null", () => {
+      const users = make6Users();
+      const predictions: PredictionInput[] = Array.from({ length: 12 }, (_, i) => ({
+        userId: "user-0",
+        matchNumber: i + 1,
+        pick: "HOME" as PickValue,
+        carriedFromRoundNumber: 7,
+      }));
+      predictions.push({
+        userId: "user-0",
+        matchNumber: 13,
+        pick: "DRAW" as PickValue,
+        carriedFromRoundNumber: null,
+      });
+
+      const currentRound: RoundPredictions = {
+        roundNumber: 10,
+        predictions,
+      };
+
+      const ballots = buildBallots({
+        users,
+        currentRound,
+        priorRounds: [],
+      });
+
+      const aliceBallot = ballots.find((b) => b.displayName === "Alice");
+      // When not ALL 13 have the same carriedFromRoundNumber, it's "current"
+      expect(aliceBallot?.source).toBe("current");
+      expect(aliceBallot?.sourceRoundNumber).toBe(10);
     });
   });
 

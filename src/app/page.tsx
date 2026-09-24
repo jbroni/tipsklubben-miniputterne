@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { carryOverMissingCoupons } from "@/lib/services/carry-over";
 import Link from "next/link";
 import { LeaderboardTable } from "@/components/LeaderboardTable";
 import {
@@ -34,6 +35,9 @@ export default async function DashboardPage() {
     );
   }
 
+  // Apply carry-overs before fetching current round data
+  await carryOverMissingCoupons();
+
   const [season, users, leaderboardEntries] = await Promise.all([
     prisma.season.findFirst({
       where: { isActive: true },
@@ -45,7 +49,7 @@ export default async function DashboardPage() {
             matches: {
               orderBy: { matchNumber: "asc" },
               include: {
-                predictions: { select: { userId: true, pick: true } },
+                predictions: { select: { userId: true, pick: true, carriedFromRoundNumber: true } },
               },
             },
             groupCoupon: {
@@ -227,6 +231,7 @@ export default async function DashboardPage() {
               predictions: m.predictions.map((p) => ({
                 userId: p.userId,
                 pick: p.pick,
+                carriedFromRoundNumber: p.carriedFromRoundNumber,
               })),
             }))}
             users={users}

@@ -1,5 +1,6 @@
 import { prisma } from "./prisma";
 import { computeLeaderboard } from "./leaderboard";
+import { carryOverMissingCoupons } from "./services/carry-over";
 import type { LeaderboardEntry } from "@/types";
 
 /**
@@ -9,6 +10,9 @@ import type { LeaderboardEntry } from "@/types";
  * Runs queries concurrently for efficiency.
  */
 export async function getLeaderboardEntries(seasonId?: string): Promise<LeaderboardEntry[]> {
+  // Apply carry-overs first
+  await carryOverMissingCoupons();
+
   // Get active season if not specified
   let targetSeasonId = seasonId;
   if (!targetSeasonId) {
