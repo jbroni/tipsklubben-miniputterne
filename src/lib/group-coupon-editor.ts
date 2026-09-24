@@ -154,6 +154,51 @@ export function setBaseOutcome(
 }
 
 /**
+ * Cycle an outcome through its states in a row.
+ *
+ * For non-U-systems (!requiresBaseRow), simply toggles the outcome on/off.
+ *
+ * For U-systems (requiresBaseRow), cycles: off → on → U-sign → off
+ * - If the outcome is not in row.outcomes, add it (and set as U-sign if coverage > 1).
+ * - If the outcome is covered and coverage is "single", return unchanged (can't empty a single row).
+ * - If the outcome is covered and not the U-sign, set it as the U-sign.
+ * - If the outcome is covered and is the U-sign, remove it (toggle removes).
+ *
+ * @param row The row to cycle
+ * @param outcome The outcome to cycle
+ * @param requiresBaseRow Whether the system requires a base outcome for multi-outcome rows
+ * @returns A new row with the outcome cycled, or the same row if the operation is invalid
+ */
+export function cycleOutcome(
+  row: EditableRow,
+  outcome: PickValue,
+  requiresBaseRow: boolean
+): EditableRow {
+  // Non-U-systems: just toggle
+  if (!requiresBaseRow) {
+    return toggleOutcome(row, outcome, false);
+  }
+
+  // U-systems: if outcome not in outcomes, add it
+  if (!row.outcomes.includes(outcome)) {
+    return toggleOutcome(row, outcome, true);
+  }
+
+  // Outcome is covered. If single coverage, return unchanged (can't empty it).
+  if (row.coverage === "single") {
+    return row;
+  }
+
+  // Outcome is covered and coverage > 1. If not the U-sign, set it as the U-sign.
+  if (outcome !== row.baseOutcome) {
+    return setBaseOutcome(row, outcome);
+  }
+
+  // Outcome is covered and is the U-sign. Remove it (toggle removes).
+  return toggleOutcome(row, outcome, true);
+}
+
+/**
  * Check if a row differs from its baseline.
  *
  * Returns true if coverage, outcome set, or baseOutcome differ (ignores reasoning).
