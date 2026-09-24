@@ -9,7 +9,13 @@ const mocks = vi.hoisted(() => ({
     },
     prediction: {
       findMany: vi.fn(),
-      upsert: vi.fn(),
+      upsert: vi.fn((config: any) => Promise.resolve({
+        id: `p-upserted`,
+        userId: config.create?.userId || "user-1",
+        matchId: config.where.userId_matchId?.matchId || "m1",
+        pick: config.create?.pick || config.update?.pick || "HOME",
+        carriedFromRoundNumber: config.create?.carriedFromRoundNumber ?? config.update?.carriedFromRoundNumber,
+      })),
     },
     $transaction: vi.fn((ops: any[]) => Promise.resolve(ops.map((_, i) => ({
       id: `p${i + 1}`,
@@ -787,6 +793,125 @@ describe("submitPicks", () => {
       expect(result.ok).toBe(true);
       if (result.ok) {
         expect(result.data.predictions).toEqual(transactionPredictions);
+      }
+    });
+  });
+
+  describe("carriedFromRoundNumber handling", () => {
+    const validRound: Partial<Round & { matches: Match[] }> = {
+      id: "round-1",
+      status: "open",
+      deadline: new Date("2099-01-01"),
+      matches: Array(13)
+        .fill(0)
+        .map((_, i) => ({
+          id: `m${i + 1}`,
+          matchNumber: i + 1,
+          oddsHome: 2.0,
+          oddsDraw: 3.0,
+          oddsAway: 4.0,
+        } as any)),
+    };
+
+    it("sets carriedFromRoundNumber: null on create", async () => {
+      mocks.prismaMocks.round.findUnique.mockResolvedValue(validRound as any);
+      mocks.prismaMocks.prediction.findMany.mockResolvedValue([]);
+      mocks.prismaMocks.$transaction.mockResolvedValue(
+        Array(13)
+          .fill(0)
+          .map((_, i) => ({
+            id: `p${i + 1}`,
+            userId: "user-1",
+            matchId: `m${i + 1}`,
+            pick: "HOME",
+          }))
+      );
+
+      const picks = Array(13)
+        .fill(0)
+        .map((_, i) => ({
+          matchId: `m${i + 1}`,
+          pick: "HOME",
+        }));
+
+      const result = await submitPicks({
+        userId: "user-1",
+        roundId: "round-1",
+        picks,
+        replace: false,
+      });
+
+      expect(result.ok).toBe(true);
+
+      // Check that upsert was called with create.carriedFromRoundNumber: null
+      expect(mocks.prismaMocks.prediction.upsert).toHaveBeenCalled();
+      const upsertCalls = mocks.prismaMocks.prediction.upsert.mock.calls;
+      expect(upsertCalls.length).toBe(13);
+
+      for (const call of upsertCalls) {
+        const config = call[0];
+        expect(config.create.carriedFromRoundNumber).toBe(null);
+      }
+    });
+
+    it("sets carriedFromRoundNumber: null on update (replace)", async () => {
+      mocks.prismaMocks.round.findUnique.mockResolvedValue(validRound as any);
+      mocks.prismaMocks.prediction.findMany.mockResolvedValue([
+        {
+          id: "p1",
+          userId: "user-1",
+          matchId: "m1",
+          pick: "AWAY",
+          match: { matchNumber: 1 },
+          carriedFromRoundNumber: 5,
+        },
+        ...Array(12)
+          .fill(0)
+          .map((_, i) => ({
+            id: `p${i + 2}`,
+            userId: "user-1",
+            matchId: `m${i + 2}`,
+            pick: "HOME",
+            match: { matchNumber: i + 2 },
+            carriedFromRoundNumber: 5,
+          })),
+      ] as any);
+
+      mocks.prismaMocks.$transaction.mockResolvedValue(
+        Array(13)
+          .fill(0)
+          .map((_, i) => ({
+            id: `p${i + 1}`,
+            userId: "user-1",
+            matchId: `m${i + 1}`,
+            pick: "HOME",
+          }))
+      );
+
+      const picks = Array(13)
+        .fill(0)
+        .map((_, i) => ({
+          matchId: `m${i + 1}`,
+          pick: "HOME",
+        }));
+
+      const result = await submitPicks({
+        userId: "user-1",
+        roundId: "round-1",
+        picks,
+        replace: true,
+      });
+
+      expect(result.ok).toBe(true);
+
+      // Check that upsert was called with update.carriedFromRoundNumber: null
+      expect(mocks.prismaMocks.prediction.upsert).toHaveBeenCalled();
+      const upsertCalls = mocks.prismaMocks.prediction.upsert.mock.calls;
+      expect(upsertCalls.length).toBe(13);
+
+      for (const call of upsertCalls) {
+        const config = call[0];
+        expect(config.update.carriedFromRoundNumber).toBe(null);
       }
     });
   });

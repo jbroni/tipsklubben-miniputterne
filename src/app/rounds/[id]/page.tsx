@@ -8,6 +8,7 @@ import { resolveRoundBackHref } from "@/lib/back-href";
 import { arePicksRevealed } from "@/lib/rounds";
 import { settleFromPrisma } from "@/lib/group-coupon-settlement-data";
 import { computeRoundScores } from "@/lib/round-scores";
+import { carryOverMissingCoupons } from "@/lib/services/carry-over";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 
@@ -21,6 +22,9 @@ export default async function RoundDetailPage({
   const { id } = await params;
   const awaitedSearchParams = await searchParams;
   const currentUser = await requireUser();
+
+  // Apply carry-overs before loading the round
+  await carryOverMissingCoupons();
 
   const round = await prisma.round.findUnique({
     where: { id },
@@ -108,6 +112,7 @@ export default async function RoundDetailPage({
           predictions: m.predictions.map((p) => ({
             userId: p.userId,
             pick: p.pick,
+            carriedFromRoundNumber: p.carriedFromRoundNumber,
           })),
         }))}
         users={usersWithPredictions}

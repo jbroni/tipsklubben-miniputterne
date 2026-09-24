@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { setResults, resolveResultsAuto } from "@/lib/services/matches";
+import { carryOverMissingCoupons } from "@/lib/services/carry-over";
 
 export async function POST(
   request: Request,
@@ -8,6 +9,9 @@ export async function POST(
 ) {
   const { id } = await params;
   await requireAdmin();
+
+  // Apply carry-overs before computing/saving anything
+  await carryOverMissingCoupons();
 
   const body = await request.json();
   const { mode, results } = body;

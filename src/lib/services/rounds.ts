@@ -106,13 +106,40 @@ export async function updateRound(input: {
   if (input.status) updateData.status = input.status;
   if (input.deadline) updateData.deadline = parseAppZonedDateTime(input.deadline);
 
-  const round = await prisma.round.update({
-    where: { id: input.roundId },
-    data: updateData,
-  });
+  // If opening the round (status -> "open" or deadline moved into future), delete carried predictions
+  const isReopening = input.status === "open" || (input.deadline && parseAppZonedDateTime(input.deadline) > new Date());
 
-  return {
-    ok: true,
-    data: round,
-  };
+  if (isReopening) {
+    // Use transaction to update round and delete carried predictions together
+    const round = await prisma.$transaction(async (tx) => {
+      // Delete carried predictions for this round
+      await tx.prediction.deleteMany({
+        where: {
+          roundId: input.roundId,
+          carriedFromRoundNumber: { not: null },
+        },
+      });
+
+      // Update the round
+      return tx.round.update({
+        where: { id: input.roundId },
+        data: updateData,
+      });
+    });
+
+    return {
+      ok: true,
+      data: round,
+    };
+  } else {
+    const round = await prisma.round.update({
+      where: { id: input.roundId },
+      data: updateData,
+    });
+
+    return {
+      ok: true,
+      data: round,
+    };
+  }
 }

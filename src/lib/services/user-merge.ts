@@ -59,7 +59,40 @@ export async function mergeUsers(input: {
     };
   }
 
-  // 4. Collision check: ensure both accounts don't have picks in the same matches
+  // 4. Carried predictions (copied from an earlier round because the member didn't
+  // submit) must never block a merge: a real coupon beats a carried one, and when both
+  // are carried the target's is kept.
+  const [targetRounds, sourceRealRounds] = await Promise.all([
+    prisma.prediction.findMany({
+      where: { userId: input.targetUserId },
+      select: { roundId: true },
+      distinct: ["roundId"],
+    }),
+    prisma.prediction.findMany({
+      where: { userId: input.sourceUserId, carriedFromRoundNumber: null },
+      select: { roundId: true },
+      distinct: ["roundId"],
+    }),
+  ]);
+
+  await prisma.$transaction([
+    prisma.prediction.deleteMany({
+      where: {
+        userId: input.sourceUserId,
+        carriedFromRoundNumber: { not: null },
+        roundId: { in: targetRounds.map((r) => r.roundId) },
+      },
+    }),
+    prisma.prediction.deleteMany({
+      where: {
+        userId: input.targetUserId,
+        carriedFromRoundNumber: { not: null },
+        roundId: { in: sourceRealRounds.map((r) => r.roundId) },
+      },
+    }),
+  ]);
+
+  // 5. Collision check: ensure both accounts don't have picks in the same matches
   const collisions = await prisma.prediction.findMany({
     where: {
       userId: input.targetUserId,
@@ -82,7 +115,7 @@ export async function mergeUsers(input: {
     };
   }
 
-  // 5. Interactive transaction: reassign records and delete source user
+  // 6. Interactive transaction: reassign records and delete source user
   try {
     const movedPredictions = await prisma.$transaction(
       async (tx) => {

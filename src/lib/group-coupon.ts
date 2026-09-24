@@ -43,6 +43,8 @@ export interface PredictionInput {
   userId: string;
   matchNumber: number;
   pick: PickValue;
+  /// When present and non-null, indicates this pick was carried from an earlier round.
+  carriedFromRoundNumber?: number | null;
 }
 
 /**
@@ -81,9 +83,11 @@ export interface VoteTally {
 /**
  * Build ballots from current and prior predictions.
  *
- * - Users with a prediction in currentRound contribute a "current" ballot.
- * - Users without one use their highest prior round (< currentRound.roundNumber)
- *   that has a prediction, marked as "carried".
+ * - Users with a prediction in currentRound contribute a "current" ballot, unless
+ *   ALL of their current-round picks have carriedFromRoundNumber set (persisted carry-over),
+ *   in which case they're marked as "carried" with sourceRoundNumber from that field.
+ * - Users without predictions in currentRound use their highest prior round
+ *   (< currentRound.roundNumber) that has a prediction, marked as "carried".
  * - Users with no predictions anywhere are omitted.
  * - Picks are mapped by matchNumber (match 7 in round 8 becomes match 7 in round 9).
  * - Result is sorted by displayName for stable output.
@@ -96,12 +100,22 @@ export function buildBallots(params: {
   const { users, currentRound, priorRounds } = params;
 
   // Index current predictions by userId for O(1) lookup
+  // Also track if all predictions for a user are carried
   const currentPredsByUser = new Map<string, Map<number, PickValue>>();
+  const currentCarriedFromByUser = new Map<string, Set<number>>();
+  const currentCarriedCountByUser = new Map<string, number>();
+
   for (const pred of currentRound.predictions) {
     if (!currentPredsByUser.has(pred.userId)) {
       currentPredsByUser.set(pred.userId, new Map());
+      currentCarriedFromByUser.set(pred.userId, new Set());
     }
     currentPredsByUser.get(pred.userId)!.set(pred.matchNumber, pred.pick);
+
+    if (pred.carriedFromRoundNumber !== null && pred.carriedFromRoundNumber !== undefined) {
+      currentCarriedFromByUser.get(pred.userId)!.add(pred.carriedFromRoundNumber);
+      currentCarriedCountByUser.set(pred.userId, (currentCarriedCountByUser.get(pred.userId) ?? 0) + 1);
+    }
   }
 
   // Sort prior rounds by roundNumber descending so we find the highest first
@@ -131,13 +145,30 @@ export function buildBallots(params: {
 
     if (currentPicks && currentPicks.size > 0) {
       // User has predictions in current round
-      ballots.push({
-        userId: user.id,
-        displayName: user.displayName,
-        source: "current",
-        sourceRoundNumber: currentRound.roundNumber,
-        picks: Object.fromEntries(currentPicks),
-      });
+      // Check if ALL predictions are carried (have non-null carriedFromRoundNumber)
+      const carriedSet = currentCarriedFromByUser.get(user.id);
+      const allCarried = carriedSet && carriedSet.size === 1 && currentCarriedCountByUser.get(user.id) === currentPicks.size
+        ? Array.from(carriedSet)[0]
+        : null;
+
+      // Only mark as "carried" if EVERY pick has the same non-null carriedFromRoundNumber
+      if (allCarried !== null) {
+        ballots.push({
+          userId: user.id,
+          displayName: user.displayName,
+          source: "carried",
+          sourceRoundNumber: allCarried,
+          picks: Object.fromEntries(currentPicks),
+        });
+      } else {
+        ballots.push({
+          userId: user.id,
+          displayName: user.displayName,
+          source: "current",
+          sourceRoundNumber: currentRound.roundNumber,
+          picks: Object.fromEntries(currentPicks),
+        });
+      }
     } else {
       // Find highest prior round with predictions for this user
       const userPriors = priorPredsByUser.get(user.id);

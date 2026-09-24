@@ -62,6 +62,7 @@ function mockPrediction(
     userId,
     matchId: match.id,
     pick: pick as PickType,
+    carriedFromRoundNumber: null,
     createdAt: new Date(),
     updatedAt: new Date(),
     match,

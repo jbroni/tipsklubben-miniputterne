@@ -118,16 +118,18 @@ model Match {
 }
 
 model Prediction {
-  id        String   @id @default(uuid()) @db.Uuid
-  roundId   String   @map("round_id") @db.Uuid
-  userId    String   @map("user_id") @db.Uuid
-  matchId   String   @map("match_id") @db.Uuid
-  pick      Pick
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  round     Round    @relation(fields: [roundId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  match     Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  id                      String   @id @default(uuid()) @db.Uuid
+  roundId                 String   @map("round_id") @db.Uuid
+  userId                  String   @map("user_id") @db.Uuid
+  matchId                 String   @map("match_id") @db.Uuid
+  pick                    Pick
+  /// Set when the pick was copied from an earlier round because the member didn't submit; the round the picks were originally submitted in.
+  carriedFromRoundNumber  Int?     @map("carried_from_round_number")
+  createdAt               DateTime @default(now()) @map("created_at")
+  updatedAt               DateTime @updatedAt @map("updated_at")
+  round                   Round    @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  user                    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  match                   Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
 
   @@unique([userId, matchId])
   @@map("predictions")

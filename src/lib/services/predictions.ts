@@ -133,12 +133,13 @@ export async function submitPicks(input: {
             matchId: p.matchId,
           },
         },
-        update: { pick: p.pick as Pick },
+        update: { pick: p.pick as Pick, carriedFromRoundNumber: null },
         create: {
           roundId: input.roundId,
           userId: input.userId,
           matchId: p.matchId,
           pick: p.pick as Pick,
+          carriedFromRoundNumber: null,
         },
       })
     )
