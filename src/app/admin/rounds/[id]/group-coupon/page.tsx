@@ -6,8 +6,7 @@ import { PICK_LABEL } from "@/lib/picks";
 import { getSystem } from "@/lib/coupon-systems";
 import { fitSystem } from "@/lib/group-coupon";
 import {
-  toggleOutcome,
-  setBaseOutcome,
+  cycleOutcome,
   isRowEdited,
   countCoverage,
   validateCoupon,
@@ -299,7 +298,7 @@ function GroupCouponContent() {
     setNeedsPrefill(true);
   };
 
-  // Handler: toggle outcome button on a single row
+  // Handler: cycle outcome button on a single row
   const handleToggleOutcome = (
     matchNumber: number,
     outcome: "HOME" | "DRAW" | "AWAY"
@@ -307,26 +306,9 @@ function GroupCouponContent() {
     const rowIdx = rows.findIndex((r) => r.matchNumber === matchNumber);
     if (rowIdx === -1) return;
 
-    const newRow = toggleOutcome(rows[rowIdx], outcome, systemDef.requiresBaseRow);
+    const newRow = cycleOutcome(rows[rowIdx], outcome, systemDef.requiresBaseRow);
     if (newRow === rows[rowIdx]) {
-      // No change (would have emptied the set)
-      return;
-    }
-
-    setRows([...rows.slice(0, rowIdx), newRow, ...rows.slice(rowIdx + 1)]);
-  };
-
-  // Handler: set base outcome for a row
-  const handleSetBaseOutcome = (
-    matchNumber: number,
-    outcome: "HOME" | "DRAW" | "AWAY"
-  ) => {
-    const rowIdx = rows.findIndex((r) => r.matchNumber === matchNumber);
-    if (rowIdx === -1) return;
-
-    const newRow = setBaseOutcome(rows[rowIdx], outcome);
-    if (newRow === rows[rowIdx]) {
-      // No change (invalid operation)
+      // No change (would have emptied the set or invalid operation)
       return;
     }
 
@@ -661,61 +643,52 @@ function GroupCouponContent() {
                     </div>
 
                     {/* Outcome buttons */}
-                    <div className="flex gap-1.5 shrink-0">
-                      {(["HOME", "DRAW", "AWAY"] as const).map((outcome) => (
-                        <button
-                          key={outcome}
-                          onClick={() =>
-                            handleToggleOutcome(row.matchNumber, outcome)
-                          }
-                          className={`w-9 h-9 rounded-lg font-mono font-bold text-sm flex items-center justify-center transition-colors ${
-                            row.outcomes.includes(outcome)
-                              ? "bg-brand text-white"
-                              : "bg-surface text-muted border border-line-pick"
-                          }`}
-                        >
-                          {PICK_LABEL[outcome]}
-                        </button>
-                      ))}
+                    <div
+                      className={`flex gap-1.5 shrink-0 ${
+                        missingBaseOutcome
+                          ? "rounded-lg ring-1 ring-signal ring-offset-2"
+                          : ""
+                      }`}
+                      title={
+                        missingBaseOutcome
+                          ? "Mangler udgangstegn – klik på et valgt udfald"
+                          : undefined
+                      }
+                    >
+                      {(["HOME", "DRAW", "AWAY"] as const).map((outcome) => {
+                        const covered = row.outcomes.includes(outcome);
+                        const isUSign =
+                          systemDef.requiresBaseRow &&
+                          row.baseOutcome === outcome;
+                        return (
+                          <button
+                            key={outcome}
+                            onClick={() =>
+                              handleToggleOutcome(row.matchNumber, outcome)
+                            }
+                            aria-pressed={covered}
+                            aria-label={`${PICK_LABEL[outcome]}${isUSign ? " (udgangstegn)" : ""}`}
+                            title={
+                              systemDef.requiresBaseRow
+                                ? "Klik: vælg · igen: udgangstegn · igen: fravælg"
+                                : undefined
+                            }
+                            className={`w-9 h-9 rounded-lg font-mono font-bold text-sm flex items-center justify-center transition-colors ${
+                              covered
+                                ? "bg-brand text-white"
+                                : "bg-surface text-muted border border-line-pick"
+                            } ${isUSign ? "relative ring-2 ring-gold ring-offset-1" : ""}`}
+                          >
+                            {PICK_LABEL[outcome]}
+                            {isUSign && (
+                              <span className="absolute -top-1.5 -right-1.5 rounded-full bg-gold text-white text-[9px] leading-none px-1 py-0.5 font-mono">
+                                U
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
                     </div>
-
-                    {/* U-sign column (for U-systems) */}
-                    {systemDef.requiresBaseRow && (
-                      <div
-                        className={`w-12 shrink-0 ${
-                          missingBaseOutcome
-                            ? "border-l-2 border-signal pl-2"
-                            : "pl-2"
-                        }`}
-                      >
-                        {row.coverage === "single" ? (
-                          <div className="text-center text-xs text-muted">–</div>
-                        ) : (
-                          <div className="flex flex-col items-center gap-1">
-                            <div className="text-xs text-muted mb-0.5">U</div>
-                            <div className="flex gap-0.5">
-                              {row.outcomes.map((outcome) => (
-                                <button
-                                  key={outcome}
-                                  onClick={() =>
-                                    handleSetBaseOutcome(row.matchNumber, outcome)
-                                  }
-                                  aria-pressed={row.baseOutcome === outcome}
-                                  title="Vælg udgangstegn"
-                                  className={`w-6 h-6 rounded text-xs font-mono font-bold transition-colors ${
-                                    row.baseOutcome === outcome
-                                      ? "bg-gold text-white"
-                                      : "bg-surface border border-line-pick text-muted hover:border-gold"
-                                  }`}
-                                >
-                                  {PICK_LABEL[outcome]}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
 
                     {/* Edit badge and reset */}
                     {edited && (
