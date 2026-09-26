@@ -3,6 +3,8 @@ import { requireUser } from "@/lib/auth";
 import Link from "next/link";
 import { computeLeaderboard } from "@/lib/leaderboard";
 import { FedtBadge } from "@/components/FedtBadge";
+import { withShortName } from "@/lib/display-name";
+import { getShortNames } from "@/lib/display-name-data";
 import type { LeaderboardEntry } from "@/types";
 
 const RANK_COLORS = ["text-rank-1", "text-rank-2", "text-rank-3"];
@@ -11,7 +13,7 @@ export default async function HistorikPage() {
   await requireUser();
 
   // Get all seasons and users concurrently
-  const [seasons, users] = await Promise.all([
+  const [seasons, rawUsers, shortNames] = await Promise.all([
     prisma.season.findMany({
       orderBy: { startDate: "desc" },
       include: {
@@ -31,7 +33,10 @@ export default async function HistorikPage() {
     prisma.user.findMany({
       select: { id: true, displayName: true, avatarUrl: true },
     }),
+    getShortNames(),
   ]);
+
+  const users = rawUsers.map((u) => withShortName(u, shortNames));
 
   // Filter seasons that have at least one completed round
   const completedRoundSeasons = seasons.filter((s) =>

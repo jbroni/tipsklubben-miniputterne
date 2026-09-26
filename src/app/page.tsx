@@ -17,6 +17,8 @@ import { computeRoundScores } from "@/lib/round-scores";
 import { getLeaderboardEntries } from "@/lib/leaderboard-data";
 import { arePicksRevealed } from "@/lib/rounds";
 import { settleFromPrisma } from "@/lib/group-coupon-settlement-data";
+import { firstName, withShortName } from "@/lib/display-name";
+import { getShortNames } from "@/lib/display-name-data";
 import type { Pick as PickType } from "@/types";
 import { Logo } from "@/components/Logo";
 import { LoginButton } from "@/components/LoginButton";
@@ -38,7 +40,7 @@ export default async function DashboardPage() {
   // Apply carry-overs before fetching current round data
   await carryOverMissingCoupons();
 
-  const [season, users, leaderboardEntries] = await Promise.all([
+  const [season, rawUsers, rawLeaderboardEntries, shortNames] = await Promise.all([
     prisma.season.findFirst({
       where: { isActive: true },
       include: {
@@ -66,7 +68,14 @@ export default async function DashboardPage() {
     }),
     prisma.user.findMany(),
     getLeaderboardEntries(),
+    getShortNames(),
   ]);
+
+  const users = rawUsers.map((u) => withShortName(u, shortNames));
+  const leaderboardEntries = rawLeaderboardEntries.map((e) => ({
+    ...e,
+    user: withShortName(e.user, shortNames),
+  }));
 
   const currentRound = season?.rounds[0] ?? null;
 
@@ -157,7 +166,7 @@ export default async function DashboardPage() {
     <div className="max-w-lg mx-auto space-y-2.5">
       <div className="flex items-baseline justify-between px-0.5">
         <h1 className="font-display text-xl font-bold text-ink">
-          Hej, {user.displayName.split(" ")[0]}
+          Hej, {firstName(user.displayName)}
         </h1>
         {season && (
           <span className="font-mono text-[10px] text-muted border border-line-card rounded-full px-2.5 py-1 bg-surface">

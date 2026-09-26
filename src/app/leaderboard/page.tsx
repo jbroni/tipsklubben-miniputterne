@@ -2,10 +2,20 @@ import { LeaderboardTable } from "@/components/LeaderboardTable";
 import { PointProgress } from "@/components/PointProgress";
 import { requireUser } from "@/lib/auth";
 import { getLeaderboardEntries } from "@/lib/leaderboard-data";
+import { withShortName } from "@/lib/display-name";
+import { getShortNames } from "@/lib/display-name-data";
 
 export default async function LeaderboardPage() {
   const user = await requireUser();
-  const entries = await getLeaderboardEntries();
+  const [allEntries, shortNames] = await Promise.all([
+    getLeaderboardEntries(),
+    getShortNames(),
+  ]);
+
+  const entries = allEntries.map((e) => ({
+    ...e,
+    user: withShortName(e.user, shortNames),
+  }));
 
   return (
     <div className="space-y-6">

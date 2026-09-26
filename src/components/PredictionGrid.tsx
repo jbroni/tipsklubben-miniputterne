@@ -1,5 +1,6 @@
 import { PICK_LABEL, type PickValue } from "@/lib/picks";
 import { isShadedRow } from "@/lib/grid-shading";
+import { nameCode } from "@/lib/display-name";
 import { Avatar } from "./Avatar";
 import { MemberLegend } from "./MemberLegend";
 
@@ -91,7 +92,7 @@ export function PredictionGrid({
                 className={isCurrentUser ? "text-brand font-bold" : ""}
                 title={u.displayName}
               >
-                {u.displayName.slice(0, 3).toUpperCase()}
+                {nameCode(u.displayName)}
               </span>
               {carriedFrom != null && (
                 <span
