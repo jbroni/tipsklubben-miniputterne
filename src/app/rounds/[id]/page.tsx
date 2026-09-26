@@ -10,6 +10,8 @@ import { arePicksRevealed } from "@/lib/rounds";
 import { settleFromPrisma } from "@/lib/group-coupon-settlement-data";
 import { computeRoundScores } from "@/lib/round-scores";
 import { carryOverMissingCoupons } from "@/lib/services/carry-over";
+import { withShortName } from "@/lib/display-name";
+import { getShortNames } from "@/lib/display-name-data";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 
@@ -69,7 +71,13 @@ export default async function RoundDetailPage({
     ? settleFromPrisma(round.groupCoupon, round.status)
     : null;
 
-  const users = await prisma.user.findMany();
+  const [rawUsers, shortNames] = await Promise.all([
+    prisma.user.findMany(),
+    getShortNames(),
+  ]);
+
+  const users = rawUsers.map((u) => withShortName(u, shortNames));
+
   const usersWithPredictions = users.filter((u) =>
     round.matches.some((m) => m.predictions.some((p) => p.userId === u.id))
   );

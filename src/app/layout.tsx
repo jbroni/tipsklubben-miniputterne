@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Navbar } from "@/components/Navbar";
 import { getCurrentUserFromHeaders } from "@/lib/auth";
+import { firstName } from "@/lib/display-name";
 import { MainContainer } from "@/components/MainContainer";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -17,7 +18,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const user = await getCurrentUserFromHeaders();
-  const displayName = user?.displayName || user?.email || null;
+  const displayName = (user?.displayName && firstName(user.displayName)) || user?.email || null;
   const isAdmin = user?.role === "admin";
 
   return (

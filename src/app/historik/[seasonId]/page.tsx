@@ -6,6 +6,8 @@ import { computeLeaderboard } from "@/lib/leaderboard";
 import { LeaderboardTable } from "@/components/LeaderboardTable";
 import { PointProgress } from "@/components/PointProgress";
 import { formatInAppZone } from "@/lib/time";
+import { withShortName } from "@/lib/display-name";
+import { getShortNames } from "@/lib/display-name-data";
 
 export default async function SeasonDetailPage({
   params,
@@ -35,9 +37,14 @@ export default async function SeasonDetailPage({
   if (!season) notFound();
 
   // Get all users
-  const users = await prisma.user.findMany({
-    select: { id: true, displayName: true, avatarUrl: true },
-  });
+  const [rawUsers, shortNames] = await Promise.all([
+    prisma.user.findMany({
+      select: { id: true, displayName: true, avatarUrl: true },
+    }),
+    getShortNames(),
+  ]);
+
+  const users = rawUsers.map((u) => withShortName(u, shortNames));
 
   // Filter to only completed rounds for leaderboard computation
   const completedRounds = season.rounds.filter((r) => r.status === "completed");

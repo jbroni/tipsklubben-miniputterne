@@ -3,11 +3,12 @@ import { requireUser } from "@/lib/auth";
 import Link from "next/link";
 import { arePicksStillOpen } from "@/lib/rounds";
 import { formatInAppZone } from "@/lib/time";
+import { getShortNames } from "@/lib/display-name-data";
 
 export default async function RoundsPage() {
   const currentUser = await requireUser();
 
-  const [season, users] = await Promise.all([
+  const [season, shortNames] = await Promise.all([
     prisma.season.findFirst({
       where: { isActive: true },
       include: {
@@ -22,17 +23,17 @@ export default async function RoundsPage() {
         },
       },
     }),
-    prisma.user.findMany({ select: { id: true, displayName: true } }),
+    getShortNames(),
   ]);
 
-  const memberCount = users.length;
+  const memberCount = shortNames.size;
 
   if (!season) {
     return <div className="text-center py-20 text-muted">Ingen aktiv sæson fundet.</div>;
   }
 
   const userName = (id: string) =>
-    users.find((u) => u.id === id)?.displayName.split(" ")[0] ?? "?";
+    shortNames.get(id) ?? "?";
 
   type Row =
     | { kind: "round"; round: (typeof season.rounds)[number] }

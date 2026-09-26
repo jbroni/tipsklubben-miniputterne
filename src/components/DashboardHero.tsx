@@ -121,7 +121,7 @@ export function RevealedHero({
   currentUserId: string;
   href: string;
 }) {
-  const winnerName = scores[0]?.user.displayName.split(" ")[0] ?? null;
+  const winnerName = scores[0]?.user.displayName ?? null;
   const userScore = scores.find((s) => s.user.id === currentUserId)?.points ?? 0;
   const userRankIndex = scores.findIndex((s) => s.user.id === currentUserId);
   const userRank = userRankIndex >= 0 ? userRankIndex + 1 : null;
