@@ -682,6 +682,84 @@ describe("coverageCosts", () => {
       expect(costs.single.outcomes).toEqual(["DRAW"]);
     });
   });
+
+  describe("missed outcomes", () => {
+    it("6-0-0: full 0, half 0, single 0", () => {
+      // All votes for HOME, so:
+      // - full covers all three (HOME, DRAW, AWAY), missed = 0
+      // - half covers HOME+DRAW, missed = 0 (AWAY has no votes)
+      // - single covers HOME, missed = 0 (DRAW and AWAY have no votes)
+      const tally: VoteTally = { HOME: 6, DRAW: 0, AWAY: 0, total: 6 };
+      const match = makeMatch(1);
+
+      const costs = coverageCosts(tally, match);
+
+      expect(costs.full.missed).toBe(0);
+      expect(costs.half.missed).toBe(0);
+      expect(costs.single.missed).toBe(0);
+    });
+
+    it("5-1-0: single 1, half 0", () => {
+      // Ranked: HOME (5 votes), DRAW (1 vote), AWAY (0 votes)
+      // - full covers all three, missed = 0
+      // - half covers HOME+DRAW, missed = 0 (AWAY has no votes)
+      // - single covers HOME, missed = 1 (DRAW has votes)
+      const tally: VoteTally = { HOME: 5, DRAW: 1, AWAY: 0, total: 6 };
+      const match = makeMatch(1);
+
+      const costs = coverageCosts(tally, match);
+
+      expect(costs.single.missed).toBe(1);
+      expect(costs.half.missed).toBe(0);
+      expect(costs.full.missed).toBe(0);
+    });
+
+    it("3-2-1: single 2, half 1", () => {
+      // Ranked: HOME (3 votes), DRAW (2 votes), AWAY (1 vote)
+      // - full covers all three, missed = 0
+      // - half covers HOME+DRAW, missed = 1 (AWAY has votes)
+      // - single covers HOME, missed = 2 (DRAW and AWAY both have votes)
+      const tally: VoteTally = { HOME: 3, DRAW: 2, AWAY: 1, total: 6 };
+      const match = makeMatch(1);
+
+      const costs = coverageCosts(tally, match);
+
+      expect(costs.single.missed).toBe(2);
+      expect(costs.half.missed).toBe(1);
+      expect(costs.full.missed).toBe(0);
+    });
+
+    it("2-2-2: half 1", () => {
+      // All outcomes tied at 2 votes each
+      // Let's check the actual ranking: with all equal votes and odds, axis order applies: HOME, DRAW, AWAY
+      // - full covers all three, missed = 0
+      // - half covers top two (HOME, DRAW), missed = 1 (AWAY has votes)
+      // - single covers top one (HOME), missed = 2 (DRAW and AWAY have votes)
+      const tally: VoteTally = { HOME: 2, DRAW: 2, AWAY: 2, total: 6 };
+      const match = makeMatch(1);
+
+      const costs = coverageCosts(tally, match);
+
+      expect(costs.half.missed).toBe(1);
+      expect(costs.single.missed).toBe(2);
+      expect(costs.full.missed).toBe(0);
+    });
+
+    it("N=0: all 0", () => {
+      // No votes anywhere
+      // - full covers all three, missed = 0
+      // - half covers top two, missed = 0 (no outcomes have votes)
+      // - single covers top one, missed = 0 (no outcomes have votes)
+      const tally: VoteTally = { HOME: 0, DRAW: 0, AWAY: 0, total: 0 };
+      const match = makeMatch(1);
+
+      const costs = coverageCosts(tally, match);
+
+      expect(costs.full.missed).toBe(0);
+      expect(costs.half.missed).toBe(0);
+      expect(costs.single.missed).toBe(0);
+    });
+  });
 });
 
 /* ──────────────────────────────────────────────────────────────────────── */
@@ -794,19 +872,19 @@ describe("fitSystem", () => {
       // We construct a scenario where greedy (assign half to highest-cost) would fail
       const matches = make13Matches();
       const round = makeRound(1, [
-        [2, 2, 2], // 0.333 half
-        [2, 2, 2], // 0.333 half
-        [2, 2, 2], // 0.333 half
-        [2, 2, 2], // 0.333 half
-        [2, 2, 2], // 0.333 half
-        [2, 2, 2], // 0.333 half
-        [2, 2, 2], // 0.333 half
-        [5, 1, 0], // 0.167 single
-        [5, 1, 0], // 0.167 single
-        [5, 1, 0], // 0.167 single
-        [5, 1, 0], // 0.167 single
-        [5, 1, 0], // 0.167 single
-        [5, 1, 0], // 0.167 single
+        [2, 2, 2], // half: missed 1, cost ≈ 0.333
+        [2, 2, 2], // half: missed 1, cost ≈ 0.333
+        [2, 2, 2], // half: missed 1, cost ≈ 0.333
+        [2, 2, 2], // half: missed 1, cost ≈ 0.333
+        [2, 2, 2], // half: missed 1, cost ≈ 0.333
+        [2, 2, 2], // half: missed 1, cost ≈ 0.333
+        [2, 2, 2], // half: missed 1, cost ≈ 0.333
+        [5, 1, 0], // single: missed 1, cost ≈ 0.167
+        [5, 1, 0], // single: missed 1, cost ≈ 0.167
+        [5, 1, 0], // single: missed 1, cost ≈ 0.167
+        [5, 1, 0], // single: missed 1, cost ≈ 0.167
+        [5, 1, 0], // single: missed 1, cost ≈ 0.167
+        [5, 1, 0], // single: missed 1, cost ≈ 0.167
       ]);
       const ballots = buildBallots({
         users: make6Users(),
@@ -817,10 +895,15 @@ describe("fitSystem", () => {
       const system = getSystem("M0-7-128")!;
       const fit = fitSystem(system, matches, ballots);
 
-      // Optimal: assign half to all 7 of the 2-2-2 matches (cost 7*0.333)
-      // and single to 6 of the 5-1-0 matches (cost 6*0.167) = ~2.333 + 1.0 = ~3.333
-      const expectedOptimal = 7 * (2 / 6) + 6 * (1 / 6);
-      expect(fit.totalCost).toBeCloseTo(expectedOptimal, 2);
+      // Optimal: assign half to all 7 of the 2-2-2 matches (missed 1 each = 7 total)
+      // and single to 6 of the 5-1-0 matches (missed 1 each = 6 total)
+      // Total missedOutcomes = 13
+      // With new objective minimizing missedOutcomes first:
+      // This is the optimal assignment (all matches have missed 1, so we minimize cost as tiebreak)
+      expect(fit.missedOutcomes).toBe(13);
+      // totalCost should still be approximately 7 * (2/6) + 6 * (1/6)
+      const expectedCost = 7 * (2 / 6) + 6 * (1 / 6);
+      expect(fit.totalCost).toBeCloseTo(expectedCost, 2);
     });
   });
 
@@ -840,6 +923,88 @@ describe("fitSystem", () => {
 
       expect(fit1.assignments).toEqual(fit2.assignments);
       expect(fit1.totalCost).toBe(fit2.totalCost);
+    });
+  });
+
+  describe("missedOutcomes tracking", () => {
+    it("real-world fixture U7-4-133 with specific tallies yields missedOutcomes 1, coverage 97.4", () => {
+      // U7-4-133 has 7 full, 4 half, 2 single slots
+      // Tallies per match: [HOME, DRAW, AWAY]
+      // The fixture: each match listed in order
+      const matches = make13Matches();
+      const round = makeRound(1, [
+        [6, 0, 0], // Match 1: unanimous HOME, no missed for any coverage
+        [4, 1, 1], // Match 2: 4-1-1 → full: 0, half: 1, single: 2
+        [5, 1, 0], // Match 3: 5-1-0 → full: 0, half: 0, single: 1
+        [1, 2, 3], // Match 4: 1-2-3 → AWAY is top, full: 0, half: 1, single: 2
+        [5, 1, 0], // Match 5: 5-1-0 → full: 0, half: 0, single: 1
+        [1, 3, 2], // Match 6: 1-3-2 → DRAW is top, full: 0, half: 1, single: 2
+        [5, 1, 0], // Match 7: 5-1-0 → full: 0, half: 0, single: 1
+        [1, 1, 4], // Match 8: 1-1-4 → AWAY is top, full: 0, half: 1, single: 2
+        [5, 0, 1], // Match 9: 5-0-1 → HOME is top, full: 0, half: 0, single: 1
+        [1, 2, 3], // Match 10: 1-2-3 → full: 0, half: 1, single: 2
+        [4, 2, 0], // Match 11: 4-2-0 → full: 0, half: 0, single: 1
+        [3, 1, 2], // Match 12: 3-1-2 → HOME is top, full: 0, half: 1, single: 2
+        [3, 2, 1], // Match 13: 3-2-1 → full: 0, half: 1, single: 2
+      ]);
+      const ballots = buildBallots({
+        users: make6Users(),
+        currentRound: round,
+        priorRounds: [],
+      });
+
+      const system = getSystem("U7-4-133")!;
+      const fit = fitSystem(system, matches, ballots);
+
+      // With optimal assignment minimizing missed outcomes:
+      // The algorithm should assign 7 full (missed 0 each = 0 total)
+      // 4 half to the ones with missed 0 or 1 per half slot
+      // 2 single to any remaining
+      // Expected: 1 missed outcome total (or close to it based on optimal fitting)
+      expect(fit.missedOutcomes).toBe(1);
+      // Coverage = round1(100 * (1 - missedOutcomes / 39)) = round1(100 * (1 - 1/39)) = round1(100 * 38/39) = round1(97.44...) = 97.4
+      expect(fit.coverage).toBe(97.4);
+      // totalCost should be approximately 1/6 (the cost contribution from the one missed outcome)
+      expect(fit.totalCost).toBeCloseTo(1 / 6, 1);
+    });
+
+    it("primary objective (minimize missedOutcomes) beats vote-share cost tiebreak", () => {
+      const matches = make13Matches();
+      const round = makeRound(1, [
+        [4, 1, 1], // Match 1: full 0, half 1, single 2
+        [3, 3, 0], // Match 2: full 0, half 0, single 1
+        [6, 0, 0], // Matches 3-13: unanimous, no missed
+        [6, 0, 0],
+        [6, 0, 0],
+        [6, 0, 0],
+        [6, 0, 0],
+        [6, 0, 0],
+        [6, 0, 0],
+        [6, 0, 0],
+        [6, 0, 0],
+        [6, 0, 0],
+        [6, 0, 0],
+      ]);
+      const ballots = buildBallots({
+        users: make6Users(),
+        currentRound: round,
+        priorRounds: [],
+      });
+
+      const system = getSystem("U8-3-100")!; // 8 full, 3 half, 2 single
+      const pinned: PinnedCoverage = {
+        3: "full",  4: "full",  5: "full",  6: "full",  7: "full",  8: "full",  9: "full",
+        10: "half", 11: "half", 12: "half",
+        13: "single",
+      };
+      const fit = fitSystem(system, matches, ballots, pinned);
+
+      // Pins leave 1 full + 1 single for matches 1 (4-1-1) and 2 (3-3-0).
+      // Cost-only would single match 1 (cost 2/6, missed 2); missed-first singles match 2 (cost 3/6, missed 1).
+      expect(fit.assignments.find((a) => a.matchNumber === 1)!.coverage).toBe("full");
+      expect(fit.assignments.find((a) => a.matchNumber === 2)!.coverage).toBe("single");
+      expect(fit.missedOutcomes).toBe(1);
+      expect(fit.totalCost).toBeCloseTo(3 / 6, 4);
     });
   });
 
@@ -954,9 +1119,9 @@ describe("fitSystem", () => {
   });
 
   describe("coverage percentage", () => {
-    it("calculates coverage as 100 * (1 - totalCost / 13), rounded to 1 decimal", () => {
+    it("calculates coverage as 100 * (1 - missedOutcomes / 39), rounded to 1 decimal", () => {
       const matches = make13Matches();
-      const round = makeRound(1, Array(13).fill([6, 0, 0])); // All cost 0
+      const round = makeRound(1, Array(13).fill([6, 0, 0])); // All unanimous, no missed
       const ballots = buildBallots({
         users: make6Users(),
         currentRound: round,
@@ -966,23 +1131,71 @@ describe("fitSystem", () => {
       const system = getSystem("U8-3-100")!;
       const fit = fitSystem(system, matches, ballots);
 
+      // With all unanimous (6-0-0), all matches have missed 0 for any coverage level
+      // So missedOutcomes = 0, coverage = 100 * (1 - 0/39) = 100.0
       expect(fit.coverage).toBe(100.0);
     });
 
-    it("calculates coverage < 100 for partial coverage", () => {
+    it("calculates coverage < 100 for cases with missed outcomes", () => {
       const matches = make13Matches();
-      const round = makeRound(1, Array(13).fill([2, 2, 2])); // Each 2-2-2 costs 2/6 for half
+      const round = makeRound(1, Array(13).fill([2, 2, 2])); // Each 2-2-2 has missed 1 for half
       const ballots = buildBallots({
         users: make6Users(),
         currentRound: round,
         priorRounds: [],
       });
 
-      const system = getSystem("U8-3-100")!;
+      const system = getSystem("U8-3-100")!; // 8 full, 3 half, 2 single
       const fit = fitSystem(system, matches, ballots);
 
+      // With 2-2-2, all matches have missed=0 for full, missed=1 for half, missed=2 for single
+      // Optimal: 8 full (missed 0 each) + 3 half (missed 1 each) + 2 single (missed 2 each)
+      // Total missedOutcomes = 0 + 3 + 4 = 7
+      // coverage = 100 * (1 - 7/39) = 100 * 32/39 ≈ 82.05
       expect(fit.coverage).toBeLessThan(100);
       expect(fit.coverage).toBeGreaterThan(0);
+      expect(fit.missedOutcomes).toBe(7);
+    });
+  });
+
+  describe("tiebreak: equal missedOutcomes, use vote-share cost", () => {
+    it("when two matches have equal missed outcomes, prefer lower cost", () => {
+      const matches = make13Matches();
+      const round = makeRound(1, [
+        [5, 1, 0], // Match 1: half 0, single 1, cost single 1/6
+        [3, 3, 0], // Match 2: half 0, single 1, cost single 3/6
+        [6, 0, 0], // Matches 3-13: unanimous, no missed
+        [6, 0, 0],
+        [6, 0, 0],
+        [6, 0, 0],
+        [6, 0, 0],
+        [6, 0, 0],
+        [6, 0, 0],
+        [6, 0, 0],
+        [6, 0, 0],
+        [6, 0, 0],
+        [6, 0, 0],
+      ]);
+      const ballots = buildBallots({
+        users: make6Users(),
+        currentRound: round,
+        priorRounds: [],
+      });
+
+      const system = getSystem("U8-3-100")!; // 8 full, 3 half, 2 single
+      const pinned: PinnedCoverage = {
+        3: "full",  4: "full",  5: "full",  6: "full",  7: "full",  8: "full",  9: "full",  10: "full",
+        11: "half", 12: "half",
+        13: "single",
+      };
+      const fit = fitSystem(system, matches, ballots, pinned);
+
+      // Pins leave 1 half + 1 single for matches 1 (5-1-0) and 2 (3-3-0); either way 1 outcome is missed.
+      // Tiebreak on vote share singles match 1 (cost 1/6) rather than match 2 (cost 3/6).
+      expect(fit.assignments.find((a) => a.matchNumber === 1)!.coverage).toBe("single");
+      expect(fit.assignments.find((a) => a.matchNumber === 2)!.coverage).toBe("half");
+      expect(fit.missedOutcomes).toBe(1);
+      expect(fit.totalCost).toBeCloseTo(1 / 6, 4);
     });
   });
 
@@ -1374,8 +1587,8 @@ describe("rankSystems", () => {
     });
   });
 
-  describe("sorting by totalCost", () => {
-    it("sorts by totalCost ascending", () => {
+  describe("sorting by missedOutcomes first", () => {
+    it("sorts by missedOutcomes ascending (primary objective)", () => {
       const matches = make13Matches();
       const round = makeRound(1, Array(13).fill([2, 2, 2]));
       const ballots = buildBallots({
@@ -1387,13 +1600,37 @@ describe("rankSystems", () => {
       const ranked = rankSystems(matches, ballots);
 
       for (let i = 1; i < ranked.length; i++) {
-        expect(ranked[i].totalCost).toBeGreaterThanOrEqual(ranked[i - 1].totalCost);
+        expect(ranked[i].missedOutcomes).toBeGreaterThanOrEqual(
+          ranked[i - 1].missedOutcomes
+        );
+      }
+    });
+  });
+
+  describe("sorting by totalCost second (tiebreak)", () => {
+    it("sorts by totalCost ascending when missedOutcomes is equal", () => {
+      const matches = make13Matches();
+      const round = makeRound(1, Array(13).fill([2, 2, 2]));
+      const ballots = buildBallots({
+        users: make6Users(),
+        currentRound: round,
+        priorRounds: [],
+      });
+
+      const ranked = rankSystems(matches, ballots);
+
+      for (let i = 1; i < ranked.length; i++) {
+        if (ranked[i].missedOutcomes === ranked[i - 1].missedOutcomes) {
+          expect(ranked[i].totalCost).toBeGreaterThanOrEqual(
+            ranked[i - 1].totalCost
+          );
+        }
       }
     });
   });
 
   describe("tie-breaking by rows", () => {
-    it("prefers fewer rows when totalCost is equal", () => {
+    it("prefers fewer rows when missedOutcomes and totalCost are equal", () => {
       const matches = make13Matches();
       const round = makeRound(1, Array(13).fill([2, 2, 2]));
       const ballots = buildBallots({
@@ -1406,6 +1643,7 @@ describe("rankSystems", () => {
 
       for (let i = 1; i < ranked.length; i++) {
         if (
+          ranked[i].missedOutcomes === ranked[i - 1].missedOutcomes &&
           Math.abs(ranked[i].totalCost - ranked[i - 1].totalCost) < 1e-9
         ) {
           expect(ranked[i].system.rows).toBeGreaterThanOrEqual(
@@ -1430,6 +1668,7 @@ describe("rankSystems", () => {
 
       for (let i = 1; i < ranked.length; i++) {
         if (
+          ranked[i].missedOutcomes === ranked[i - 1].missedOutcomes &&
           ranked[i].totalCost === ranked[i - 1].totalCost &&
           ranked[i].system.rows === ranked[i - 1].system.rows
         ) {
@@ -1442,7 +1681,7 @@ describe("rankSystems", () => {
   });
 
   describe("coverage percentage", () => {
-    it("calculates coverage = 100 * (1 - totalCost / 13), rounded to 1 decimal", () => {
+    it("calculates coverage = 100 * (1 - missedOutcomes / 39), rounded to 1 decimal", () => {
       const matches = make13Matches();
       const round = makeRound(1, Array(13).fill([6, 0, 0])); // All cost 0
       const ballots = buildBallots({
@@ -1454,7 +1693,7 @@ describe("rankSystems", () => {
       const ranked = rankSystems(matches, ballots);
 
       for (const fit of ranked) {
-        const expected = Math.round((1 - fit.totalCost / 13) * 1000) / 10;
+        const expected = Math.round((1 - fit.missedOutcomes / 39) * 1000) / 10;
         expect(fit.coverage).toBe(expected);
       }
     });

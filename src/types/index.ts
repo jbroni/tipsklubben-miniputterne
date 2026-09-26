@@ -161,6 +161,7 @@ export interface GroupCouponSuggestionResponse {
         idealCoverage: "single" | "half" | "full";
         reasoning: string;
       }>;
+      missedOutcomes: number;
       totalCost: number;
       coverage: number;
     }>;

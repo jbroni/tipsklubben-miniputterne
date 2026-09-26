@@ -5,15 +5,27 @@
  * - Build ballots from current and carried predictions
  * - Tally votes per match
  * - Rank outcomes deterministically
- * - Calculate coverage costs
- * - Fit system via exact dynamic program
- * - Rank systems by total cost
+ * - Calculate coverage costs (including missed outcome count)
+ * - Fit system via exact dynamic program, optimizing for missed outcomes first,
+ *   then vote-share cost as tiebreak
+ * - Rank systems by missed outcomes, then total cost
  *
  * All reasoning text is in Danish.
  */
 
 import { SYSTEMS, SystemDefinition, COUPON_SIZE } from "./coupon-systems";
 import { PICK_LABEL, PICK_ORDER, PickValue } from "./picks";
+
+/** Weight for each missed outcome in the DP objective.
+ *  Ensures one missed outcome outweighs any vote-share cost difference
+ *  (total vote-share cost < 13, so MISSED_WEIGHT = 14).
+ */
+const MISSED_WEIGHT = COUPON_SIZE + 1;
+
+/** Compute combined objective for a coverage choice. */
+function objective(choice: CoverageChoice): number {
+  return choice.missed * MISSED_WEIGHT + choice.cost;
+}
 
 /* ──────────────────────────────────────────────────────────────────────── */
 /* Input types                                                              */
@@ -300,10 +312,14 @@ export function rankOutcomes(
 /* ──────────────────────────────────────────────────────────────────────── */
 
 /**
- * Coverage choice: outcomes list and cost (fraction of voters uncovered).
+ * Coverage choice: outcomes list, vote-share cost, and missed outcome count.
+ * - cost: fraction of voters uncovered (0 to 1)
+ * - missed: number of outcomes not in this choice whose tally > 0
+ * - outcomes: the covered outcomes (1, 2, or 3 entries)
  */
 export interface CoverageChoice {
   cost: number;
+  missed: number;
   outcomes: PickValue[];
 }
 
@@ -319,11 +335,13 @@ export interface CoverageCosts {
 /**
  * Calculate coverage costs for a single match.
  *
- * - full: all three outcomes, cost 0
- * - half: top two ranked outcomes, cost = tally[ranked[2]] / N
- * - single: top ranked outcome, cost = (N - tally[ranked[0]]) / N
+ * - full: all three outcomes, cost 0, missed 0
+ * - half: top two ranked outcomes, cost = tally[ranked[2]] / N,
+ *   missed = 1 if tally[ranked[2]] > 0 else 0
+ * - single: top ranked outcome, cost = (N - tally[ranked[0]]) / N,
+ *   missed = count of the other two outcomes with tally > 0
  *
- * If N === 0, all costs are 0. Outcomes still respect coverage level (1, 2, 3)
+ * If N === 0, all costs and missed are 0. Outcomes still respect coverage level (1, 2, 3)
  * and are taken from ranked order (which falls through to odds, then axis order).
  */
 export function coverageCosts(
@@ -333,24 +351,29 @@ export function coverageCosts(
   const ranked = rankOutcomes(tally, match);
   const N = tally.total;
 
-  // Full: all three, cost 0
+  // Full: all three outcomes covered, cost 0, missed 0
   const fullOutcomes = PICK_ORDER.slice();
   const fullCost = 0;
+  const fullMissed = 0;
 
-  // Half: top two ranked
+  // Half: top two ranked outcomes, missed = 1 if third has votes else 0
   const halfOutcomes = [ranked[0], ranked[1]].sort(
     (a, b) => PICK_ORDER.indexOf(a) - PICK_ORDER.indexOf(b)
   );
   const halfCost = N > 0 ? tally[ranked[2]] / N : 0;
+  const halfMissed = N > 0 && tally[ranked[2]] > 0 ? 1 : 0;
 
-  // Single: top ranked
+  // Single: top ranked outcome, missed = count of the other two with votes
   const singleOutcomes = [ranked[0]];
   const singleCost = N > 0 ? (N - tally[ranked[0]]) / N : 0;
+  const singleMissed = N > 0
+    ? (tally[ranked[1]] > 0 ? 1 : 0) + (tally[ranked[2]] > 0 ? 1 : 0)
+    : 0;
 
   return {
-    full: { cost: fullCost, outcomes: fullOutcomes },
-    half: { cost: halfCost, outcomes: halfOutcomes },
-    single: { cost: singleCost, outcomes: singleOutcomes },
+    full: { cost: fullCost, missed: fullMissed, outcomes: fullOutcomes },
+    half: { cost: halfCost, missed: halfMissed, outcomes: halfOutcomes },
+    single: { cost: singleCost, missed: singleMissed, outcomes: singleOutcomes },
   };
 }
 
@@ -429,8 +452,9 @@ export interface MatchAssignment {
 export interface SystemFit {
   system: SystemDefinition;
   assignments: MatchAssignment[];
-  totalCost: number; // Sum of per-match costs
-  coverage: number; // 100 * (1 - totalCost / 13), rounded to 1 decimal
+  missedOutcomes: number; // Sum of per-match missed outcome counts
+  totalCost: number; // Sum of per-match vote-share costs
+  coverage: number; // 100 * (1 - missedOutcomes / (COUPON_SIZE * 3)), rounded to 1 decimal
 }
 
 /**
@@ -440,13 +464,15 @@ export interface SystemFit {
  * - Total fully covered = system.full (exact)
  * - Total half covered = system.half (exact)
  * - Total single covered = system.single (computed: 13 - full - half)
- * - Total cost is minimized
+ * - Total missed outcomes is minimized (primary objective)
+ * - Total vote-share cost is minimized (tiebreak)
  *
  * If `pinned` is provided, matches listed in it are constrained to that coverage.
  * Unpinned matches are solved optimally against the remaining slot budget.
  * The exact slot constraint still holds overall.
  *
- * Uses DP over (matchIndex, fullUsed, halfUsed).
+ * Uses DP over (matchIndex, fullUsed, halfUsed), optimizing the scalar:
+ *   missed * MISSED_WEIGHT + cost
  *
  * Throws if system.full + system.half > 13.
  * Throws InfeasiblePinsError if pins exceed the system's budget.
@@ -540,8 +566,9 @@ export function fitSystem(
     }
   }
 
-  // DP state: dp[i][full][half] = minimum cost to cover first i matches
-  // using exactly `full` fully covered and `half` half covered
+  // DP state: dp[i][full][half] = minimum combined objective to cover first i matches
+  // using exactly `full` fully covered and `half` half covered.
+  // Combined objective = missed * MISSED_WEIGHT + cost
   type DPState = number | null; // null means infeasible
   const dp: DPState[][][] = Array.from({ length: numMatches + 1 }, () =>
     Array.from({ length: system.full + 1 }, () =>
@@ -564,53 +591,55 @@ export function fitSystem(
         if (prevState === null) continue;
 
         // prevState is now known to be non-null
-        const currentCost: number = prevState;
+        const currentObjective: number = prevState;
 
         if (isPinned) {
           // This match is pinned: only one legal transition
           let newFullUsed = fullUsed;
           let newHalfUsed = halfUsed;
-          let newCost = currentCost;
+          let newObjective = currentObjective;
 
           if (pinnedCov === "full") {
             newFullUsed = fullUsed + 1;
-            newCost = currentCost + costs[i].full.cost;
+            newObjective = currentObjective + objective(costs[i].full);
           } else if (pinnedCov === "half") {
             newHalfUsed = halfUsed + 1;
-            newCost = currentCost + costs[i].half.cost;
+            newObjective = currentObjective + objective(costs[i].half);
           } else {
             // "single" — don't increment fullUsed or halfUsed
-            newCost = currentCost + costs[i].single.cost;
+            newObjective = currentObjective + objective(costs[i].single);
           }
 
+          if (newFullUsed > system.full || newHalfUsed > system.half) continue;
+
           const existing = dp[i + 1][newFullUsed][newHalfUsed];
-          if (existing === null || existing > newCost) {
-            dp[i + 1][newFullUsed][newHalfUsed] = newCost;
+          if (existing === null || existing > newObjective) {
+            dp[i + 1][newFullUsed][newHalfUsed] = newObjective;
           }
         } else {
           // This match is not pinned: try all transitions
           // Try assigning this match to single coverage
-          const newCost1 = currentCost + costs[i].single.cost;
+          const newObjective1 = currentObjective + objective(costs[i].single);
           const existing1 = dp[i + 1][fullUsed][halfUsed];
-          if (existing1 === null || existing1 > newCost1) {
-            dp[i + 1][fullUsed][halfUsed] = newCost1;
+          if (existing1 === null || existing1 > newObjective1) {
+            dp[i + 1][fullUsed][halfUsed] = newObjective1;
           }
 
           // Try assigning this match to half coverage (if slots available)
           if (halfUsed < system.half) {
-            const newCost2 = currentCost + costs[i].half.cost;
+            const newObjective2 = currentObjective + objective(costs[i].half);
             const existing2 = dp[i + 1][fullUsed][halfUsed + 1];
-            if (existing2 === null || existing2 > newCost2) {
-              dp[i + 1][fullUsed][halfUsed + 1] = newCost2;
+            if (existing2 === null || existing2 > newObjective2) {
+              dp[i + 1][fullUsed][halfUsed + 1] = newObjective2;
             }
           }
 
           // Try assigning this match to full coverage (if slots available)
           if (fullUsed < system.full) {
-            const newCost3 = currentCost + costs[i].full.cost;
+            const newObjective3 = currentObjective + objective(costs[i].full);
             const existing3 = dp[i + 1][fullUsed + 1][halfUsed];
-            if (existing3 === null || existing3 > newCost3) {
-              dp[i + 1][fullUsed + 1][halfUsed] = newCost3;
+            if (existing3 === null || existing3 > newObjective3) {
+              dp[i + 1][fullUsed + 1][halfUsed] = newObjective3;
             }
           }
         }
@@ -619,8 +648,8 @@ export function fitSystem(
   }
 
   // Extract solution: backtrack from dp[numMatches][system.full][system.half]
-  const optimalCost = dp[numMatches][system.full][system.half];
-  if (optimalCost === null) {
+  const optimalObjective = dp[numMatches][system.full][system.half];
+  if (optimalObjective === null) {
     // If pins were supplied, this is an infeasible pins error; otherwise it's a genuine system error
     if (hasPins) {
       throw new InfeasiblePinsError(
@@ -644,9 +673,9 @@ export function fitSystem(
     const pinnedCov = pinnedCoverage[matchNumber];
 
     let chosen: "single" | "half" | "full" | null = null;
-    const currentCost = dp[i][fullUsed][halfUsed];
+    const currentObjective = dp[i][fullUsed][halfUsed];
 
-    if (currentCost === null) {
+    if (currentObjective === null) {
       throw new Error(`DP state is null at [${i}][${fullUsed}][${halfUsed}]`);
     }
 
@@ -662,20 +691,20 @@ export function fitSystem(
     } else {
       // For unpinned matches, try each possibility
       // Check if this match was assigned to single (most likely)
-      const prevCostSingle = dp[i - 1][fullUsed][halfUsed];
-      if (prevCostSingle !== null) {
-        const expectedCost = prevCostSingle + costs[i - 1].single.cost;
-        if (Math.abs(currentCost - expectedCost) < 1e-9) {
+      const prevObjectiveSingle = dp[i - 1][fullUsed][halfUsed];
+      if (prevObjectiveSingle !== null) {
+        const expectedObjective = prevObjectiveSingle + objective(costs[i - 1].single);
+        if (Math.abs(currentObjective - expectedObjective) < 1e-9) {
           chosen = "single";
         }
       }
 
       // Check if this match was assigned to half
       if (chosen === null && halfUsed > 0) {
-        const prevCostHalf = dp[i - 1][fullUsed][halfUsed - 1];
-        if (prevCostHalf !== null) {
-          const expectedCost = prevCostHalf + costs[i - 1].half.cost;
-          if (Math.abs(currentCost - expectedCost) < 1e-9) {
+        const prevObjectiveHalf = dp[i - 1][fullUsed][halfUsed - 1];
+        if (prevObjectiveHalf !== null) {
+          const expectedObjective = prevObjectiveHalf + objective(costs[i - 1].half);
+          if (Math.abs(currentObjective - expectedObjective) < 1e-9) {
             chosen = "half";
             halfUsed--;
           }
@@ -684,10 +713,10 @@ export function fitSystem(
 
       // Check if this match was assigned to full
       if (chosen === null && fullUsed > 0) {
-        const prevCostFull = dp[i - 1][fullUsed - 1][halfUsed];
-        if (prevCostFull !== null) {
-          const expectedCost = prevCostFull + costs[i - 1].full.cost;
-          if (Math.abs(currentCost - expectedCost) < 1e-9) {
+        const prevObjectiveFull = dp[i - 1][fullUsed - 1][halfUsed];
+        if (prevObjectiveFull !== null) {
+          const expectedObjective = prevObjectiveFull + objective(costs[i - 1].full);
+          if (Math.abs(currentObjective - expectedObjective) < 1e-9) {
             chosen = "full";
             fullUsed--;
           }
@@ -745,13 +774,23 @@ export function fitSystem(
   // Sort assignments by matchNumber for stable output
   assignments.sort((a, b) => a.matchNumber - b.matchNumber);
 
-  // Calculate coverage figure
-  const coverage = Math.round((1 - optimalCost / COUPON_SIZE) * 1000) / 10;
+  // Compute missedOutcomes and totalCost from the assignment
+  let missedOutcomes = 0;
+  let totalCost = 0;
+  for (let i = 0; i < numMatches; i++) {
+    const cov = assignment[i];
+    missedOutcomes += costs[i][cov].missed;
+    totalCost += costs[i][cov].cost;
+  }
+
+  // Calculate coverage figure: (1 - missedOutcomes / (COUPON_SIZE * 3)) * 100, rounded to 1 decimal
+  const coverage = Math.round((1 - missedOutcomes / (COUPON_SIZE * 3)) * 1000) / 10;
 
   return {
     system,
     assignments,
-    totalCost: optimalCost,
+    missedOutcomes,
+    totalCost,
     coverage,
   };
 }
@@ -761,12 +800,13 @@ export function fitSystem(
 /* ──────────────────────────────────────────────────────────────────────── */
 
 /**
- * Rank all 13 systems by fit quality (lowest cost wins).
+ * Rank all 13 systems by fit quality.
  *
  * Sort by:
- * 1. totalCost ascending
- * 2. system.rows ascending (fewer rows wins a tie)
- * 3. code for stability
+ * 1. missedOutcomes ascending (fewer uncovered distinct outcomes wins)
+ * 2. totalCost ascending (lower vote-share cost wins a tie)
+ * 3. system.rows ascending (fewer rows wins a tie)
+ * 4. code for stability
  */
 export function rankSystems(
   matches: MatchInput[],
@@ -775,15 +815,19 @@ export function rankSystems(
   const fits = SYSTEMS.map((system) => fitSystem(system, matches, ballots));
 
   fits.sort((a, b) => {
-    // 1. totalCost ascending
+    // 1. missedOutcomes ascending
+    if (a.missedOutcomes !== b.missedOutcomes) {
+      return a.missedOutcomes - b.missedOutcomes;
+    }
+    // 2. totalCost ascending
     if (a.totalCost !== b.totalCost) {
       return a.totalCost - b.totalCost;
     }
-    // 2. rows ascending
+    // 3. rows ascending
     if (a.system.rows !== b.system.rows) {
       return a.system.rows - b.system.rows;
     }
-    // 3. code for stability
+    // 4. code for stability
     return a.system.code.localeCompare(b.system.code);
   });
 
