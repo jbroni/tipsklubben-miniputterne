@@ -214,6 +214,7 @@ export async function GET(
           idealCoverage: a.idealCoverage,
           reasoning: a.reasoning,
         })),
+        missedOutcomes: fit.missedOutcomes,
         totalCost: fit.totalCost,
         coverage: fit.coverage,
       })),

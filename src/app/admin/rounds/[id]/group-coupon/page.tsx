@@ -530,9 +530,9 @@ function GroupCouponContent() {
                 <div className="text-xs">
                   <span
                     className={
-                      fit.coverage >= 80
+                      fit.missedOutcomes <= 1
                         ? "text-brand"
-                        : fit.coverage >= 55
+                        : fit.missedOutcomes <= 3
                           ? "text-gold"
                           : "text-signal"
                     }
