@@ -4,6 +4,7 @@ import { RoundStatusBadge } from "@/components/RoundStatusBadge";
 import { GroupCouponCard } from "@/components/GroupCouponCard";
 import { PredictionGrid } from "@/components/PredictionGrid";
 import { RoundScoreboard } from "@/components/RoundScoreboard";
+import { CorrectPicksRadar } from "@/components/CorrectPicksRadar";
 import { resolveRoundBackHref } from "@/lib/back-href";
 import { arePicksRevealed } from "@/lib/rounds";
 import { settleFromPrisma } from "@/lib/group-coupon-settlement-data";
@@ -99,6 +100,12 @@ export default async function RoundDetailPage({
       {isRevealed && userScores.length > 0 && (
         <div className="card">
           <RoundScoreboard scores={userScores} currentUserId={currentUser.id} kicker="RUNDENS SCORER" />
+        </div>
+      )}
+
+      {isRevealed && userScores.length >= 3 && round.matches.some((m) => m.result) && (
+        <div className="card">
+          <CorrectPicksRadar scores={userScores} maxPoints={round.matches.length} currentUserId={currentUser.id} kicker="RIGTIGE KAMPE" />
         </div>
       )}
 
