@@ -2,22 +2,24 @@
  * System-key convention calibration script.
  *
  * System keys were copied from Danske Spil's site as bare rows, with no legend.
- * Four reading rules were recovered, three confirmed:
+ * Four reading rules were recovered, all confirmed:
  *
  * Rule 1 (CONFIRMED): Matches with a single outcome never appear in the key.
  * Rule 2 (CONFIRMED): Each row lists the fully covered matches first, then the half covered ones.
  * Rule 3 (CONFIRMED): A half covered match is always written with glyphs 1 and X, regardless
  *                      of its two covered outcomes. The glyph-to-outcome mapping depends on
  *                      which outcomes are covered.
- * Rule 4 (ASSUMED):    In a U-system, glyph 1 is the udgangsrække (base outcome), transposed
- *                      with whichever glyph would otherwise hold it.
+ * Rule 4 (CONFIRMED):  In a U-system, glyph 1 is the udgangsrække (base outcome), with the
+ *                      remaining covered outcomes assigned to the remaining glyphs (X, then 2)
+ *                      in PICK_ORDER (HOME, DRAW, AWAY). Verified empirically against three
+ *                      real U7-4-133 coupons (rounds dated 12/9, 19/9, 26/9 2026).
  *
- * THE UNKNOWN: the order of matches within each block (full-covered and half-covered).
+ * MATCH ORDERING: the order of matches within each block (full-covered and half-covered).
  * Rule 2 pins full-before-half but not which fully covered match takes the first full column.
  *
- * DEFAULT_CONVENTION assumes ascending match number. Getting this wrong changes the best-row
- * score on U7-4-133 for 51% of outcomes, with a maximum gap of 3 correct — so it matters,
- * and it must be settled empirically rather than guessed.
+ * DEFAULT_CONVENTION uses ascending match number, verified empirically against three real U7-4-133
+ * coupons (rounds dated 12/9, 19/9, 26/9 2026). Descending ordering fails those coupons.
+ * The script remains useful to verify the ordering rule on other U-systems with real samples.
  *
  * This script settles it from a single real sample: the user builds a system coupon on
  * danskespil.dk, copies the rows the site generates, and the script reports which candidate
@@ -459,7 +461,7 @@ async function main() {
         "  - Rule 1: Matches with a single outcome never appear in the key.\n" +
         "  - Rule 2: Each row lists fully covered matches first, then half covered.\n" +
         "  - Rule 3: Half covered matches are always written with glyphs 1 and X.\n" +
-        "  - Rule 4: In U-systems, glyph 1 denotes the base outcome (transposition, not rotation).\n" +
+        "  - Rule 4: In U-systems, glyph 1 denotes the base outcome, with remaining outcomes in PICK_ORDER.\n" +
         "\n  Or the input file format is incorrect."
     );
 
