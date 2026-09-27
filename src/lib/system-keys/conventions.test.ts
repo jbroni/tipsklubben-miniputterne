@@ -126,7 +126,7 @@ describe("DEFAULT_CONVENTION.decodeGlyph", () => {
       expect(DEFAULT_CONVENTION.decodeGlyph("2", slot, system)).toBe("AWAY");
     });
 
-    it("base=DRAW: 1→DRAW, X→HOME, 2→AWAY (transposition)", () => {
+    it("base=DRAW: 1→DRAW, X→HOME, 2→AWAY (base-first)", () => {
       const system = makeSystem("U", 1, 0);
       const slot = makeSlot(
         1,
@@ -139,7 +139,7 @@ describe("DEFAULT_CONVENTION.decodeGlyph", () => {
       expect(DEFAULT_CONVENTION.decodeGlyph("2", slot, system)).toBe("AWAY");
     });
 
-    it("base=AWAY: 1→AWAY, X→DRAW, 2→HOME (transposition)", () => {
+    it("base=AWAY: 1→AWAY, X→HOME, 2→DRAW (base-first)", () => {
       const system = makeSystem("U", 1, 0);
       const slot = makeSlot(
         1,
@@ -148,8 +148,8 @@ describe("DEFAULT_CONVENTION.decodeGlyph", () => {
         "AWAY"
       );
       expect(DEFAULT_CONVENTION.decodeGlyph("1", slot, system)).toBe("AWAY");
-      expect(DEFAULT_CONVENTION.decodeGlyph("X", slot, system)).toBe("DRAW");
-      expect(DEFAULT_CONVENTION.decodeGlyph("2", slot, system)).toBe("HOME");
+      expect(DEFAULT_CONVENTION.decodeGlyph("X", slot, system)).toBe("HOME");
+      expect(DEFAULT_CONVENTION.decodeGlyph("2", slot, system)).toBe("DRAW");
     });
   });
 
@@ -183,8 +183,8 @@ describe("DEFAULT_CONVENTION.decodeGlyph", () => {
     });
   });
 
-  describe("transposition vs rotation for U-system base=AWAY", () => {
-    it("transposition: X stays DRAW, 2 becomes HOME (not rotation)", () => {
+  describe("base-first vs transposition/rotation for U-system base=AWAY", () => {
+    it("base-first: baseOutcome first, then remaining in PICK_ORDER", () => {
       const system = makeSystem("U", 1, 0);
       const slot = makeSlot(
         1,
@@ -192,13 +192,14 @@ describe("DEFAULT_CONVENTION.decodeGlyph", () => {
         ["HOME", "DRAW", "AWAY"],
         "AWAY"
       );
-      // With transposition (which is correct):
+      // With base-first (which is correct):
       // Outcomes sorted by PICK_ORDER: [HOME, DRAW, AWAY]
-      // Swap HOME and AWAY so AWAY is at index 0: [AWAY, DRAW, HOME]
-      // So: 1→AWAY, X→DRAW, 2→HOME
+      // Put baseOutcome first, then remaining in PICK_ORDER: [AWAY, HOME, DRAW]
+      // So: 1→AWAY, X→HOME, 2→DRAW
+      // (Transposition would give X→DRAW, 2→HOME; rotation would give X→HOME, 2→DRAW for AWAY, but differs for base DRAW: X→AWAY)
       expect(DEFAULT_CONVENTION.decodeGlyph("1", slot, system)).toBe("AWAY");
-      expect(DEFAULT_CONVENTION.decodeGlyph("X", slot, system)).toBe("DRAW");
-      expect(DEFAULT_CONVENTION.decodeGlyph("2", slot, system)).toBe("HOME");
+      expect(DEFAULT_CONVENTION.decodeGlyph("X", slot, system)).toBe("HOME");
+      expect(DEFAULT_CONVENTION.decodeGlyph("2", slot, system)).toBe("DRAW");
     });
   });
 
@@ -410,8 +411,8 @@ describe("CANDIDATE_CONVENTIONS", () => {
     expect(ids).toContain("descending-match-number");
   });
 
-  it("includes rotational-u-base variant", () => {
+  it("includes transposition-u-base variant", () => {
     const ids = CANDIDATE_CONVENTIONS.map((c) => c.id);
-    expect(ids).toContain("rotational-u-base");
+    expect(ids).toContain("transposition-u-base");
   });
 });

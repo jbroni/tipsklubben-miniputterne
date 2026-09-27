@@ -1,8 +1,9 @@
 /**
- * Pure module for user display name disambiguation.
+ * Pure module for user display name disambiguation and app-wide ordering.
  *
  * Derives short display names from full displayName strings, with
- * automatic disambiguation when first names collide.
+ * automatic disambiguation when first names collide. Provides
+ * compareByName for consistent player ordering throughout the app.
  */
 
 export interface NamedUser {
@@ -89,4 +90,27 @@ export function nameCode(shortName: string): string {
     return firstNamePart + initial;
   }
   return shortName.slice(0, 3).toUpperCase();
+}
+
+const nameCollator = new Intl.Collator("da");
+
+/** Danish alphabetical order: Æ < Ø < Å after Z, and "Aa" collates as Å. */
+export function compareNames(a: string, b: string): number {
+  return nameCollator.compare(a, b);
+}
+
+/**
+ * The app-wide player order: compareNames on displayName, ties broken by id
+ * (plain code-unit comparison, so the result never depends on locale).
+ */
+export function compareByName(a: NamedUser, b: NamedUser): number {
+  return (
+    compareNames(a.displayName, b.displayName) ||
+    (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
+  );
+}
+
+/** Copy of `users` in compareByName order. Does not mutate the input. */
+export function sortByName<T extends NamedUser>(users: T[]): T[] {
+  return [...users].sort(compareByName);
 }

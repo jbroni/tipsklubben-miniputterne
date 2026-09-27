@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, isMember } from "@/lib/auth";
 import { carryOverMissingCoupons } from "@/lib/services/carry-over";
 import Link from "next/link";
 import { LeaderboardTable } from "@/components/LeaderboardTable";
@@ -17,7 +17,7 @@ import { computeRoundScores } from "@/lib/round-scores";
 import { getLeaderboardEntries } from "@/lib/leaderboard-data";
 import { arePicksRevealed } from "@/lib/rounds";
 import { settleFromPrisma } from "@/lib/group-coupon-settlement-data";
-import { firstName, withShortName } from "@/lib/display-name";
+import { firstName, withShortName, sortByName } from "@/lib/display-name";
 import { getShortNames } from "@/lib/display-name-data";
 import type { Pick as PickType } from "@/types";
 import { Logo } from "@/components/Logo";
@@ -33,6 +33,24 @@ export default async function DashboardPage() {
           <Logo href="/" />
         </div>
         <LoginButton className="text-sm" />
+      </div>
+    );
+  }
+
+  if (!isMember(user)) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
+        <div className="scale-150">
+          <Logo href="/" />
+        </div>
+        <div className="text-center space-y-3 max-w-sm">
+          <h1 className="font-display text-xl font-bold text-ink">
+            Afventer godkendelse
+          </h1>
+          <p className="text-sm text-muted">
+            Hej {firstName(user.displayName)}, din konto skal godkendes af en admin, før du kan se kuponer og stillinger.
+          </p>
+        </div>
       </div>
     );
   }
@@ -66,12 +84,12 @@ export default async function DashboardPage() {
         },
       },
     }),
-    prisma.user.findMany(),
+    prisma.user.findMany({ where: { role: { not: "guest" } } }),
     getLeaderboardEntries(),
     getShortNames(),
   ]);
 
-  const users = rawUsers.map((u) => withShortName(u, shortNames));
+  const users = sortByName(rawUsers.map((u) => withShortName(u, shortNames)));
   const leaderboardEntries = rawLeaderboardEntries.map((e) => ({
     ...e,
     user: withShortName(e.user, shortNames),

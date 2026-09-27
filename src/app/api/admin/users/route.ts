@@ -1,14 +1,16 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
+import { sortByName } from "@/lib/display-name";
 
 export async function GET() {
   await requireAdmin();
 
-  const users = await prisma.user.findMany({
+  const rawUsers = await prisma.user.findMany({
     include: { identities: { select: { id: true, authId: true, email: true } } },
-    orderBy: { createdAt: "asc" },
   });
+
+  const users = sortByName(rawUsers);
 
   return NextResponse.json({ data: users });
 }
@@ -22,6 +24,14 @@ export async function PATCH(request: Request) {
   if (!userId || !role) {
     return NextResponse.json(
       { error: "User ID and role are required" },
+      { status: 400 }
+    );
+  }
+
+  const validRoles = ["guest", "member", "admin"];
+  if (!validRoles.includes(role)) {
+    return NextResponse.json(
+      { error: "Invalid role" },
       { status: 400 }
     );
   }

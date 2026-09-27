@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Navbar } from "@/components/Navbar";
-import { getCurrentUserFromHeaders } from "@/lib/auth";
+import { getCurrentUserFromHeaders, isMember } from "@/lib/auth";
 import { firstName } from "@/lib/display-name";
 import { MainContainer } from "@/components/MainContainer";
 import { Analytics } from "@vercel/analytics/next";
@@ -21,10 +21,11 @@ export default async function RootLayout({
   const user = await getCurrentUserFromHeaders();
   const displayName = (user?.displayName && firstName(user.displayName)) || user?.email || null;
   const isAdmin = user?.role === "admin";
+  const isGuest = !!user && !isMember(user);
 
-  // Query for delegate round if user exists and is not admin
+  // Query for delegate round if user exists and is not admin and not guest
   let delegateRoundId: string | null = null;
-  if (user && !isAdmin) {
+  if (user && !isAdmin && !isGuest) {
     const delegateRound = await prisma.round.findFirst({
       where: {
         couponDelegateId: user.id,
@@ -43,7 +44,7 @@ export default async function RootLayout({
   return (
     <html lang="da">
       <body className="min-h-screen flex flex-col bg-paper">
-        <Navbar displayName={displayName} isAdmin={isAdmin} delegateRoundId={delegateRoundId} />
+        <Navbar displayName={displayName} isAdmin={isAdmin} isGuest={isGuest} delegateRoundId={delegateRoundId} />
         <MainContainer>{children}</MainContainer>
         <footer className="border-t border-line-card py-6 text-center text-sm text-muted">
           Tipsklubben Miniputterne · 2013

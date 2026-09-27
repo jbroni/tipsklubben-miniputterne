@@ -15,6 +15,7 @@ interface AdminUser {
   id: string;
   displayName: string;
   authId: string;
+  role: string;
 }
 
 interface RoundData {
@@ -108,7 +109,7 @@ function AdminRoundsContent() {
 
   // Compute labels for delegate select, using full name when two first names are the same
   const getDisplayLabels = (): Record<string, string> => {
-    const filteredUsers = users.filter((u) => !isHistoricPlaceholder(u.authId));
+    const filteredUsers = users.filter((u) => !isHistoricPlaceholder(u.authId) && u.role !== "guest");
     const firstNames = filteredUsers.map((u) => firstName(u.displayName));
     const duplicateFirstNames = new Set(firstNames.filter((n, i) => firstNames.indexOf(n) !== i));
 
@@ -963,7 +964,7 @@ function AdminRoundsContent() {
                   </label>
                   {(() => {
                     const displayLabels = getDisplayLabels();
-                    const filteredUsers = users.filter((u) => !isHistoricPlaceholder(u.authId));
+                    const filteredUsers = users.filter((u) => !isHistoricPlaceholder(u.authId) && u.role !== "guest");
                     const delegateExists = round.couponDelegateId && filteredUsers.some((u) => u.id === round.couponDelegateId);
 
                     return (

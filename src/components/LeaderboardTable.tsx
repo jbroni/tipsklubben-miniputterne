@@ -2,7 +2,7 @@ import type { LeaderboardEntry } from "@/types";
 import { FedtBadge } from "./FedtBadge";
 import { Avatar } from "./Avatar";
 import { formatDecimal } from "@/lib/fedt";
-import { compareEntries, computeMovements } from "@/lib/leaderboard";
+import { compareRanking, computeMovements } from "@/lib/leaderboard";
 
 interface LeaderboardTableProps {
   entries: LeaderboardEntry[];
@@ -19,7 +19,7 @@ export function LeaderboardTable({
   showRounds = false,
   showMovement = true,
 }: LeaderboardTableProps) {
-  const sorted = [...entries].sort(compareEntries);
+  const sorted = [...entries].sort(compareRanking);
   const movement = showMovement ? computeMovements(entries) : {};
 
   return (

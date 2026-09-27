@@ -5,6 +5,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/server";
 import { prisma } from "@/lib/prisma";
+import { carryOverMissingCoupons } from "@/lib/services/carry-over";
 import { submitPicks } from "@/lib/services/predictions";
 import { arePicksStillOpen, arePicksRevealed } from "@/lib/rounds";
 import {
@@ -30,6 +31,9 @@ export function registerPlayerTools(server: McpServer): void {
     },
     async (input, ctx) => {
       try {
+        // Apply carry-over logic before reading rounds
+        await carryOverMissingCoupons();
+
         const caller = getCaller(ctx);
 
         // Get target season
@@ -99,6 +103,9 @@ export function registerPlayerTools(server: McpServer): void {
     },
     async (input, ctx) => {
       try {
+        // Apply carry-over logic before reading the round
+        await carryOverMissingCoupons();
+
         const caller = getCaller(ctx);
 
         const round = await prisma.round.findUnique({
@@ -205,6 +212,9 @@ export function registerPlayerTools(server: McpServer): void {
     },
     async (input, ctx) => {
       try {
+        // Apply carry-over logic before reading the caller's picks
+        await carryOverMissingCoupons();
+
         const caller = getCaller(ctx);
 
         const round = await prisma.round.findUnique({

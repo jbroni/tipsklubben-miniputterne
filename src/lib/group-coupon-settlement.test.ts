@@ -6,6 +6,7 @@ import {
   type ExpandedRow,
 } from "./group-coupon-settlement";
 import {
+  CANDIDATE_CONVENTIONS,
   DEFAULT_CONVENTION,
   type CouponSlot,
   type KeyConvention,
@@ -13,6 +14,20 @@ import {
 import { getSystemKey, generateCompleteKey } from "./system-keys/index";
 import { getSystem, SYSTEMS, type SystemDefinition } from "./coupon-systems";
 import { type PickValue } from "./picks";
+import {
+  coupon1209Slots,
+  coupon1209Results,
+  coupon1209ExpandedRows,
+  coupon1209Expected,
+  coupon1909Slots,
+  coupon1909Results,
+  coupon1909ExpandedRows,
+  coupon1909Expected,
+  coupon2609Slots,
+  coupon2609Results,
+  coupon2609ExpandedRows,
+  coupon2609Expected,
+} from "./__fixtures__/u7-4-133-coupons";
 
 /**
  * Helper to build a coupon slot.
@@ -167,6 +182,88 @@ describe("expandCoupon", () => {
       );
     });
   });
+
+  describe.each([
+    {
+      couponId: "1209",
+      slots: coupon1209Slots,
+      results: coupon1209Results,
+      expandedRows: coupon1209ExpandedRows,
+      expected: coupon1209Expected,
+    },
+    {
+      couponId: "1909",
+      slots: coupon1909Slots,
+      results: coupon1909Results,
+      expandedRows: coupon1909ExpandedRows,
+      expected: coupon1909Expected,
+    },
+    {
+      couponId: "2609",
+      slots: coupon2609Slots,
+      results: coupon2609Results,
+      expandedRows: coupon2609ExpandedRows,
+      expected: coupon2609Expected,
+    },
+  ])(
+    "U7-4-133 regression test: coupon $couponId",
+    ({ couponId, slots, results, expandedRows, expected }) => {
+      const system = getSystem("U7-4-133")!;
+      const key = getSystemKey("U7-4-133")!;
+
+      it("expands to 133 rows with correct glyph mapping", () => {
+        const rows = expandCoupon({
+          system,
+          slots,
+          key,
+          convention: DEFAULT_CONVENTION,
+        });
+
+        expect(rows.length).toBe(133);
+        // Verify the expanded rows match the fixture
+        const expandedSigns = rows.map((r) =>
+          r.signs.map((s) => (s === "HOME" ? "1" : s === "DRAW" ? "X" : "2")).join("")
+        );
+        expect(expandedSigns).toEqual(expandedRows);
+      });
+
+      it("settleGroupCoupon gives correct best row score", () => {
+        const settlement = settleGroupCoupon({
+          systemCode: "U7-4-133",
+          slots,
+          results,
+          roundCompleted: true,
+        });
+
+        expect(settlement.status).toBe("settled");
+        if (settlement.status !== "settled") {
+          throw new Error("unreachable");
+        }
+
+        expect(settlement.bestRow.correct).toBe(expected.bestCorrect);
+        expect(settlement.bestRowCount).toBe(expected.bestRowCount);
+      });
+
+      it("rejects the old transposition rule", () => {
+        const transpositionConvention = CANDIDATE_CONVENTIONS.find(
+          (c) => c.id === "transposition-u-base"
+        )!;
+        const rows = expandCoupon({
+          system,
+          slots,
+          key,
+          convention: transpositionConvention,
+        });
+
+        const signs = rows.map((r) =>
+          r.signs
+            .map((s) => (s === "HOME" ? "1" : s === "DRAW" ? "X" : "2"))
+            .join("")
+        );
+        expect(signs).not.toEqual(expandedRows);
+      });
+    }
+  );
 });
 
 describe("expandCoupon guarantee suite", () => {
@@ -297,7 +394,7 @@ describe("expandCoupon guarantee suite", () => {
     // slot assignment. This test exercises a mixed-shape case with interleaved coverage
     // across match numbers to verify:
     // 1. Half-glyph substitution for pairs other than ["HOME","AWAY"]
-    // 2. U-system transposition when baseOutcome is "AWAY" (glyph X must still mean DRAW, 2 must mean HOME)
+    // 2. U-system base-first decoding when baseOutcome is "AWAY" (glyph X means HOME, 2 means DRAW)
     // 3. Column assignment when covered matches are not numbered consecutively
     const system = getSystem("U7-4-133")!;
     const key = getSystemKey("U7-4-133")!;

@@ -136,10 +136,13 @@ export async function updateRound(input: {
         },
       });
 
-      // Update the round
+      // Update the round, including clearing the carry-over marker
       return tx.round.update({
         where: { id: input.roundId },
-        data: updateData,
+        data: {
+          ...updateData,
+          carryOverAppliedAt: null,
+        },
       });
     });
 

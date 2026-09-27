@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentMember } from "@/lib/auth";
 import { getLeaderboardEntries } from "@/lib/leaderboard-data";
 
 export async function GET(request: Request) {
-  const user = await getCurrentUser();
+  const user = await getCurrentMember();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { searchParams } = new URL(request.url);

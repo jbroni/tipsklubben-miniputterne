@@ -943,6 +943,182 @@ describe("mergeUsers", () => {
       // Verify user.update was NOT called (target already admin)
       expect(mocks.txMock.user.update).not.toHaveBeenCalled();
     });
+
+    it("promotes guest target to member when source is member", async () => {
+      const sourceUser: User = {
+        id: "user-1",
+        authId: "auth-member-1",
+        email: "member@example.com",
+        displayName: "Member",
+        avatarUrl: null,
+        role: "member",
+        createdAt: new Date(),
+      };
+
+      const targetUser: User = {
+        id: "user-2",
+        authId: "auth-guest-2",
+        email: "guest@example.com",
+        displayName: "Guest",
+        avatarUrl: null,
+        role: "guest",
+        createdAt: new Date(),
+      };
+
+      mocks.prismaMocks.user.findUnique
+        .mockResolvedValueOnce(sourceUser)
+        .mockResolvedValueOnce(targetUser);
+
+      mocks.prismaMocks.prediction.findMany.mockResolvedValue([]);
+      mocks.txMock.prediction.count.mockResolvedValue(0);
+      mocks.txMock.user.update.mockResolvedValue({ id: "user-2", role: "member" });
+
+      const result = await mergeUsers({
+        sourceUserId: "user-1",
+        targetUserId: "user-2",
+      });
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.data.user.role).toBe("member");
+      }
+
+      // Verify user.update was called to promote guest to member
+      expect(mocks.txMock.user.update).toHaveBeenCalledWith({
+        where: { id: "user-2" },
+        data: { role: "member" },
+      });
+    });
+
+    it("does not change target role when source is guest and target is member", async () => {
+      const sourceUser: User = {
+        id: "user-1",
+        authId: "auth-guest-1",
+        email: "guest@example.com",
+        displayName: "Guest",
+        avatarUrl: null,
+        role: "guest",
+        createdAt: new Date(),
+      };
+
+      const targetUser: User = {
+        id: "user-2",
+        authId: "auth-member-2",
+        email: "member@example.com",
+        displayName: "Member",
+        avatarUrl: null,
+        role: "member",
+        createdAt: new Date(),
+      };
+
+      mocks.prismaMocks.user.findUnique
+        .mockResolvedValueOnce(sourceUser)
+        .mockResolvedValueOnce(targetUser);
+
+      mocks.prismaMocks.prediction.findMany.mockResolvedValue([]);
+      mocks.txMock.prediction.count.mockResolvedValue(0);
+
+      const result = await mergeUsers({
+        sourceUserId: "user-1",
+        targetUserId: "user-2",
+      });
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.data.user.role).toBe("member");
+      }
+
+      // Verify user.update was NOT called (member already higher than guest)
+      expect(mocks.txMock.user.update).not.toHaveBeenCalled();
+    });
+
+    it("promotes guest target to admin when source is admin", async () => {
+      const sourceUser: User = {
+        id: "user-1",
+        authId: "auth-admin-1",
+        email: "admin@example.com",
+        displayName: "Admin",
+        avatarUrl: null,
+        role: "admin",
+        createdAt: new Date(),
+      };
+
+      const targetUser: User = {
+        id: "user-2",
+        authId: "auth-guest-2",
+        email: "guest@example.com",
+        displayName: "Guest",
+        avatarUrl: null,
+        role: "guest",
+        createdAt: new Date(),
+      };
+
+      mocks.prismaMocks.user.findUnique
+        .mockResolvedValueOnce(sourceUser)
+        .mockResolvedValueOnce(targetUser);
+
+      mocks.prismaMocks.prediction.findMany.mockResolvedValue([]);
+      mocks.txMock.prediction.count.mockResolvedValue(0);
+      mocks.txMock.user.update.mockResolvedValue({ id: "user-2", role: "admin" });
+
+      const result = await mergeUsers({
+        sourceUserId: "user-1",
+        targetUserId: "user-2",
+      });
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.data.user.role).toBe("admin");
+      }
+
+      // Verify user.update was called to promote guest to admin
+      expect(mocks.txMock.user.update).toHaveBeenCalledWith({
+        where: { id: "user-2" },
+        data: { role: "admin" },
+      });
+    });
+
+    it("does not change target role when source is guest and target is admin", async () => {
+      const sourceUser: User = {
+        id: "user-1",
+        authId: "auth-guest-1",
+        email: "guest@example.com",
+        displayName: "Guest",
+        avatarUrl: null,
+        role: "guest",
+        createdAt: new Date(),
+      };
+
+      const targetUser: User = {
+        id: "user-2",
+        authId: "auth-admin-2",
+        email: "admin@example.com",
+        displayName: "Admin",
+        avatarUrl: null,
+        role: "admin",
+        createdAt: new Date(),
+      };
+
+      mocks.prismaMocks.user.findUnique
+        .mockResolvedValueOnce(sourceUser)
+        .mockResolvedValueOnce(targetUser);
+
+      mocks.prismaMocks.prediction.findMany.mockResolvedValue([]);
+      mocks.txMock.prediction.count.mockResolvedValue(0);
+
+      const result = await mergeUsers({
+        sourceUserId: "user-1",
+        targetUserId: "user-2",
+      });
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.data.user.role).toBe("admin");
+      }
+
+      // Verify user.update was NOT called (admin already higher than guest)
+      expect(mocks.txMock.user.update).not.toHaveBeenCalled();
+    });
   });
 
   describe("edge cases", () => {

@@ -1,6 +1,7 @@
 import type { Round, Match, Prediction, Pick as PickType } from "@prisma/client";
 import { calcRoundFedt, calcSeasonFedt } from "./fedt";
 import type { LeaderboardEntry, LeaderboardUser } from "@/types";
+import { compareByName } from "./display-name";
 
 type RoundWithMatches = Round & {
   matches: Match[];
@@ -49,9 +50,17 @@ export function compareEntries(a: LeaderboardEntry, b: LeaderboardEntry): number
 }
 
 /**
+ * Display order for leaderboard entries: compareEntries, then the shared
+ * name order so full ties are deterministic instead of following DB order.
+ */
+export function compareRanking(a: LeaderboardEntry, b: LeaderboardEntry): number {
+  return compareEntries(a, b) || compareByName(a.user, b.user);
+}
+
+/**
  * Compute rank movements for leaderboard entries.
  * Returns a map of user ID to movement (positive = improved, negative = dropped, 0 = same, undefined = no history).
- * Ranking is consistent with compareEntries: most points first, then bolder (lower fedt) on ties.
+ * Ranking is consistent with compareRanking: most points first, then bolder (lower fedt) on ties, then shared name order.
  */
 export function computeMovements(entries: LeaderboardEntry[]): Record<string, number | undefined> {
   const hasHistory = entries.some((e) => e.roundScores.length > 0);
@@ -65,7 +74,7 @@ export function computeMovements(entries: LeaderboardEntry[]): Record<string, nu
     return movement;
   }
 
-  const currRanked = [...entries].sort(compareEntries);
+  const currRanked = [...entries].sort(compareRanking);
   const currRanking = new Map(currRanked.map((e, i) => [e.user.id, i]));
 
   const prevEntries = entries.map((e) => {
@@ -77,12 +86,13 @@ export function computeMovements(entries: LeaderboardEntry[]): Record<string, nu
     const prevPlayedRounds = e.roundScores.slice(0, -1).filter((r) => r.played);
     const prevFedt = calcSeasonFedt(prevPlayedRounds.map((r) => r.fedt));
 
-    return { id: e.user.id, prevTotal, prevFedt };
+    return { id: e.user.id, displayName: e.user.displayName, prevTotal, prevFedt };
   });
 
   const prevRanked = [...prevEntries].sort((a, b) => {
     if (b.prevTotal !== a.prevTotal) return b.prevTotal - a.prevTotal;
-    return a.prevFedt - b.prevFedt;
+    if (a.prevFedt !== b.prevFedt) return a.prevFedt - b.prevFedt;
+    return compareByName({ id: a.id, displayName: a.displayName }, { id: b.id, displayName: b.displayName });
   });
   const prevRanking = new Map(prevRanked.map((e, i) => [e.id, i]));
 
@@ -98,7 +108,7 @@ export function computeMovements(entries: LeaderboardEntry[]): Record<string, nu
 /**
  * Compute the full leaderboard from a list of rounds and users.
  * Aggregates points and fedt scores across all completed predictions.
- * Returns entries sorted by totalPoints (desc) then seasonFedt (asc).
+ * Returns entries sorted by totalPoints (desc) then seasonFedt (asc) then shared name order.
  */
 export function computeLeaderboard(
   rounds: RoundWithMatches[],
@@ -147,8 +157,8 @@ export function computeLeaderboard(
     };
   });
 
-  // Sort: most points first, then lower Fedt (bolder) breaks ties
-  entries.sort(compareEntries);
+  // Sort: most points first, then lower Fedt (bolder) breaks ties, then shared name order
+  entries.sort(compareRanking);
 
   return entries;
 }

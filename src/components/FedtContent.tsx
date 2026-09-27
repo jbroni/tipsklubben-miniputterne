@@ -4,18 +4,30 @@ import { useState } from "react";
 import { FedtBadge } from "@/components/FedtBadge";
 import { getFedtLabel } from "@/lib/fedt";
 import type { LeaderboardEntry } from "@/types";
+import { compareByName } from "@/lib/display-name";
 
 export function FedtContent({ entries }: { entries: LeaderboardEntry[] }) {
   const [sortBy, setSortBy] = useState<"safest" | "boldest">("boldest");
 
-  const sorted = [...entries].sort((a, b) =>
-    sortBy === "boldest" ? a.seasonFedt - b.seasonFedt : b.seasonFedt - a.seasonFedt
-  );
+  const sorted = [...entries].sort((a, b) => {
+    const fedtCompare = sortBy === "boldest" ? a.seasonFedt - b.seasonFedt : b.seasonFedt - a.seasonFedt;
+    return fedtCompare || compareByName(a.user, b.user);
+  });
 
   const boldest =
-    entries.length > 0 ? entries.reduce((a, b) => (a.seasonFedt < b.seasonFedt ? a : b)) : null;
+    entries.length > 0
+      ? entries.reduce((a, b) => {
+          if (a.seasonFedt !== b.seasonFedt) return a.seasonFedt < b.seasonFedt ? a : b;
+          return compareByName(a.user, b.user) <= 0 ? a : b;
+        })
+      : null;
   const safest =
-    entries.length > 0 ? entries.reduce((a, b) => (a.seasonFedt > b.seasonFedt ? a : b)) : null;
+    entries.length > 0
+      ? entries.reduce((a, b) => {
+          if (a.seasonFedt !== b.seasonFedt) return a.seasonFedt > b.seasonFedt ? a : b;
+          return compareByName(a.user, b.user) <= 0 ? a : b;
+        })
+      : null;
 
   return (
     <div className="space-y-8">

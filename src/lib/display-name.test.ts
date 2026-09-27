@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { firstName, buildShortNames, withShortName, nameCode, type NamedUser } from "./display-name";
+import { firstName, buildShortNames, withShortName, nameCode, sortByName, compareByName, type NamedUser } from "./display-name";
 
 describe("firstName", () => {
   it("extracts first token from multi-part name", () => {
@@ -347,5 +347,92 @@ describe("nameCode", () => {
 
   it("returns empty string for empty input", () => {
     expect(nameCode("")).toBe("");
+  });
+});
+
+describe("sortByName", () => {
+  it("Danish letters sort after Z in the order Æ < Ø < Å", () => {
+    const items = [
+      { id: "id1", displayName: "Zack" },
+      { id: "id2", displayName: "Åse" },
+      { id: "id3", displayName: "Ærlig" },
+      { id: "id4", displayName: "Øjvind" },
+    ];
+    const sorted = sortByName(items);
+    expect(sorted.map(i => i.displayName)).toEqual(["Zack", "Ærlig", "Øjvind", "Åse"]);
+  });
+
+  it("mixed case: exact order assertion", () => {
+    const items = [
+      { id: "id1", displayName: "åse" },
+      { id: "id2", displayName: "Ærlig" },
+      { id: "id3", displayName: "øjvind" },
+      { id: "id4", displayName: "Anna" },
+    ];
+    const sorted = sortByName(items);
+    const names = sorted.map(i => i.displayName);
+    expect(names).toEqual(["Anna", "Ærlig", "øjvind", "åse"]);
+  });
+
+  it('"Aa" collates as Å: "Aage" sorts after "Zack"', () => {
+    const items = [
+      { id: "id1", displayName: "Aage" },
+      { id: "id2", displayName: "Zack" },
+      { id: "id3", displayName: "Anders" },
+    ];
+    const sorted = sortByName(items);
+    const names = sorted.map(i => i.displayName);
+    expect(names).toEqual(["Anders", "Zack", "Aage"]);
+  });
+
+  it("identical displayNames ordered by id using plain code-unit comparison", () => {
+    const items = [
+      { id: "a", displayName: "Alice" },
+      { id: "B", displayName: "Alice" },
+      { id: "m", displayName: "Alice" },
+    ];
+    const sorted = sortByName(items);
+    // "B" < "a" < "m" in code-unit order (65 < 97 < 109)
+    expect(sorted.map(i => i.id)).toEqual(["B", "a", "m"]);
+  });
+
+  it("does not mutate input and returns a new array with same object identities and preserved extra fields", () => {
+    interface UserWithExtra extends NamedUser {
+      points?: number;
+    }
+    const item1: UserWithExtra = { id: "a1", displayName: "Charlie", points: 50 };
+    const item2: UserWithExtra = { id: "b1", displayName: "Alice", points: 100 };
+    const items = [item1, item2];
+    const sorted = sortByName(items);
+
+    // Input order unchanged
+    expect(items[0]).toBe(item1);
+    expect(items[1]).toBe(item2);
+
+    // Different array instance
+    expect(sorted).not.toBe(items);
+
+    // Same objects by identity, reordered
+    expect(sorted[0]).toBe(item2);
+    expect(sorted[1]).toBe(item1);
+
+    // Extra fields preserved
+    expect(sorted[0].points).toBe(100);
+    expect(sorted[1].points).toBe(50);
+  });
+});
+
+describe("compareByName", () => {
+  it("returns 0 only for identical name and id", () => {
+    const user1 = { id: "a1", displayName: "Alice" };
+    const user2 = { id: "a1", displayName: "Alice" };
+    expect(compareByName(user1, user2)).toBe(0);
+  });
+
+  it("returns negative when first user sorts before second, positive otherwise", () => {
+    const alice = { id: "a1", displayName: "Alice" };
+    const bob = { id: "b1", displayName: "Bob" };
+    expect(compareByName(alice, bob)).toBeLessThan(0);
+    expect(compareByName(bob, alice)).toBeGreaterThan(0);
   });
 });

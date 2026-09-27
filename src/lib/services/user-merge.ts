@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
-import type { User } from "@prisma/client";
+import type { User, Role } from "@prisma/client";
 import type { ServiceResult } from "./result";
 import { isHistoricPlaceholder } from "@/lib/historic-users";
 
@@ -10,6 +10,13 @@ class MergeRaceError extends Error {
     super("Prediction inserted during merge window");
     this.name = "MergeRaceError";
   }
+}
+
+/** Privilege order used when merging: guest < member < admin. */
+const ROLE_RANK: Record<Role, number> = { guest: 0, member: 1, admin: 2 };
+
+function higherRole(a: Role, b: Role): Role {
+  return ROLE_RANK[a] > ROLE_RANK[b] ? a : b;
 }
 
 export async function mergeUsers(input: {
@@ -116,6 +123,9 @@ export async function mergeUsers(input: {
   }
 
   // 6. Interactive transaction: reassign records and delete source user
+  // Merge must preserve the higher-ranked role (admin > member > guest).
+  const mergedRole = higherRole(sourceUser.role, targetUser.role);
+
   try {
     const movedPredictions = await prisma.$transaction(
       async (tx) => {
@@ -159,11 +169,10 @@ export async function mergeUsers(input: {
           });
         }
 
-        // A merge must never destroy an admin role.
-        if (sourceUser.role === "admin" && targetUser.role !== "admin") {
+        if (mergedRole !== targetUser.role) {
           await tx.user.update({
             where: { id: input.targetUserId },
-            data: { role: "admin" },
+            data: { role: mergedRole },
           });
         }
 
@@ -184,10 +193,10 @@ export async function mergeUsers(input: {
       { timeout: 20000 }
     );
 
-    // Reflect any admin promotion in the response
+    // Reflect the merged role in the response
     const finalUser =
-      sourceUser.role === "admin" && targetUser.role !== "admin"
-        ? { ...targetUser, role: "admin" as const }
+      mergedRole !== targetUser.role
+        ? { ...targetUser, role: mergedRole }
         : targetUser;
 
     return {

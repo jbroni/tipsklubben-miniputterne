@@ -34,7 +34,15 @@ vi.mock("next/headers", () => ({
   headers: mocks.headersMocks,
 }));
 
-import { getCurrentUser, getCurrentUserFromHeaders, syncUser, canManageGroupCoupon } from "./auth";
+vi.mock("next/navigation", () => ({
+  redirect: vi.fn((path: string) => {
+    const error = new Error("REDIRECT");
+    (error as any).digest = path;
+    throw error;
+  }),
+}));
+
+import { getCurrentUser, getCurrentUserFromHeaders, syncUser, canManageGroupCoupon, isMember, getCurrentMember, requireUser, requireAdmin } from "./auth";
 
 describe("auth functions", () => {
   beforeEach(() => {
@@ -538,6 +546,239 @@ describe("auth functions", () => {
       });
     });
   });
+  describe("isMember", () => {
+    it("returns false for guest role", () => {
+      const guestUser: Pick<User, "role"> = { role: "guest" };
+      expect(isMember(guestUser)).toBe(false);
+    });
+
+    it("returns true for member role", () => {
+      const memberUser: Pick<User, "role"> = { role: "member" };
+      expect(isMember(memberUser)).toBe(true);
+    });
+
+    it("returns true for admin role", () => {
+      const adminUser: Pick<User, "role"> = { role: "admin" };
+      expect(isMember(adminUser)).toBe(true);
+    });
+  });
+
+  describe("getCurrentMember", () => {
+    it("returns null when not authenticated", async () => {
+      mocks.supabaseMocks.auth.getUser.mockResolvedValue({
+        data: { user: null },
+      });
+
+      const result = await getCurrentMember();
+      expect(result).toBeNull();
+    });
+
+    it("returns null for guest user", async () => {
+      const guestUser: User = {
+        id: "user-1",
+        authId: "auth-1",
+        email: "guest@example.com",
+        displayName: "Guest",
+        avatarUrl: null,
+        role: "guest",
+        createdAt: new Date(),
+      };
+
+      mocks.supabaseMocks.auth.getUser.mockResolvedValue({
+        data: { user: { id: "auth-1" } },
+      });
+
+      mocks.prismaMocks.user.findUnique.mockResolvedValue(guestUser);
+
+      const result = await getCurrentMember();
+      expect(result).toBeNull();
+    });
+
+    it("returns user for member role", async () => {
+      const memberUser: User = {
+        id: "user-1",
+        authId: "auth-1",
+        email: "member@example.com",
+        displayName: "Member",
+        avatarUrl: null,
+        role: "member",
+        createdAt: new Date(),
+      };
+
+      mocks.supabaseMocks.auth.getUser.mockResolvedValue({
+        data: { user: { id: "auth-1" } },
+      });
+
+      mocks.prismaMocks.user.findUnique.mockResolvedValue(memberUser);
+
+      const result = await getCurrentMember();
+      expect(result).toEqual(memberUser);
+    });
+
+    it("returns user for admin role", async () => {
+      const adminUser: User = {
+        id: "user-1",
+        authId: "auth-1",
+        email: "admin@example.com",
+        displayName: "Admin",
+        avatarUrl: null,
+        role: "admin",
+        createdAt: new Date(),
+      };
+
+      mocks.supabaseMocks.auth.getUser.mockResolvedValue({
+        data: { user: { id: "auth-1" } },
+      });
+
+      mocks.prismaMocks.user.findUnique.mockResolvedValue(adminUser);
+
+      const result = await getCurrentMember();
+      expect(result).toEqual(adminUser);
+    });
+  });
+
+  describe("requireUser", () => {
+    it("redirects to / when not authenticated", async () => {
+      mocks.supabaseMocks.auth.getUser.mockResolvedValue({
+        data: { user: null },
+      });
+
+      const redirectModule = await import("next/navigation");
+      await expect(requireUser()).rejects.toThrow("REDIRECT");
+      expect(redirectModule.redirect).toHaveBeenCalledWith("/");
+    });
+
+    it("redirects to / for guest user", async () => {
+      const guestUser: User = {
+        id: "user-1",
+        authId: "auth-1",
+        email: "guest@example.com",
+        displayName: "Guest",
+        avatarUrl: null,
+        role: "guest",
+        createdAt: new Date(),
+      };
+
+      mocks.supabaseMocks.auth.getUser.mockResolvedValue({
+        data: { user: { id: "auth-1" } },
+      });
+
+      mocks.prismaMocks.user.findUnique.mockResolvedValue(guestUser);
+
+      const redirectModule = await import("next/navigation");
+      await expect(requireUser()).rejects.toThrow("REDIRECT");
+      expect(redirectModule.redirect).toHaveBeenCalledWith("/");
+    });
+
+    it("returns member user", async () => {
+      const memberUser: User = {
+        id: "user-1",
+        authId: "auth-1",
+        email: "member@example.com",
+        displayName: "Member",
+        avatarUrl: null,
+        role: "member",
+        createdAt: new Date(),
+      };
+
+      mocks.supabaseMocks.auth.getUser.mockResolvedValue({
+        data: { user: { id: "auth-1" } },
+      });
+
+      mocks.prismaMocks.user.findUnique.mockResolvedValue(memberUser);
+
+      const result = await requireUser();
+      expect(result).toEqual(memberUser);
+    });
+
+    it("returns admin user", async () => {
+      const adminUser: User = {
+        id: "user-1",
+        authId: "auth-1",
+        email: "admin@example.com",
+        displayName: "Admin",
+        avatarUrl: null,
+        role: "admin",
+        createdAt: new Date(),
+      };
+
+      mocks.supabaseMocks.auth.getUser.mockResolvedValue({
+        data: { user: { id: "auth-1" } },
+      });
+
+      mocks.prismaMocks.user.findUnique.mockResolvedValue(adminUser);
+
+      const result = await requireUser();
+      expect(result).toEqual(adminUser);
+    });
+  });
+
+  describe("requireAdmin", () => {
+    it("redirects to / for guest user", async () => {
+      const guestUser: User = {
+        id: "user-1",
+        authId: "auth-1",
+        email: "guest@example.com",
+        displayName: "Guest",
+        avatarUrl: null,
+        role: "guest",
+        createdAt: new Date(),
+      };
+
+      mocks.supabaseMocks.auth.getUser.mockResolvedValue({
+        data: { user: { id: "auth-1" } },
+      });
+
+      mocks.prismaMocks.user.findUnique.mockResolvedValue(guestUser);
+
+      const redirectModule = await import("next/navigation");
+      await expect(requireAdmin()).rejects.toThrow("REDIRECT");
+      expect(redirectModule.redirect).toHaveBeenCalledWith("/");
+    });
+
+    it("redirects to / for member user", async () => {
+      const memberUser: User = {
+        id: "user-1",
+        authId: "auth-1",
+        email: "member@example.com",
+        displayName: "Member",
+        avatarUrl: null,
+        role: "member",
+        createdAt: new Date(),
+      };
+
+      mocks.supabaseMocks.auth.getUser.mockResolvedValue({
+        data: { user: { id: "auth-1" } },
+      });
+
+      mocks.prismaMocks.user.findUnique.mockResolvedValue(memberUser);
+
+      const redirectModule = await import("next/navigation");
+      await expect(requireAdmin()).rejects.toThrow("REDIRECT");
+      expect(redirectModule.redirect).toHaveBeenCalledWith("/");
+    });
+
+    it("returns admin user", async () => {
+      const adminUser: User = {
+        id: "user-1",
+        authId: "auth-1",
+        email: "admin@example.com",
+        displayName: "Admin",
+        avatarUrl: null,
+        role: "admin",
+        createdAt: new Date(),
+      };
+
+      mocks.supabaseMocks.auth.getUser.mockResolvedValue({
+        data: { user: { id: "auth-1" } },
+      });
+
+      mocks.prismaMocks.user.findUnique.mockResolvedValue(adminUser);
+
+      const result = await requireAdmin();
+      expect(result).toEqual(adminUser);
+    });
+  });
 
   describe("canManageGroupCoupon", () => {
     it("returns true when user is admin regardless of delegate", () => {
@@ -577,7 +818,7 @@ describe("auth functions", () => {
       const round = { couponDelegateId: null };
 
       const result = canManageGroupCoupon(member, round);
-      expect(result).toBe(false);
+      expect(result).toBe(false)
     });
   });
 });

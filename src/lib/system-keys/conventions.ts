@@ -8,19 +8,20 @@
  *         of its two covered outcomes. The glyph-to-outcome mapping depends on which
  *         outcomes are covered.
  *
- * Rule 2: In a U-system, glyph 1 always denotes the baseOutcome (udgangsrække).
- *         This is achieved via transposition (not rotation): if the base outcome
- *         is not the first outcome in PICK_ORDER, we swap it with the first,
- *         leaving X and 2 (or X on half columns) to their natural positions relative
- *         to the base.
+ * Rule 2: In a U-system, glyph 1 always denotes the baseOutcome (udgangsrække),
+ *         with the remaining covered outcomes assigned to the remaining glyphs (X, then 2)
+ *         in PICK_ORDER (HOME, DRAW, AWAY). Thus: outcomes = [base, ...sortedCovered.filter(o => o !== base)].
+ *         Verified empirically against three real U7-4-133 coupons (rounds dated 12/9, 19/9, 26/9 2026)
+ *         whose full row lists reproduce exactly.
  *
- * The remaining unknown dimension is the ordering of matches within each block
- * (full-covered and half-covered). This module assumes matches are ordered by
- * ascending matchNumber within each block — the DEFAULT_CONVENTION.
+ * The ordering of matches within each block (full-covered and half-covered) is confirmed
+ * empirically: ascending matchNumber (DEFAULT_CONVENTION) reproduces all three real U7-4-133
+ * coupons exactly, while descending matchNumber fails. This is assumed to hold for all U-systems
+ * with the same key-file format and convention.
  *
- * Variants in CANDIDATE_CONVENTIONS exist to test alternative orderings and
- * to include a rotational variant so the calibration harness (scripts/calibrate-system-key.ts)
- * can prove that transposition, not rotation, is the correct rule.
+ * Variants in CANDIDATE_CONVENTIONS exist to test the alternative descending ordering
+ * and to include a transposition variant so the calibration harness (scripts/calibrate-system-key.ts)
+ * can distinguish the correct rule (base first in PICK_ORDER) from the previously tested (incorrect) transposition approach.
  */
 
 import { PickValue, PICK_ORDER } from "../picks";
@@ -63,7 +64,7 @@ export interface KeyConvention {
 
 /**
  * Helper to validate and extract covered outcomes for decoding.
- * Shared by DEFAULT_CONVENTION and rotational variant.
+ * Shared by DEFAULT_CONVENTION and the transposition-u-base variant.
  */
 function validateAndGetOutcomes(
   glyph: KeyGlyph,
@@ -139,10 +140,11 @@ function assignColumnsWithComparator(
  * Default convention: within each coverage block (full then half),
  * sort slots by ascending matchNumber.
  *
- * This assumption is confirmed to produce the correct key rows for all
- * 12 official R- and U-system keys. The within-block ordering is the sole
- * remaining unknown dimension; changing it shifts the best-row score on
- * U7-4-133 for 51% of outcome combinations (max gap 3 correct).
+ * This convention is confirmed to produce the correct key rows for all
+ * 12 official R- and U-system keys. The within-block ordering (ascending vs. descending
+ * matchNumber) is verified empirically against three real U7-4-133 coupons (rounds dated 12/9, 19/9, 26/9 2026):
+ * ascending matchNumber reproduces the coupons exactly, while descending fails.
+ * This rule is assumed to hold for all U-systems with the same key-file format and convention.
  */
 export const DEFAULT_CONVENTION: KeyConvention = {
   id: "ascending-match-number",
@@ -163,10 +165,10 @@ export const DEFAULT_CONVENTION: KeyConvention = {
     const glyphsForSlot: KeyGlyph[] = slot.coverage === "full" ? ["1", "X", "2"] : ["1", "X"];
 
     // Step 3: Create outcomes array where outcomes[i] is for glyph glyphsForSlot[i]
-    const outcomes = [...outcomesSorted];
+    let outcomes = [...outcomesSorted];
 
-    // Step 4: For U-systems with covered slots, transpose the outcomes
-    // so baseOutcome lands on glyph 1
+    // Step 4: For U-systems with covered slots, put baseOutcome on glyph 1
+    // and the remaining covered outcomes in PICK_ORDER on the remaining glyphs
     if (system.type === "U" && (slot.coverage === "full" || slot.coverage === "half")) {
       if (slot.baseOutcome === null) {
         throw new Error(
@@ -179,13 +181,9 @@ export const DEFAULT_CONVENTION: KeyConvention = {
         );
       }
 
-      // Find which index currently has baseOutcome
-      const baseOutcomeIdx = outcomes.indexOf(slot.baseOutcome);
-
-      // If baseOutcome is not already on glyph 1 (index 0), swap it with what's at index 0
-      if (baseOutcomeIdx !== 0 && baseOutcomeIdx !== -1) {
-        [outcomes[0], outcomes[baseOutcomeIdx]] = [outcomes[baseOutcomeIdx], outcomes[0]];
-      }
+      // Put baseOutcome first, then the rest in PICK_ORDER
+      const otherOutcomes = outcomes.filter((o) => o !== slot.baseOutcome);
+      outcomes = [slot.baseOutcome, ...otherOutcomes];
     }
 
     // Step 5: Look up the glyph and return its outcome
@@ -208,18 +206,19 @@ export const DEFAULT_CONVENTION: KeyConvention = {
 /**
  * Candidate conventions for calibration.
  *
- * The within-block ordering is the one unconfirmed assumption in the reading rules.
- * Only two orderings are considered plausible:
- * - ascending-match-number (the default, confirmed on all 13 catalogue systems)
- * - descending-match-number (an alternative ordering)
+ * The within-block ordering (ascending vs. descending matchNumber) is the primary candidate
+ * distinction. Only two orderings are considered plausible:
+ * - ascending-match-number (the default, verified empirically against three real U7-4-133 coupons)
+ * - descending-match-number (an alternative ordering that fails the U7-4-133 coupons)
  *
  * Any other permutation of match order within blocks is not enumerated. If the calibration
  * harness reports "no exact match" (rather than an exact match for one of these two), it
  * signals that the sample violates one of the core reading rules, rather than a silent
  * near-miss from an unenumerated ordering.
  *
- * The rotational-u-base variant is kept to prove that transposition (not rotation)
- * is the correct rule for placing the base outcome on glyph 1 in U-systems.
+ * The transposition-u-base variant is kept to distinguish the correct glyph-mapping rule
+ * (base outcome on glyph 1, remaining outcomes in PICK_ORDER) from the previously tested
+ * (incorrect) transposition approach (swap base with first in PICK_ORDER).
  */
 export const CANDIDATE_CONVENTIONS: readonly KeyConvention[] = [
   DEFAULT_CONVENTION,
@@ -238,33 +237,22 @@ export const CANDIDATE_CONVENTIONS: readonly KeyConvention[] = [
     decodeGlyph: DEFAULT_CONVENTION.decodeGlyph,
   },
 
-  // Variant: rotational mapping instead of transposition (for testing the rule)
+  // Variant: transposition mapping (old incorrect approach)
   {
-    id: "rotational-u-base",
-    label: "Rotationsvariant (forkert)",
+    id: "transposition-u-base",
+    label: "Ombytningsvariant (forkert)",
     assignColumns: DEFAULT_CONVENTION.assignColumns,
     decodeGlyph(glyph: KeyGlyph, slot: CouponSlot, system: SystemDefinition): PickValue {
       const outcomesSorted = validateAndGetOutcomes(glyph, slot);
 
-      // Step 2: Create the initial mapping
-      let mapping: Record<KeyGlyph, PickValue>;
+      // Step 2: Define which glyphs the slot can express
+      const glyphsForSlot: KeyGlyph[] = slot.coverage === "full" ? ["1", "X", "2"] : ["1", "X"];
 
-      if (slot.coverage === "full") {
-        mapping = {
-          "1": outcomesSorted[0],
-          X: outcomesSorted[1],
-          "2": outcomesSorted[2],
-        };
-      } else {
-        mapping = {
-          "1": outcomesSorted[0],
-          X: outcomesSorted[1],
-          "2": "AWAY",
-        };
-      }
+      // Step 3: Create outcomes array where outcomes[i] is for glyph glyphsForSlot[i]
+      const outcomes = [...outcomesSorted];
 
-      // Step 3: For U-systems with covered slots, ROTATE the mapping
-      // (different from the correct transposition rule)
+      // Step 4: For U-systems with covered slots, use the old (incorrect) transposition rule:
+      // swap baseOutcome with what's at index 0
       if (system.type === "U" && (slot.coverage === "full" || slot.coverage === "half")) {
         if (slot.baseOutcome === null) {
           throw new Error(
@@ -277,33 +265,23 @@ export const CANDIDATE_CONVENTIONS: readonly KeyConvention[] = [
           );
         }
 
-        // ROTATION: shift the mapping so baseOutcome is first
-        const baseIdx = PICK_ORDER.indexOf(slot.baseOutcome);
-        const rotatedPick = [
-          PICK_ORDER[baseIdx],
-          PICK_ORDER[(baseIdx + 1) % 3],
-          PICK_ORDER[(baseIdx + 2) % 3],
-        ];
+        // Find which index currently has baseOutcome and swap it with index 0
+        const baseOutcomeIdx = outcomes.indexOf(slot.baseOutcome);
 
-        // Filter to just the outcomes we have
-        const rotatedOutcomes = rotatedPick.filter((o) => slot.outcomes.includes(o));
-
-        if (slot.coverage === "full") {
-          mapping = {
-            "1": rotatedOutcomes[0],
-            X: rotatedOutcomes[1],
-            "2": rotatedOutcomes[2],
-          };
-        } else {
-          mapping = {
-            "1": rotatedOutcomes[0],
-            X: rotatedOutcomes[1],
-            "2": "AWAY",
-          };
+        // If baseOutcome is not already on glyph 1 (index 0), swap it with what's at index 0
+        if (baseOutcomeIdx !== 0 && baseOutcomeIdx !== -1) {
+          [outcomes[0], outcomes[baseOutcomeIdx]] = [outcomes[baseOutcomeIdx], outcomes[0]];
         }
       }
 
-      const outcome = mapping[glyph];
+      // Step 5: Look up the glyph and return its outcome
+      const glyphIdx = glyphsForSlot.indexOf(glyph);
+      if (glyphIdx === -1) {
+        throw new Error(
+          `Match ${slot.matchNumber}: glyph '${glyph}' not found in mapping`
+        );
+      }
+      const outcome = outcomes[glyphIdx];
       if (outcome === undefined) {
         throw new Error(
           `Match ${slot.matchNumber}: glyph '${glyph}' resolved to undefined`

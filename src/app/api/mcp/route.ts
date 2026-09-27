@@ -4,6 +4,7 @@ export const maxDuration = 60;
 import { createMcpHandler, withMcpAuth } from "mcp-handler";
 import type { McpServer, AuthInfo } from "@modelcontextprotocol/server";
 import { verifyMcpToken } from "@/lib/mcp/tokens";
+import { isMember } from "@/lib/auth";
 import { registerPlayerTools } from "@/lib/mcp/tools/player";
 import { registerAdminTools } from "@/lib/mcp/tools/admin";
 
@@ -23,7 +24,7 @@ async function verifyToken(
   bearerToken?: string
 ): Promise<AuthInfo | undefined> {
   const user = await verifyMcpToken(bearerToken);
-  if (!user) {
+  if (!user || !isMember(user)) {
     return undefined;
   }
 
