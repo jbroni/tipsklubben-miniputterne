@@ -21,10 +21,12 @@ export function Navbar({
   displayName,
   isAdmin,
   isGuest = false,
+  delegateRoundId,
 }: {
   displayName: string | null;
   isAdmin: boolean;
   isGuest?: boolean;
+  delegateRoundId?: string | null;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -140,6 +142,18 @@ export function Navbar({
                         }`}
                       >
                         Admin-panel
+                      </Link>
+                    )}
+                    {delegateRoundId && (
+                      <Link
+                        href={`/admin/rounds/${delegateRoundId}/group-coupon`}
+                        className={`block px-4 py-2.5 text-sm transition-colors ${
+                          pathname === `/admin/rounds/${delegateRoundId}/group-coupon`
+                            ? "text-signal bg-signal-soft font-medium"
+                            : "text-signal hover:bg-paper"
+                        }`}
+                      >
+                        Fælleskupon
                       </Link>
                     )}
 

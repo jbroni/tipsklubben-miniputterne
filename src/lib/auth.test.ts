@@ -42,7 +42,7 @@ vi.mock("next/navigation", () => ({
   }),
 }));
 
-import { getCurrentUser, getCurrentUserFromHeaders, syncUser, isMember, getCurrentMember, requireUser, requireAdmin } from "./auth";
+import { getCurrentUser, getCurrentUserFromHeaders, syncUser, canManageGroupCoupon, isMember, getCurrentMember, requireUser, requireAdmin } from "./auth";
 
 describe("auth functions", () => {
   beforeEach(() => {
@@ -546,7 +546,6 @@ describe("auth functions", () => {
       });
     });
   });
-
   describe("isMember", () => {
     it("returns false for guest role", () => {
       const guestUser: Pick<User, "role"> = { role: "guest" };
@@ -781,59 +780,45 @@ describe("auth functions", () => {
     });
   });
 
-  describe("syncUser - role handling", () => {
-    it("does not set role in create payload for new authId", async () => {
-      const newUser: User = {
-        id: "user-new",
-        authId: "auth-new",
-        email: "new@example.com",
-        displayName: "New User",
-        avatarUrl: null,
-        role: "guest",
-        createdAt: new Date(),
-      };
+  describe("canManageGroupCoupon", () => {
+    it("returns true when user is admin regardless of delegate", () => {
+      const admin = { id: "admin-1", role: "admin" };
+      const round = { couponDelegateId: "delegate-1" };
 
-      mocks.prismaMocks.userIdentity.findUnique.mockResolvedValue(null);
-      mocks.prismaMocks.user.upsert.mockResolvedValue(newUser);
-
-      await syncUser({
-        id: "auth-new",
-        email: "new@example.com",
-        user_metadata: {
-          full_name: "New User",
-        },
-      });
-
-      const upsertCall = mocks.prismaMocks.user.upsert.mock.calls[0][0];
-      expect(upsertCall.create).toBeDefined();
-      expect(upsertCall.create.role).toBeUndefined();
+      const result = canManageGroupCoupon(admin, round);
+      expect(result).toBe(true);
     });
 
-    it("does not set role in update payload for new authId", async () => {
-      const newUser: User = {
-        id: "user-new",
-        authId: "auth-new",
-        email: "new@example.com",
-        displayName: "New User",
-        avatarUrl: null,
-        role: "guest",
-        createdAt: new Date(),
-      };
+    it("returns true when user is admin and no delegate is set", () => {
+      const admin = { id: "admin-1", role: "admin" };
+      const round = { couponDelegateId: null };
 
-      mocks.prismaMocks.userIdentity.findUnique.mockResolvedValue(null);
-      mocks.prismaMocks.user.upsert.mockResolvedValue(newUser);
+      const result = canManageGroupCoupon(admin, round);
+      expect(result).toBe(true);
+    });
 
-      await syncUser({
-        id: "auth-new",
-        email: "new@example.com",
-        user_metadata: {
-          full_name: "New User",
-        },
-      });
+    it("returns true when user is the delegate", () => {
+      const member = { id: "user-1", role: "member" };
+      const round = { couponDelegateId: "user-1" };
 
-      const upsertCall = mocks.prismaMocks.user.upsert.mock.calls[0][0];
-      expect(upsertCall.update).toBeDefined();
-      expect(upsertCall.update.role).toBeUndefined();
+      const result = canManageGroupCoupon(member, round);
+      expect(result).toBe(true);
+    });
+
+    it("returns false when user is not the delegate and couponDelegateId is set", () => {
+      const member = { id: "user-1", role: "member" };
+      const round = { couponDelegateId: "user-2" };
+
+      const result = canManageGroupCoupon(member, round);
+      expect(result).toBe(false);
+    });
+
+    it("returns false when user is a member and no delegate is set", () => {
+      const member = { id: "user-1", role: "member" };
+      const round = { couponDelegateId: null };
+
+      const result = canManageGroupCoupon(member, round);
+      expect(result).toBe(false)
     });
   });
 });

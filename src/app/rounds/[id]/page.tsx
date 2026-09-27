@@ -134,6 +134,15 @@ export default async function RoundDetailPage({
         currentUserId={currentUser.id}
       />
 
+      {round.couponDelegateId === currentUser.id && arePicksRevealed(round) && round.status !== "completed" && (
+        <Link
+          href={`/admin/rounds/${round.id}/group-coupon`}
+          className="card block px-4 py-3 text-center font-semibold text-brand hover:bg-brand-tint transition-colors"
+        >
+          {round.groupCoupon?.status === "final" ? "Rediger fælleskupon" : "Byg fælleskupon"}
+        </Link>
+      )}
+
       {serializedGroupCoupon && round.groupCoupon?.status === "final" && (
         <GroupCouponCard
           coupon={serializedGroupCoupon}

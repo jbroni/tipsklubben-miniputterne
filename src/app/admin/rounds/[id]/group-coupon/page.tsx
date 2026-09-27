@@ -2,6 +2,7 @@
 
 import { Suspense, useState, useEffect, useMemo } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import { PICK_LABEL } from "@/lib/picks";
 import { getSystem } from "@/lib/coupon-systems";
 import { fitSystem } from "@/lib/group-coupon";
@@ -14,10 +15,7 @@ import {
   type EditableRow,
 } from "@/lib/group-coupon-editor";
 import { GroupCouponCard } from "@/components/GroupCouponCard";
-import type {
-  GroupCouponSuggestionResponse,
-  SerializedGroupCouponMatchDetails,
-} from "@/types";
+import type { GroupCouponSuggestionResponse } from "@/types";
 
 function GroupCouponContent() {
   const params = useParams();
@@ -165,6 +163,25 @@ function GroupCouponContent() {
           Fælleskupon
         </h1>
         <div className="text-center py-20 text-muted">Indlæser...</div>
+      </div>
+    );
+  }
+
+  // Not allowed to manage
+  if (suggestion && suggestion.canManage === false) {
+    return (
+      <div className="space-y-6">
+        <h1 className="font-display text-2xl font-bold text-ink">
+          Fælleskupon
+        </h1>
+        <div className="card">
+          <p className="text-sm text-ink-secondary">
+            Du har ikke adgang til at bygge fælleskuponen for denne runde.
+          </p>
+          <Link href="/" className="text-sm text-brand hover:underline mt-2 inline-block">
+            Tilbage til start
+          </Link>
+        </div>
       </div>
     );
   }

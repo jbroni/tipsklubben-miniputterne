@@ -229,6 +229,14 @@ export default async function DashboardPage() {
 
       {(mode === "locked" || mode === "revealed") && currentRound && (
         <>
+          {currentRound.couponDelegateId === user.id && mode === "locked" && (
+            <Link
+              href={`/admin/rounds/${currentRound.id}/group-coupon`}
+              className="card block px-4 py-3 text-center font-semibold text-brand hover:bg-brand-tint transition-colors"
+            >
+              {currentRound.groupCoupon?.status === "final" ? "Rediger fælleskupon" : "Byg fælleskupon"}
+            </Link>
+          )}
           {currentRound.groupCoupon?.status === "final" && (
             <GroupCouponCard
               coupon={{

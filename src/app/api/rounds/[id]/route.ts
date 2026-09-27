@@ -51,12 +51,31 @@ export async function PATCH(
   await requireAdmin();
 
   const body = await request.json();
-  const { status, deadline } = body;
+  const { status, deadline, couponDelegateId } = body;
+
+  // Validate couponDelegateId type if present
+  if (couponDelegateId !== undefined && couponDelegateId !== null) {
+    if (typeof couponDelegateId !== "string") {
+      return NextResponse.json(
+        { error: "Ugyldig fælleskupon-ansvarlig" },
+        { status: 400 }
+      );
+    }
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(couponDelegateId)) {
+      return NextResponse.json(
+        { error: "Ugyldig fælleskupon-ansvarlig" },
+        { status: 400 }
+      );
+    }
+  }
 
   const result = await updateRound({
     roundId: id,
     status,
     deadline,
+    couponDelegateId,
   });
 
   if (!result.ok) {

@@ -6,6 +6,7 @@ import { firstName } from "@/lib/display-name";
 import { MainContainer } from "@/components/MainContainer";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { prisma } from "@/lib/prisma";
 
 export const metadata: Metadata = {
   title: "Tipsklubben Miniputterne",
@@ -22,10 +23,28 @@ export default async function RootLayout({
   const isAdmin = user?.role === "admin";
   const isGuest = !!user && !isMember(user);
 
+  // Query for delegate round if user exists and is not admin and not guest
+  let delegateRoundId: string | null = null;
+  if (user && !isAdmin && !isGuest) {
+    const delegateRound = await prisma.round.findFirst({
+      where: {
+        couponDelegateId: user.id,
+        status: { not: "completed" },
+        OR: [
+          { status: "locked" },
+          { deadline: { lte: new Date() } }
+        ],
+      },
+      orderBy: { deadline: "desc" },
+      select: { id: true },
+    });
+    delegateRoundId = delegateRound?.id ?? null;
+  }
+
   return (
     <html lang="da">
       <body className="min-h-screen flex flex-col bg-paper">
-        <Navbar displayName={displayName} isAdmin={isAdmin} isGuest={isGuest} />
+        <Navbar displayName={displayName} isAdmin={isAdmin} isGuest={isGuest} delegateRoundId={delegateRoundId} />
         <MainContainer>{children}</MainContainer>
         <footer className="border-t border-line-card py-6 text-center text-sm text-muted">
           Tipsklubben Miniputterne · 2013

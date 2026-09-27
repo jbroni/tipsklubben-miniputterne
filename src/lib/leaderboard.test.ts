@@ -84,6 +84,7 @@ function mockRound(
     status: "open",
     carryOverAppliedAt: null,
     createdAt: new Date(),
+    couponDelegateId: null,
     matches,
     predictions,
   };

@@ -11,6 +11,9 @@ const mocks = vi.hoisted(() => ({
     prediction: {
       deleteMany: vi.fn(),
     },
+    user: {
+      findUnique: vi.fn(),
+    },
     $transaction: vi.fn(async (cb) => cb(
       {
         prediction: {
@@ -75,6 +78,7 @@ describe("updateRound", () => {
         status: "locked",
         deadline: new Date("2099-12-31"),
         createdAt: new Date(),
+        couponDelegateId: null,
         carryOverAppliedAt: null,
       };
 
@@ -113,6 +117,7 @@ describe("updateRound", () => {
         status: "locked",
         deadline: new Date("2020-01-01"),
         createdAt: new Date(),
+        couponDelegateId: null,
         carryOverAppliedAt: null,
       };
 
@@ -153,6 +158,7 @@ describe("updateRound", () => {
         status: "open",
         deadline: new Date("2099-12-31"),
         createdAt: new Date(),
+        couponDelegateId: null,
         carryOverAppliedAt: null,
       };
 
@@ -182,6 +188,7 @@ describe("updateRound", () => {
         status: "open",
         deadline: new Date("2099-12-31"),
         createdAt: new Date(),
+        couponDelegateId: null,
         carryOverAppliedAt: null,
       };
 
@@ -226,6 +233,7 @@ describe("updateRound", () => {
         status: "locked",
         deadline: new Date("2020-01-01"),
         createdAt: new Date(),
+        couponDelegateId: null,
         carryOverAppliedAt: null,
       };
 
@@ -252,6 +260,145 @@ describe("updateRound", () => {
       if (!result.ok) {
         expect(result.code).toBe("VALIDATION");
       }
+    });
+
+    it("returns VALIDATION when couponDelegateId is a non-existent user", async () => {
+      mocks.prismaMocks.user.findUnique.mockResolvedValue(null);
+
+      const result = await updateRound({
+        roundId: "round-1",
+        couponDelegateId: "nonexistent-user",
+      });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.code).toBe("VALIDATION");
+      }
+      // Verify user lookup was attempted
+      expect(mocks.prismaMocks.user.findUnique).toHaveBeenCalledWith({
+        where: { id: "nonexistent-user" },
+      });
+      // Verify no round update was made
+      expect(mocks.prismaMocks.round.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("couponDelegateId update", () => {
+    it("writes couponDelegateId to update data when an existing user id is provided", async () => {
+      mocks.prismaMocks.user.findUnique.mockResolvedValue({
+        id: "delegate-user",
+        authId: "auth-delegate",
+        email: "delegate@example.com",
+        displayName: "Delegate",
+        avatarUrl: null,
+        role: "member",
+        createdAt: new Date(),
+      });
+
+      mocks.prismaMocks.round.update.mockResolvedValue({
+        id: "round-1",
+        seasonId: "season-1",
+        roundNumber: 1,
+        status: "open",
+        deadline: new Date(),
+        couponDelegateId: "delegate-user",
+        createdAt: new Date(),
+      });
+
+      const result = await updateRound({
+        roundId: "round-1",
+        couponDelegateId: "delegate-user",
+      });
+
+      expect(result.ok).toBe(true);
+      // Verify the update was called with couponDelegateId
+      expect(mocks.prismaMocks.round.update).toHaveBeenCalled();
+      const updateCall = mocks.prismaMocks.round.update.mock.calls[0];
+      expect(updateCall[0].data).toHaveProperty("couponDelegateId", "delegate-user");
+    });
+
+    it("clears couponDelegateId when null is explicitly provided", async () => {
+      mocks.prismaMocks.round.update.mockResolvedValue({
+        id: "round-1",
+        seasonId: "season-1",
+        roundNumber: 1,
+        status: "open",
+        deadline: new Date(),
+        couponDelegateId: null,
+        createdAt: new Date(),
+      });
+
+      const result = await updateRound({
+        roundId: "round-1",
+        couponDelegateId: null,
+      });
+
+      expect(result.ok).toBe(true);
+      // Verify user lookup was skipped for null
+      expect(mocks.prismaMocks.user.findUnique).not.toHaveBeenCalled();
+      // Verify the update was called with couponDelegateId: null
+      expect(mocks.prismaMocks.round.update).toHaveBeenCalled();
+      const updateCall = mocks.prismaMocks.round.update.mock.calls[0];
+      expect(updateCall[0].data).toHaveProperty("couponDelegateId", null);
+    });
+
+    it("leaves couponDelegateId out of update data when undefined", async () => {
+      mocks.prismaMocks.round.update.mockResolvedValue({
+        id: "round-1",
+        seasonId: "season-1",
+        roundNumber: 1,
+        status: "open",
+        deadline: new Date(),
+        couponDelegateId: "existing-delegate",
+        createdAt: new Date(),
+      });
+
+      const result = await updateRound({
+        roundId: "round-1",
+        status: "completed",
+        // couponDelegateId is not provided (undefined)
+      });
+
+      expect(result.ok).toBe(true);
+      // Verify user lookup was not attempted
+      expect(mocks.prismaMocks.user.findUnique).not.toHaveBeenCalled();
+      // Verify couponDelegateId is not in the update data
+      expect(mocks.prismaMocks.round.update).toHaveBeenCalled();
+      const updateCall = mocks.prismaMocks.round.update.mock.calls[0];
+      expect(updateCall[0].data).not.toHaveProperty("couponDelegateId");
+    });
+
+    it("does not use transaction when updating only couponDelegateId", async () => {
+      mocks.prismaMocks.user.findUnique.mockResolvedValue({
+        id: "delegate-user",
+        authId: "auth-delegate",
+        email: "delegate@example.com",
+        displayName: "Delegate",
+        avatarUrl: null,
+        role: "member",
+        createdAt: new Date(),
+      });
+
+      mocks.prismaMocks.round.update.mockResolvedValue({
+        id: "round-1",
+        seasonId: "season-1",
+        roundNumber: 1,
+        status: "open",
+        deadline: new Date("2099-12-31"),
+        createdAt: new Date(),
+        couponDelegateId: "delegate-user",
+      });
+
+      const result = await updateRound({
+        roundId: "round-1",
+        couponDelegateId: "delegate-user",
+      });
+
+      expect(result.ok).toBe(true);
+      // Transaction should NOT be used for delegate-only updates
+      expect(mocks.prismaMocks.$transaction).not.toHaveBeenCalled();
+      // Direct update should be used
+      expect(mocks.prismaMocks.round.update).toHaveBeenCalled();
     });
   });
 });
