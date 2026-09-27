@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin, getCurrentUser } from "@/lib/auth";
+import { requireAdmin, getCurrentMember } from "@/lib/auth";
 import { Prisma } from "@prisma/client";
 
 export async function GET() {
-  const user = await getCurrentUser();
+  const user = await getCurrentMember();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const seasons = await prisma.season.findMany({

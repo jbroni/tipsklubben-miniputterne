@@ -6,7 +6,7 @@ import { isHistoricPlaceholder } from "@/lib/historic-users";
 
 type AdminUser = User & { identities: { id: string; authId: string; email: string }[] };
 
-const ROLE_LABEL: Record<string, string> = { admin: "admin", member: "medlem" };
+const ROLE_LABEL: Record<string, string> = { admin: "admin", member: "medlem", guest: "gæst" };
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -38,8 +38,7 @@ export default function AdminUsersPage() {
     fetchUsers();
   }, []);
 
-  const toggleRole = async (userId: string, currentRole: string) => {
-    const newRole = currentRole === "admin" ? "member" : "admin";
+  const setRole = async (userId: string, newRole: string) => {
     await fetch("/api/admin/users", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -104,7 +103,15 @@ export default function AdminUsersPage() {
   }
 
   const historicUsers = users.filter((u) => isHistoricPlaceholder(u.authId));
-  const realUsers = users.filter((u) => !isHistoricPlaceholder(u.authId));
+  const realUsers = users
+    .filter((u) => !isHistoricPlaceholder(u.authId))
+    .sort((a, b) => {
+      // Sort guests first, then by name
+      const aIsGuest = a.role === "guest" ? 0 : 1;
+      const bIsGuest = b.role === "guest" ? 0 : 1;
+      if (aIsGuest !== bIsGuest) return aIsGuest - bIsGuest;
+      return a.displayName.localeCompare(b.displayName);
+    });
 
   return (
     <div className="space-y-6">
@@ -389,17 +396,47 @@ export default function AdminUsersPage() {
                   className={`text-xs px-2 py-1 rounded-full ${
                     user.role === "admin"
                       ? "bg-signal-soft text-signal border border-[#eed7d0]"
-                      : "bg-line-divider text-muted"
+                      : user.role === "guest"
+                        ? "bg-yellow-100 text-yellow-800 border border-yellow-300"
+                        : "bg-line-divider text-muted"
                   }`}
                 >
                   {ROLE_LABEL[user.role]}
                 </span>
-                <button
-                  onClick={() => toggleRole(user.id, user.role)}
-                  className="text-xs text-muted hover:text-ink transition-colors"
-                >
-                  {user.role === "admin" ? "Gør til medlem" : "Gør til admin"}
-                </button>
+                <div className="flex items-center gap-2">
+                  {user.role === "guest" && (
+                    <button
+                      onClick={() => setRole(user.id, "member")}
+                      className="text-xs text-muted hover:text-ink transition-colors"
+                    >
+                      Godkend som medlem
+                    </button>
+                  )}
+                  {user.role === "member" && (
+                    <>
+                      <button
+                        onClick={() => setRole(user.id, "admin")}
+                        className="text-xs text-muted hover:text-ink transition-colors"
+                      >
+                        Gør til admin
+                      </button>
+                      <button
+                        onClick={() => setRole(user.id, "guest")}
+                        className="text-xs text-muted hover:text-ink transition-colors"
+                      >
+                        Gør til gæst
+                      </button>
+                    </>
+                  )}
+                  {user.role === "admin" && (
+                    <button
+                      onClick={() => setRole(user.id, "member")}
+                      className="text-xs text-muted hover:text-ink transition-colors"
+                    >
+                      Gør til medlem
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           ))}
