@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireUser, requireAdmin } from "@/lib/auth";
+import { requireUser, canManageGroupCoupon } from "@/lib/auth";
 import { buildBallots, rankSystems } from "@/lib/group-coupon";
 import { getSystem, COUPON_SIZE } from "@/lib/coupon-systems";
 import { carryOverMissingCoupons } from "@/lib/services/carry-over";
@@ -32,8 +32,8 @@ type GroupCouponWithMatches = Prisma.GroupCouponGetPayload<{
 /**
  * GET: Retrieve the group coupon for a round.
  *
- * Non-admins see only finalized coupons (status === "final").
- * Admins see all coupons plus a freshly computed suggestion (if deadline has passed).
+ * Managers (admin or the round's delegate) see all coupons plus a freshly computed suggestion (if deadline has passed).
+ * Non-managers see only finalized coupons (status === "final").
  */
 export async function GET(
   _request: Request,
@@ -68,31 +68,34 @@ export async function GET(
     },
   });
 
-  const isAdmin = user.role === "admin";
+  const canManage = canManageGroupCoupon(user, round);
 
-  // Non-admin users only see finalized coupons
-  if (!isAdmin) {
+  // Non-managers see only finalized coupons
+  if (!canManage) {
     if (savedCoupon && savedCoupon.status === "final") {
       const serialized = serializeGroupCoupon(savedCoupon);
       const response: GroupCouponSuggestionResponse = {
         coupon: serialized,
         seasonName: round.season.name,
+        canManage: false,
       };
       return NextResponse.json(response);
     } else {
       const response: GroupCouponSuggestionResponse = {
         coupon: null,
         seasonName: round.season.name,
+        canManage: false,
       };
       return NextResponse.json(response);
     }
   }
 
-  // Admin path: return saved coupon + computed suggestion + match details
+  // Manager path: return saved coupon + computed suggestion + match details
   const couponResponse: GroupCouponSuggestionResponse = {
     coupon: savedCoupon ? serializeGroupCoupon(savedCoupon) : null,
     roundNumber: round.roundNumber,
     seasonName: round.season.name,
+    canManage: true,
     matches: round.matches.map((m) => ({
       id: m.id,
       matchNumber: m.matchNumber,
@@ -240,7 +243,7 @@ export async function GET(
 /**
  * POST: Create or update the group coupon for a round.
  *
- * Admins only. Validates systemCode, match count, slot distribution, and coverage.
+ * Managers (admin or the round's delegate). Validates systemCode, match count, slot distribution, and coverage.
  * Upserts the coupon and its match assignments in a transaction.
  */
 export async function POST(
@@ -248,7 +251,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const user = await requireAdmin();
+  const user = await requireUser();
 
   const body = await request.json();
   const { systemCode, status, matches } = body;
@@ -261,6 +264,22 @@ export async function POST(
 
   if (!round) {
     return NextResponse.json({ error: "Runde ikke fundet" }, { status: 404 });
+  }
+
+  // Check if user can manage the group coupon for this round
+  if (!canManageGroupCoupon(user, round)) {
+    return NextResponse.json(
+      { error: "Du har ikke adgang til fælleskuponen for denne runde" },
+      { status: 403 }
+    );
+  }
+
+  // Non-admins cannot modify completed rounds
+  if (user.role !== "admin" && round.status === "completed") {
+    return NextResponse.json(
+      { error: "Runden er afsluttet – kun admin kan ændre fælleskuponen" },
+      { status: 403 }
+    );
   }
 
   // Validate deadline has passed
@@ -549,6 +568,7 @@ export async function POST(
   const response: GroupCouponSuggestionResponse = {
     coupon: serializeGroupCoupon(result),
     seasonName: round.season.name,
+    canManage: true,
   };
 
   return NextResponse.json(response);

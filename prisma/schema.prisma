@@ -37,17 +37,18 @@ enum GroupCouponStatus {
 }
 
 model User {
-  id           String        @id @default(uuid()) @db.Uuid
-  authId       String        @unique @map("auth_id")
-  email        String        @unique
-  displayName  String        @map("display_name")
-  avatarUrl    String?       @map("avatar_url")
-  role         Role          @default(member)
-  createdAt    DateTime      @default(now()) @map("created_at")
-  predictions  Prediction[]
-  groupCoupons GroupCoupon[]
-  mcpTokens    McpToken[]
-  identities   UserIdentity[]
+  id              String        @id @default(uuid()) @db.Uuid
+  authId          String        @unique @map("auth_id")
+  email           String        @unique
+  displayName     String        @map("display_name")
+  avatarUrl       String?       @map("avatar_url")
+  role            Role          @default(member)
+  createdAt       DateTime      @default(now()) @map("created_at")
+  predictions     Prediction[]
+  groupCoupons    GroupCoupon[]
+  mcpTokens       McpToken[]
+  identities      UserIdentity[]
+  delegatedRounds Round[]       @relation("RoundCouponDelegate")
 
   @@map("users")
 }
@@ -78,18 +79,21 @@ model Season {
 }
 
 model Round {
-  id          String       @id @default(uuid()) @db.Uuid
-  seasonId    String       @map("season_id") @db.Uuid
-  roundNumber Int          @map("round_number")
-  deadline    DateTime
-  status      RoundStatus  @default(open)
-  createdAt   DateTime     @default(now()) @map("created_at")
-  season      Season       @relation(fields: [seasonId], references: [id], onDelete: Cascade)
-  matches     Match[]
-  predictions Prediction[]
-  groupCoupon GroupCoupon?
+  id               String       @id @default(uuid()) @db.Uuid
+  seasonId         String       @map("season_id") @db.Uuid
+  roundNumber      Int          @map("round_number")
+  deadline         DateTime
+  status           RoundStatus  @default(open)
+  createdAt        DateTime     @default(now()) @map("created_at")
+  couponDelegateId String?      @map("coupon_delegate_id") @db.Uuid
+  season           Season       @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  matches          Match[]
+  predictions      Prediction[]
+  groupCoupon      GroupCoupon?
+  couponDelegate   User?        @relation("RoundCouponDelegate", fields: [couponDelegateId], references: [id], onDelete: SetNull)
 
   @@unique([seasonId, roundNumber])
+  @@index([couponDelegateId])
   @@map("rounds")
 }
 

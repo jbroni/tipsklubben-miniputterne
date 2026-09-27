@@ -19,6 +19,9 @@ const mocks = vi.hoisted(() => {
     groupCoupon: {
       updateMany: vi.fn(),
     },
+    round: {
+      updateMany: vi.fn(),
+    },
     userIdentity: {
       updateMany: vi.fn(),
       create: vi.fn(),
@@ -67,6 +70,7 @@ describe("mergeUsers", () => {
     mocks.txMock.prediction.findMany.mockResolvedValue([]);
     mocks.txMock.mcpToken.updateMany.mockResolvedValue({ count: 0 });
     mocks.txMock.groupCoupon.updateMany.mockResolvedValue({ count: 0 });
+    mocks.txMock.round.updateMany.mockResolvedValue({ count: 0 });
     mocks.txMock.userIdentity.updateMany.mockResolvedValue({ count: 0 });
     mocks.txMock.userIdentity.create.mockResolvedValue({ id: "identity-1" });
     mocks.txMock.user.update.mockResolvedValue({ id: "user-2" });
@@ -604,6 +608,10 @@ describe("mergeUsers", () => {
         where: { createdById: "user-1" },
         data: { createdById: "user-2" },
       });
+      expect(mocks.txMock.round.updateMany).toHaveBeenCalledWith({
+        where: { couponDelegateId: "user-1" },
+        data: { couponDelegateId: "user-2" },
+      });
       expect(mocks.txMock.userIdentity.updateMany).toHaveBeenCalledWith({
         where: { userId: "user-1" },
         data: { userId: "user-2" },
@@ -667,6 +675,48 @@ describe("mergeUsers", () => {
           email: "source@example.com",
           userId: "user-2",
         },
+      });
+    });
+
+    it("moves couponDelegateId from source to target user", async () => {
+      const sourceUser: User = {
+        id: "user-1",
+        authId: "auth-real-1",
+        email: "source@example.com",
+        displayName: "Source",
+        avatarUrl: null,
+        role: "member",
+        createdAt: new Date(),
+      };
+
+      const targetUser: User = {
+        id: "user-2",
+        authId: "auth-real-2",
+        email: "target@example.com",
+        displayName: "Target",
+        avatarUrl: null,
+        role: "member",
+        createdAt: new Date(),
+      };
+
+      mocks.prismaMocks.user.findUnique
+        .mockResolvedValueOnce(sourceUser)
+        .mockResolvedValueOnce(targetUser);
+
+      mocks.prismaMocks.prediction.findMany.mockResolvedValue([]);
+      mocks.txMock.prediction.count.mockResolvedValue(0);
+
+      const result = await mergeUsers({
+        sourceUserId: "user-1",
+        targetUserId: "user-2",
+      });
+
+      expect(result.ok).toBe(true);
+
+      // Verify round.updateMany was called to move couponDelegateId
+      expect(mocks.txMock.round.updateMany).toHaveBeenCalledWith({
+        where: { couponDelegateId: "user-1" },
+        data: { couponDelegateId: "user-2" },
       });
     });
   });

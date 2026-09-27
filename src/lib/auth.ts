@@ -90,3 +90,12 @@ export async function syncUser(authUser: {
     create: { authId: authUser.id, email, displayName, avatarUrl },
   });
 }
+
+// Check if a user can manage the group coupon for a round.
+// Admins can always manage; delegates can manage only their assigned round.
+export function canManageGroupCoupon(
+  user: { id: string; role: string },
+  round: { couponDelegateId: string | null }
+): boolean {
+  return user.role === "admin" || (round.couponDelegateId !== null && round.couponDelegateId === user.id);
+}

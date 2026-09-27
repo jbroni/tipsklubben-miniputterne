@@ -83,6 +83,7 @@ function mockRound(
     deadline: new Date(),
     status: "open",
     createdAt: new Date(),
+    couponDelegateId: null,
     matches,
     predictions,
   };

@@ -7,7 +7,15 @@ import { useSearchParams } from "next/navigation";
 import { RoundStatusBadge } from "@/components/RoundStatusBadge";
 import { parseCouponText, resolveKickoff } from "@/lib/coupon-parser";
 import { parseAppZonedDateTime, toDatetimeLocalValue, formatInAppZone } from "@/lib/time";
+import { firstName } from "@/lib/display-name";
+import { isHistoricPlaceholder } from "@/lib/historic-users";
 import type { RoundStatus, Match, Pick as PickType } from "@prisma/client";
+
+interface AdminUser {
+  id: string;
+  displayName: string;
+  authId: string;
+}
 
 interface RoundData {
   id: string;
@@ -16,6 +24,7 @@ interface RoundData {
   status: RoundStatus;
   matches: Match[];
   _count: { predictions: number };
+  couponDelegateId: string | null;
 }
 
 const PICK_LABEL: Record<string, string> = { HOME: "1", DRAW: "X", AWAY: "2" };
@@ -36,6 +45,7 @@ function AdminRoundsContent() {
 
   const [rounds, setRounds] = useState<RoundData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [newRoundNumber, setNewRoundNumber] = useState(1);
   const [newDeadline, setNewDeadline] = useState("");
@@ -82,6 +92,9 @@ function AdminRoundsContent() {
   const [deadlineInputValue, setDeadlineInputValue] = useState("");
   const [reopeningRound, setReopeningRound] = useState<string | null>(null);
 
+  // Delegate select state
+  const [savingDelegate, setSavingDelegate] = useState<Record<string, boolean>>({});
+
   // Helper functions
   const formatDeadline = (deadline: string): string => {
     return formatInAppZone(deadline, {
@@ -91,6 +104,20 @@ function AdminRoundsContent() {
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  // Compute labels for delegate select, using full name when two first names are the same
+  const getDisplayLabels = (): Record<string, string> => {
+    const filteredUsers = users.filter((u) => !isHistoricPlaceholder(u.authId));
+    const firstNames = filteredUsers.map((u) => firstName(u.displayName));
+    const duplicateFirstNames = new Set(firstNames.filter((n, i) => firstNames.indexOf(n) !== i));
+
+    const labels: Record<string, string> = {};
+    filteredUsers.forEach((user) => {
+      const first = firstName(user.displayName);
+      labels[user.id] = duplicateFirstNames.has(first) ? user.displayName : first;
+    });
+    return labels;
   };
 
   const isDeadlineInPast = (deadline: string): boolean => {
@@ -113,9 +140,31 @@ function AdminRoundsContent() {
       });
   };
 
+  const fetchUsers = () => {
+    fetch("/api/admin/users")
+      .then((r) => {
+        if (!r.ok) {
+          setUsers([]);
+          return;
+        }
+        return r.json();
+      })
+      .then(({ data }) => {
+        setUsers(data ?? []);
+      })
+      .catch(() => {
+        setUsers([]);
+      });
+  };
+
   useEffect(() => {
     fetchRounds();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seasonId]);
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   const createRound = async () => {
     if (!seasonId || !newDeadline) return;
@@ -172,6 +221,26 @@ function AdminRoundsContent() {
     setEditingDeadlineRound(null);
     setReopeningRound(null);
     fetchRounds();
+  };
+
+  const updateCouponDelegate = async (roundId: string, couponDelegateId: string | null) => {
+    setActionError("");
+    setSavingDelegate((prev) => ({ ...prev, [roundId]: true }));
+    try {
+      const res = await fetch(`/api/rounds/${roundId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ couponDelegateId }),
+      });
+      if (!res.ok) {
+        const { error } = await res.json().catch(() => ({ error: "Fejl ved opdatering" }));
+        setActionError(error ?? "Fejl ved opdatering");
+        return;
+      }
+      fetchRounds();
+    } finally {
+      setSavingDelegate((prev) => ({ ...prev, [roundId]: false }));
+    }
   };
 
   const startAddMatches = (roundId: string) => {
@@ -885,6 +954,38 @@ function AdminRoundsContent() {
                 >
                   {autoResolveMessages[round.id].text}
                 </p>
+              )}
+
+              {round.status !== "completed" && (
+                <div className="mb-3">
+                  <label className="text-xs text-ink-secondary block mb-1">
+                    Fælleskupon-ansvarlig:
+                  </label>
+                  {(() => {
+                    const displayLabels = getDisplayLabels();
+                    const filteredUsers = users.filter((u) => !isHistoricPlaceholder(u.authId));
+                    const delegateExists = round.couponDelegateId && filteredUsers.some((u) => u.id === round.couponDelegateId);
+
+                    return (
+                      <select
+                        value={round.couponDelegateId ?? ""}
+                        onChange={(e) => updateCouponDelegate(round.id, e.target.value || null)}
+                        disabled={savingDelegate[round.id] ?? false}
+                        className="input py-1.5! text-sm"
+                      >
+                        <option value="">Ingen (admin)</option>
+                        {filteredUsers.map((user) => (
+                          <option key={user.id} value={user.id}>
+                            {displayLabels[user.id]}
+                          </option>
+                        ))}
+                        {!delegateExists && round.couponDelegateId && (
+                          <option value={round.couponDelegateId}>Ukendt bruger</option>
+                        )}
+                      </select>
+                    );
+                  })()}
+                </div>
               )}
 
               <div className="flex flex-wrap gap-2">

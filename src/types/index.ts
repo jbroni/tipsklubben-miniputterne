@@ -178,4 +178,5 @@ export interface GroupCouponSuggestionResponse {
   roundNumber?: number;
   seasonName: string;
   suggestionError?: string;
+  canManage: boolean;
 }

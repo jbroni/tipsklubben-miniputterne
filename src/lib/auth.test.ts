@@ -34,7 +34,7 @@ vi.mock("next/headers", () => ({
   headers: mocks.headersMocks,
 }));
 
-import { getCurrentUser, getCurrentUserFromHeaders, syncUser } from "./auth";
+import { getCurrentUser, getCurrentUserFromHeaders, syncUser, canManageGroupCoupon } from "./auth";
 
 describe("auth functions", () => {
   beforeEach(() => {
@@ -536,6 +536,48 @@ describe("auth functions", () => {
           })
         );
       });
+    });
+  });
+
+  describe("canManageGroupCoupon", () => {
+    it("returns true when user is admin regardless of delegate", () => {
+      const admin = { id: "admin-1", role: "admin" };
+      const round = { couponDelegateId: "delegate-1" };
+
+      const result = canManageGroupCoupon(admin, round);
+      expect(result).toBe(true);
+    });
+
+    it("returns true when user is admin and no delegate is set", () => {
+      const admin = { id: "admin-1", role: "admin" };
+      const round = { couponDelegateId: null };
+
+      const result = canManageGroupCoupon(admin, round);
+      expect(result).toBe(true);
+    });
+
+    it("returns true when user is the delegate", () => {
+      const member = { id: "user-1", role: "member" };
+      const round = { couponDelegateId: "user-1" };
+
+      const result = canManageGroupCoupon(member, round);
+      expect(result).toBe(true);
+    });
+
+    it("returns false when user is not the delegate and couponDelegateId is set", () => {
+      const member = { id: "user-1", role: "member" };
+      const round = { couponDelegateId: "user-2" };
+
+      const result = canManageGroupCoupon(member, round);
+      expect(result).toBe(false);
+    });
+
+    it("returns false when user is a member and no delegate is set", () => {
+      const member = { id: "user-1", role: "member" };
+      const round = { couponDelegateId: null };
+
+      const result = canManageGroupCoupon(member, round);
+      expect(result).toBe(false);
     });
   });
 });

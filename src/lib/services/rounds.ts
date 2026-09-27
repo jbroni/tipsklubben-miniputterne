@@ -60,6 +60,7 @@ export async function updateRound(input: {
   roundId: string;
   status?: string;
   deadline?: string;
+  couponDelegateId?: string | null;
 }): Promise<ServiceResult<Round>> {
   // Validate deadline if provided
   if (input.deadline) {
@@ -69,6 +70,20 @@ export async function updateRound(input: {
         ok: false,
         code: "VALIDATION",
         message: "Ugyldigt deadline-format",
+      };
+    }
+  }
+
+  // Validate couponDelegateId if provided (non-null)
+  if (input.couponDelegateId !== undefined && input.couponDelegateId !== null) {
+    const delegateUser = await prisma.user.findUnique({
+      where: { id: input.couponDelegateId },
+    });
+    if (!delegateUser) {
+      return {
+        ok: false,
+        code: "VALIDATION",
+        message: "Ukendt bruger",
       };
     }
   }
@@ -105,6 +120,7 @@ export async function updateRound(input: {
   const updateData: Record<string, unknown> = {};
   if (input.status) updateData.status = input.status;
   if (input.deadline) updateData.deadline = parseAppZonedDateTime(input.deadline);
+  if (input.couponDelegateId !== undefined) updateData.couponDelegateId = input.couponDelegateId;
 
   // If opening the round (status -> "open" or deadline moved into future), delete carried predictions
   const isReopening = input.status === "open" || (input.deadline && parseAppZonedDateTime(input.deadline) > new Date());
