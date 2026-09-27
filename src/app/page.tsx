@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, isMember } from "@/lib/auth";
 import { carryOverMissingCoupons } from "@/lib/services/carry-over";
 import Link from "next/link";
 import { LeaderboardTable } from "@/components/LeaderboardTable";
@@ -37,6 +37,24 @@ export default async function DashboardPage() {
     );
   }
 
+  if (!isMember(user)) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
+        <div className="scale-150">
+          <Logo href="/" />
+        </div>
+        <div className="text-center space-y-3 max-w-sm">
+          <h1 className="font-display text-xl font-bold text-ink">
+            Afventer godkendelse
+          </h1>
+          <p className="text-sm text-muted">
+            Hej {firstName(user.displayName)}, din konto skal godkendes af en admin, før du kan se kuponer og stillinger.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   // Apply carry-overs before fetching current round data
   await carryOverMissingCoupons();
 
@@ -66,7 +84,7 @@ export default async function DashboardPage() {
         },
       },
     }),
-    prisma.user.findMany(),
+    prisma.user.findMany({ where: { role: { not: "guest" } } }),
     getLeaderboardEntries(),
     getShortNames(),
   ]);

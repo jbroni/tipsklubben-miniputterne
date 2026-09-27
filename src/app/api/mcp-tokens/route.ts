@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentMember } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { generateToken } from "@/lib/mcp/tokens";
 
 export async function GET(request: Request) {
-  const user = await getCurrentUser();
+  const user = await getCurrentMember();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const tokens = await prisma.mcpToken.findMany({
@@ -24,7 +24,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const user = await getCurrentUser();
+  const user = await getCurrentMember();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await request.json();

@@ -23,6 +23,7 @@ export async function getCurrentUserFromHeaders(): Promise<User | null> {
   // ONLY safe in page/layout server components on routes covered by the
   // middleware matcher. NEVER use in a route handler or Server Action
   // (where middleware does not populate this header).
+  // Note: returns guest users too; use getCurrentMember to exclude guests.
   const user = await findUserByAuthId(authId);
 
   return user;
@@ -38,14 +39,25 @@ export async function getCurrentUser(): Promise<User | null> {
   // Network-verified user fetch. Always makes a network call to Supabase auth
   // server to cryptographically verify the JWT signature. Safe to use anywhere:
   // page/layout server components, route handlers, and Server Actions.
+  // Note: returns guest users too; use getCurrentMember to exclude guests.
   const user = await findUserByAuthId(authUser.id);
 
   return user;
 }
 
+export function isMember(user: Pick<User, "role">): boolean {
+  return user.role !== "guest";
+}
+
+export async function getCurrentMember(): Promise<User | null> {
+  const user = await getCurrentUser();
+  if (!user || !isMember(user)) return null;
+  return user;
+}
+
 export async function requireUser(): Promise<User> {
   const user = await getCurrentUser();
-  if (!user) redirect("/");
+  if (!user || !isMember(user)) redirect("/");
   return user;
 }
 

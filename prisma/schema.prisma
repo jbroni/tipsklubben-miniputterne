@@ -11,6 +11,7 @@ datasource db {
 enum Role {
   admin
   member
+  guest
 }
 
 enum RoundStatus {
@@ -42,7 +43,7 @@ model User {
   email        String        @unique
   displayName  String        @map("display_name")
   avatarUrl    String?       @map("avatar_url")
-  role         Role          @default(member)
+  role         Role          @default(guest)
   createdAt    DateTime      @default(now()) @map("created_at")
   predictions  Prediction[]
   groupCoupons GroupCoupon[]

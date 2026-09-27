@@ -28,6 +28,14 @@ export async function PATCH(request: Request) {
     );
   }
 
+  const validRoles = ["guest", "member", "admin"];
+  if (!validRoles.includes(role)) {
+    return NextResponse.json(
+      { error: "Invalid role" },
+      { status: 400 }
+    );
+  }
+
   const user = await prisma.user.update({
     where: { id: userId },
     data: { role },

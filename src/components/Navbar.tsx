@@ -20,9 +20,11 @@ const navLinks = [
 export function Navbar({
   displayName,
   isAdmin,
+  isGuest = false,
 }: {
   displayName: string | null;
   isAdmin: boolean;
+  isGuest?: boolean;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -113,19 +115,21 @@ export function Navbar({
                       </p>
                     </div>
 
-                    {navLinks.map((link) => (
-                      <Link
-                        key={link.href}
-                        href={link.href}
-                        className={`block px-4 py-2.5 text-sm transition-colors ${
-                          pathname === link.href
-                            ? "text-brand bg-brand-tint font-medium"
-                            : "text-ink-tertiary hover:bg-paper"
-                        }`}
-                      >
-                        {link.label}
-                      </Link>
-                    ))}
+                    {navLinks
+                      .filter((link) => isGuest ? link.href === "/" : true)
+                      .map((link) => (
+                        <Link
+                          key={link.href}
+                          href={link.href}
+                          className={`block px-4 py-2.5 text-sm transition-colors ${
+                            pathname === link.href
+                              ? "text-brand bg-brand-tint font-medium"
+                              : "text-ink-tertiary hover:bg-paper"
+                          }`}
+                        >
+                          {link.label}
+                        </Link>
+                      ))}
                     {isAdmin && (
                       <Link
                         href="/admin"
