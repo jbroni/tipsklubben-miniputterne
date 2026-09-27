@@ -348,4 +348,30 @@ describe("computeRoundScores", () => {
       expect(scores[0].points).toBe(1);
     });
   });
+
+  describe("name-based tiebreaking", () => {
+    it("orders fully tied users by displayName (Danish collation) regardless of input order", () => {
+      const matches = [
+        createMatch(H, 2.0, 3.0, 4.0, [
+          { userId: "user-zack", pick: H },
+          { userId: "user-aase", pick: H },
+        ]),
+        createMatch(H, 2.0, 3.0, 4.0, [
+          { userId: "user-zack", pick: H },
+          { userId: "user-aase", pick: H },
+        ]),
+      ];
+
+      const users = [
+        createUser("user-aase", "Åse"),
+        createUser("user-zack", "Zack"),
+      ];
+
+      const scores = computeRoundScores(matches, users);
+
+      // Both have 2 points and same fedt; Zack should come first, Åse second (Danish order)
+      expect(scores[0].user.displayName).toBe("Zack");
+      expect(scores[1].user.displayName).toBe("Åse");
+    });
+  });
 });

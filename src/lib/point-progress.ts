@@ -1,5 +1,6 @@
 import type { LeaderboardEntry } from "@/types";
-import { compareEntries, computeMovements } from "./leaderboard";
+import { compareRanking, compareEntries, computeMovements } from "./leaderboard";
+import { compareNames } from "./display-name";
 
 /** Marker shapes used to distinguish player lines without relying on colour alone. */
 export type PlayerShape =
@@ -90,9 +91,7 @@ export function layoutLabels(
     .map((p) => ({ id: p.id, name: p.name, endY: p.endY, labelY: p.endY }))
     .sort((a, b) => {
       if (a.endY !== b.endY) return a.endY - b.endY;
-      const byName = a.name.localeCompare(b.name, "da");
-      if (byName !== 0) return byName;
-      return a.id.localeCompare(b.id);
+      return compareNames(a.name, b.name) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
     });
 
   // Push down: keep at least `gap` below the previous label
@@ -227,7 +226,7 @@ export function buildProgress(entries: LeaderboardEntry[]): Progress {
     }
   }
 
-  const sorted = [...tracks].sort((a, b) => compareEntries(a.entry, b.entry));
+  const sorted = [...tracks].sort((a, b) => compareRanking(a.entry, b.entry));
 
   const series: ProgressSeries[] = sorted.map((track, index) => {
     // Competition ranking: equal entries share the rank of the first of them

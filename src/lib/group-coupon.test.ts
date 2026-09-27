@@ -407,6 +407,29 @@ describe("buildBallots", () => {
 
       expect(ballots.map((b) => b.displayName)).toEqual(["Alice", "Bob", "Zoe"]);
     });
+
+    it("sorts ballots by Danish collation (Å after Z)", () => {
+      const users = [
+        { id: "user-1", displayName: "Zack" },
+        { id: "user-0", displayName: "Åse" },
+      ];
+      const currentRound: RoundPredictions = {
+        roundNumber: 10,
+        predictions: [
+          { userId: "user-0", matchNumber: 1, pick: "HOME" },
+          { userId: "user-1", matchNumber: 1, pick: "HOME" },
+        ],
+      };
+
+      const ballots = buildBallots({
+        users,
+        currentRound,
+        priorRounds: [],
+      });
+
+      // Zack comes before Åse in Danish alphabetical order
+      expect(ballots.map((b) => b.displayName)).toEqual(["Zack", "Åse"]);
+    });
   });
 });
 

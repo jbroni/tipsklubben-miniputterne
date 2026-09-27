@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { Decimal } from "@prisma/client/runtime/library";
-import { computeLeaderboard, toFedtInput, computeMovements } from "./leaderboard";
+import { computeLeaderboard, toFedtInput, computeMovements, compareRanking, compareEntries } from "./leaderboard";
 import type { User, Round, Match, Prediction, Role, Pick as PickType } from "@prisma/client";
 
 type RoundWithMatches = Round & {
@@ -82,6 +82,7 @@ function mockRound(
     roundNumber,
     deadline: new Date(),
     status: "open",
+    carryOverAppliedAt: null,
     createdAt: new Date(),
     matches,
     predictions,
@@ -750,6 +751,184 @@ describe("computeLeaderboard", () => {
 
       expect(movements["a"]).toBe(0);
       expect(movements["b"]).toBe(0);
+    });
+  });
+
+  describe("name-based tiebreaking", () => {
+    it("compareEntries returns 0 for full ties; compareRanking orders by name", () => {
+      const entryZack = {
+        user: { id: "user-zack", displayName: "Zack", avatarUrl: null },
+        totalPoints: 10,
+        roundsPlayed: 1,
+        avgScore: 10,
+        seasonFedt: 50,
+        roundScores: [{ roundNumber: 1, points: 10, fedt: 50, played: true }],
+      };
+
+      const entryOejvind = {
+        user: { id: "user-oj", displayName: "Øjvind", avatarUrl: null },
+        totalPoints: 10,
+        roundsPlayed: 1,
+        avgScore: 10,
+        seasonFedt: 50,
+        roundScores: [{ roundNumber: 1, points: 10, fedt: 50, played: true }],
+      };
+
+      // compareEntries returns 0 for full ties
+      expect(compareEntries(entryZack, entryOejvind)).toBe(0);
+      expect(compareEntries(entryOejvind, entryZack)).toBe(0);
+
+      // compareRanking puts Zack before Øjvind (Z before Ø in Danish order)
+      expect(compareRanking(entryZack, entryOejvind)).toBeLessThan(0);
+      expect(compareRanking(entryOejvind, entryZack)).toBeGreaterThan(0);
+    });
+
+    it("orders fully tied users by displayName (Danish collation) in computeLeaderboard", () => {
+      // Pass users with Åse first to test that output order is by compareRanking (name order), not input order
+      const users = [
+        mockUser("user-aase", "Åse"),
+        mockUser("user-zack", "Zack"),
+      ];
+
+      // Both get identical points and fedt
+      const m1 = mockMatch("m1", 1, "HOME", 50, 30, 20);
+      const m2 = mockMatch("m2", 2, "DRAW", 50, 30, 20);
+
+      const predictions = [
+        mockPrediction("p1", "user-zack", m1, "HOME"), // 1 point, fedt 50
+        mockPrediction("p2", "user-zack", m2, "DRAW"), // 1 point, fedt 30
+        mockPrediction("p3", "user-aase", m1, "HOME"), // 1 point, fedt 50
+        mockPrediction("p4", "user-aase", m2, "DRAW"), // 1 point, fedt 30
+      ];
+
+      const rounds = [mockRound("round1", 1, [m1, m2], predictions)];
+
+      const leaderboard = computeLeaderboard(rounds, users);
+
+      // Both have 2 points and same fedt; Zack should come before Åse (Danish order: Z before Å)
+      expect(leaderboard[0].user.displayName).toBe("Zack");
+      expect(leaderboard[1].user.displayName).toBe("Åse");
+    });
+
+    it("tied after rounds 1 and 2: both get 0 movement (regression guard)", () => {
+      const users = [
+        mockUser("user-aase", "Åse"),
+        mockUser("user-zack", "Zack"),
+      ];
+
+      // Round 1: both get 1 point, same fedt
+      const m1 = mockMatch("m1", 1, "HOME", 33, 33, 33);
+
+      const round1Preds = [
+        mockPrediction("p1", "user-aase", m1, "HOME"),
+        mockPrediction("p2", "user-zack", m1, "HOME"),
+      ];
+
+      // Round 2: both get 1 point, same fedt
+      const m2 = mockMatch("m2", 1, "HOME", 33, 33, 33);
+
+      const round2Preds = [
+        mockPrediction("p3", "user-aase", m2, "HOME"),
+        mockPrediction("p4", "user-zack", m2, "HOME"),
+      ];
+
+      const rounds = [
+        mockRound("round1", 1, [m1], round1Preds),
+        mockRound("round2", 2, [m2], round2Preds),
+      ];
+
+      const leaderboard = computeLeaderboard(rounds, users);
+      // Reorder to [Åse, Zack] to test movement calculation
+      const byId = new Map(leaderboard.map((e) => [e.user.id, e]));
+      const movements = computeMovements([byId.get("user-aase")!, byId.get("user-zack")!]);
+
+      // Both stayed tied throughout, so movement should be 0 for both
+      expect(movements["user-aase"]).toBe(0);
+      expect(movements["user-zack"]).toBe(0);
+    });
+
+    it("Åse ahead after round 1, tied after round 2: movement Zack +1, Åse -1", () => {
+      const users = [
+        mockUser("user-aase", "Åse"),
+        mockUser("user-zack", "Zack"),
+      ];
+
+      // Round 1: Åse gets 1 point, Zack gets 0, both 33 fedt
+      const m1 = mockMatch("m1", 1, "HOME", 33, 33, 33);
+
+      const round1Preds = [
+        mockPrediction("p1", "user-aase", m1, "HOME"), // correct
+        mockPrediction("p2", "user-zack", m1, "AWAY"), // incorrect
+      ];
+
+      // Round 2: Zack gets 1 point, Åse gets 0, both 33 fedt (now tied)
+      const m2 = mockMatch("m2", 1, "HOME", 33, 33, 33);
+
+      const round2Preds = [
+        mockPrediction("p3", "user-aase", m2, "AWAY"), // incorrect
+        mockPrediction("p4", "user-zack", m2, "HOME"), // correct
+      ];
+
+      const rounds = [
+        mockRound("round1", 1, [m1], round1Preds),
+        mockRound("round2", 2, [m2], round2Preds),
+      ];
+
+      const leaderboard = computeLeaderboard(rounds, users);
+      // Verify both are tied after round 2
+      expect(compareEntries(leaderboard[0], leaderboard[1])).toBe(0);
+
+      // Reorder to [Åse, Zack] for movement calculation
+      const byId = new Map(leaderboard.map((e) => [e.user.id, e]));
+      const movements = computeMovements([byId.get("user-aase")!, byId.get("user-zack")!]);
+
+      // Åse was ahead (rank 0), now tied and comes after by name (rank 1): movement = 0 - 1 = -1
+      // Zack was behind (rank 1), now tied and comes first by name (rank 0): movement = 1 - 0 = +1
+      expect(movements["user-zack"]).toBe(1);
+      expect(movements["user-aase"]).toBe(-1);
+    });
+
+    it("tied after round 1, Åse ahead after round 2: movement Åse +1, Zack -1", () => {
+      const users = [
+        mockUser("user-aase", "Åse"),
+        mockUser("user-zack", "Zack"),
+      ];
+
+      // Round 1: both get 1 point, same 33 fedt (tied)
+      const m1 = mockMatch("m1", 1, "HOME", 33, 33, 33);
+
+      const round1Preds = [
+        mockPrediction("p1", "user-aase", m1, "HOME"),
+        mockPrediction("p2", "user-zack", m1, "HOME"),
+      ];
+
+      // Round 2: Åse gets 1 point, Zack gets 0, both 33 fedt (Åse ahead)
+      const m2 = mockMatch("m2", 1, "HOME", 33, 33, 33);
+
+      const round2Preds = [
+        mockPrediction("p3", "user-aase", m2, "HOME"), // correct
+        mockPrediction("p4", "user-zack", m2, "AWAY"), // incorrect
+      ];
+
+      const rounds = [
+        mockRound("round1", 1, [m1], round1Preds),
+        mockRound("round2", 2, [m2], round2Preds),
+      ];
+
+      const leaderboard = computeLeaderboard(rounds, users);
+      // After round 2, Åse should be ahead
+      expect(leaderboard[0].user.id).toBe("user-aase");
+
+      // Reorder to [Åse, Zack] for movement calculation
+      const byId = new Map(leaderboard.map((e) => [e.user.id, e]));
+      const movements = computeMovements([byId.get("user-aase")!, byId.get("user-zack")!]);
+
+      // After round 1 (prior state): tied, so by name [Zack, Åse] → prevRank: Zack=0, Åse=1
+      // After round 2 (current): Åse ahead → [Åse, Zack] → currRank: Åse=0, Zack=1
+      // Åse: prevRank=1, currRank=0, movement = 1 - 0 = +1
+      // Zack: prevRank=0, currRank=1, movement = 0 - 1 = -1
+      expect(movements["user-aase"]).toBe(1);
+      expect(movements["user-zack"]).toBe(-1);
     });
   });
 });

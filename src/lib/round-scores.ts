@@ -2,6 +2,7 @@ import type { Decimal } from "@prisma/client/runtime/library";
 import type { Pick as PickType, Match } from "@prisma/client";
 import { calcRoundFedt } from "./fedt";
 import { toFedtInput } from "./leaderboard";
+import { compareByName } from "./display-name";
 
 export interface RoundScoreUser {
   id: string;
@@ -63,7 +64,8 @@ export function computeRoundScores(
 
   scores.sort((a, b) => {
     if (b.points !== a.points) return b.points - a.points;
-    return a.fedt - b.fedt;
+    if (a.fedt !== b.fedt) return a.fedt - b.fedt;
+    return compareByName(a.user, b.user);
   });
 
   return scores;

@@ -15,6 +15,7 @@
 
 import { SYSTEMS, SystemDefinition, COUPON_SIZE } from "./coupon-systems";
 import { PICK_LABEL, PICK_ORDER, PickValue } from "./picks";
+import { compareByName } from "./display-name";
 
 /** Weight for each missed outcome in the DP objective.
  *  Ensures one missed outcome outweighs any vote-share cost difference
@@ -202,8 +203,8 @@ export function buildBallots(params: {
     }
   }
 
-  // Sort by displayName for stable output
-  ballots.sort((a, b) => a.displayName.localeCompare(b.displayName));
+  // Sort by shared name order for stable output
+  ballots.sort((a, b) => compareByName({ id: a.userId, displayName: a.displayName }, { id: b.userId, displayName: b.displayName }));
   return ballots;
 }
 
