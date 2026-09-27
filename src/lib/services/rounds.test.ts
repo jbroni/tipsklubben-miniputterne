@@ -75,6 +75,7 @@ describe("updateRound", () => {
         status: "locked",
         deadline: new Date("2099-12-31"),
         createdAt: new Date(),
+        carryOverAppliedAt: null,
       };
 
       mocks.prismaMocks.round.findUnique.mockResolvedValue(round);
@@ -94,6 +95,14 @@ describe("updateRound", () => {
           carriedFromRoundNumber: { not: null },
         },
       });
+      // Verify that round update was called with carryOverAppliedAt: null
+      expect(txMock.round.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            carryOverAppliedAt: null,
+          }),
+        })
+      );
     });
 
     it("deletes carried predictions when moving deadline into the future", async () => {
@@ -104,6 +113,7 @@ describe("updateRound", () => {
         status: "locked",
         deadline: new Date("2020-01-01"),
         createdAt: new Date(),
+        carryOverAppliedAt: null,
       };
 
       mocks.prismaMocks.round.findUnique.mockResolvedValue(round);
@@ -123,6 +133,14 @@ describe("updateRound", () => {
           carriedFromRoundNumber: { not: null },
         },
       });
+      // Verify that round update was called with carryOverAppliedAt: null
+      expect(txMock.round.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            carryOverAppliedAt: null,
+          }),
+        })
+      );
     });
   });
 
@@ -135,6 +153,7 @@ describe("updateRound", () => {
         status: "open",
         deadline: new Date("2099-12-31"),
         createdAt: new Date(),
+        carryOverAppliedAt: null,
       };
 
       mocks.prismaMocks.round.update.mockResolvedValue(round);
@@ -150,6 +169,9 @@ describe("updateRound", () => {
       expect(mocks.prismaMocks.$transaction).not.toHaveBeenCalled();
       // Direct update should be used instead
       expect(mocks.prismaMocks.round.update).toHaveBeenCalled();
+      // Verify that the update data does not include carryOverAppliedAt
+      const updateCall = mocks.prismaMocks.round.update.mock.calls[0][0];
+      expect(updateCall.data).not.toHaveProperty("carryOverAppliedAt");
     });
 
     it("does not use transaction when just updating status to non-open value", async () => {
@@ -160,6 +182,7 @@ describe("updateRound", () => {
         status: "open",
         deadline: new Date("2099-12-31"),
         createdAt: new Date(),
+        carryOverAppliedAt: null,
       };
 
       mocks.prismaMocks.round.update.mockResolvedValue({
@@ -203,6 +226,7 @@ describe("updateRound", () => {
         status: "locked",
         deadline: new Date("2020-01-01"),
         createdAt: new Date(),
+        carryOverAppliedAt: null,
       };
 
       mocks.prismaMocks.round.findUnique.mockResolvedValue(round);

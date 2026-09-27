@@ -17,7 +17,7 @@ import { computeRoundScores } from "@/lib/round-scores";
 import { getLeaderboardEntries } from "@/lib/leaderboard-data";
 import { arePicksRevealed } from "@/lib/rounds";
 import { settleFromPrisma } from "@/lib/group-coupon-settlement-data";
-import { firstName, withShortName } from "@/lib/display-name";
+import { firstName, withShortName, sortByName } from "@/lib/display-name";
 import { getShortNames } from "@/lib/display-name-data";
 import type { Pick as PickType } from "@/types";
 import { Logo } from "@/components/Logo";
@@ -71,7 +71,7 @@ export default async function DashboardPage() {
     getShortNames(),
   ]);
 
-  const users = rawUsers.map((u) => withShortName(u, shortNames));
+  const users = sortByName(rawUsers.map((u) => withShortName(u, shortNames)));
   const leaderboardEntries = rawLeaderboardEntries.map((e) => ({
     ...e,
     user: withShortName(e.user, shortNames),

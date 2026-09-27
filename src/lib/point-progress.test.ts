@@ -541,6 +541,22 @@ describe("buildProgress", () => {
     expect(progress.series.map((s) => s.points)).toEqual([[], []]);
     expect(progress.series.every((s) => s.total === 0 && s.gapToLeader === 0)).toBe(true);
   });
+
+  describe("name-based tiebreaking", () => {
+    it("orders fully tied entries by name and assigns them the same rank", () => {
+      const entries = [
+        entry("u-aase", "Åse", [[1, 7]], 40),
+        entry("u-zack", "Zack", [[1, 7]], 40),
+      ];
+
+      const progress = buildProgress(entries);
+
+      // Both tied: Zack should come first (Z before Å in Danish order), Åse second
+      expect(progress.series.map((s) => s.displayName)).toEqual(["Zack", "Åse"]);
+      // Both should have rank 1 (shared rank)
+      expect(progress.series.map((s) => s.rank)).toEqual([1, 1]);
+    });
+  });
 });
 
 // --- buildProgress: maxGap regression -------------------------------------

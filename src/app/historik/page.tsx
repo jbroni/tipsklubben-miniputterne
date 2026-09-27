@@ -3,7 +3,7 @@ import { requireUser } from "@/lib/auth";
 import Link from "next/link";
 import { computeLeaderboard } from "@/lib/leaderboard";
 import { FedtBadge } from "@/components/FedtBadge";
-import { withShortName } from "@/lib/display-name";
+import { withShortName, compareByName } from "@/lib/display-name";
 import { getShortNames } from "@/lib/display-name-data";
 import type { LeaderboardEntry } from "@/types";
 
@@ -150,10 +150,11 @@ export default async function HistorikPage() {
           : 50,
     }));
 
-  // Sort: titles desc, then totalPoints desc
+  // Sort: titles desc, then totalPoints desc, then shared name order
   allTimeLeaderboard.sort((a, b) => {
     if (b.titles !== a.titles) return b.titles - a.titles;
-    return b.totalPoints - a.totalPoints;
+    if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
+    return compareByName(a.user, b.user);
   });
 
   // Reuse precomputed season leaderboards and filter to participants

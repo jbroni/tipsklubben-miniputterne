@@ -1,5 +1,6 @@
 import type { RoundScore } from "@/lib/round-scores";
 import { radarPoint, radarPolygon, toSvgPoints } from "@/lib/radar";
+import { compareByName } from "@/lib/display-name";
 
 interface CorrectPicksRadarProps {
   scores: RoundScore[];
@@ -9,15 +10,18 @@ interface CorrectPicksRadarProps {
 }
 
 export function CorrectPicksRadar({
-  scores,
+  scores: rankedScores,
   maxPoints,
   currentUserId,
   kicker,
 }: CorrectPicksRadarProps) {
   // Render null if fewer than 3 players or maxPoints <= 0
-  if (scores.length < 3 || maxPoints <= 0) {
+  if (rankedScores.length < 3 || maxPoints <= 0) {
     return null;
   }
+
+  // Fixed alphabetical spoke order so the web is easy to compare across rounds
+  const scores = [...rankedScores].sort((a, b) => compareByName(a.user, b.user));
 
   // Geometry constants for proper label spacing
   const radius = 78;

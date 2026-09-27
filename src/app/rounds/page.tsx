@@ -1,12 +1,17 @@
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
+import { carryOverMissingCoupons } from "@/lib/services/carry-over";
 import Link from "next/link";
 import { arePicksStillOpen } from "@/lib/rounds";
 import { formatInAppZone } from "@/lib/time";
 import { getShortNames } from "@/lib/display-name-data";
+import { computeRoundScores } from "@/lib/round-scores";
 
 export default async function RoundsPage() {
   const currentUser = await requireUser();
+
+  // Apply carry-overs before loading rounds so winners include carried coupons
+  await carryOverMissingCoupons();
 
   const [season, shortNames] = await Promise.all([
     prisma.season.findFirst({
@@ -32,8 +37,7 @@ export default async function RoundsPage() {
     return <div className="text-center py-20 text-muted">Ingen aktiv sæson fundet.</div>;
   }
 
-  const userName = (id: string) =>
-    shortNames.get(id) ?? "?";
+  const scoreUsers = Array.from(shortNames, ([id, displayName]) => ({ id, displayName }));
 
   type Row =
     | { kind: "round"; round: (typeof season.rounds)[number] }
@@ -119,21 +123,10 @@ export default async function RoundsPage() {
           let userWon = false;
 
           if (isCompleted) {
-            const userIds = Array.from(
-              new Set(round.matches.flatMap((m) => m.predictions.map((p) => p.userId)))
-            );
-            const scores = userIds.map((uid) => ({
-              userId: uid,
-              points: round.matches.filter((m) => {
-                const pred = m.predictions.find((p) => p.userId === uid);
-                return pred && m.result && pred.pick === m.result;
-              }).length,
-            }));
-            scores.sort((a, b) => b.points - a.points);
-            if (scores.length > 0) {
-              const winner = scores[0];
-              userWon = winner.userId === currentUser.id;
-              meta = `${userWon ? "Du" : userName(winner.userId)} vandt · ${
+            const [winner] = computeRoundScores(round.matches, scoreUsers);
+            if (winner) {
+              userWon = winner.user.id === currentUser.id;
+              meta = `${userWon ? "Du" : winner.user.displayName} vandt · ${
                 winner.points
               }/13`;
             }

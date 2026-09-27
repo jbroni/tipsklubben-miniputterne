@@ -69,7 +69,7 @@ export interface CarriedPrediction {
  * enabling multi-round carry-overs (e.g., user missing rounds 3 and 4 gets
  * round 3's picks carried to 4, with carriedFromRoundNumber = round 3's original source).
  *
- * @param rounds - All deadline-passed rounds of one season, any order.
+ * @param rounds - All closed rounds of one season (deadline passed, or locked/completed), any order.
  * @returns Array of Prisma-ready prediction records to create.
  */
 export function planCarryOvers(rounds: CarryOverRound[]): CarriedPrediction[] {
