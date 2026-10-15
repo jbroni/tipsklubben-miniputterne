@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { PICK_LABEL } from "@/lib/picks";
 import { getSystem } from "@/lib/coupon-systems";
-import { fitSystem } from "@/lib/group-coupon";
+import { fitSystem, rankSystems } from "@/lib/group-coupon";
 import {
   cycleOutcome,
   isRowEdited,
@@ -16,6 +16,13 @@ import {
 } from "@/lib/group-coupon-editor";
 import { GroupCouponCard } from "@/components/GroupCouponCard";
 import type { GroupCouponSuggestionResponse } from "@/types";
+
+// Structural shape shared by rankSystems results and the server-provided ranking
+type RankedSystem = {
+  system: { code: string; rows: number };
+  coverage: number;
+  missedOutcomes: number;
+};
 
 function GroupCouponContent() {
   const params = useParams();
@@ -33,6 +40,8 @@ function GroupCouponContent() {
   const [rows, setRows] = useState<EditableRow[]>([]);
   const [needsPrefill, setNeedsPrefill] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  // Players whose ballots are left out of the system coverage calculation (in-memory only)
+  const [excludedUserIds, setExcludedUserIds] = useState<Set<string>>(new Set());
 
   // Load suggestion on mount
   useEffect(() => {
@@ -87,6 +96,24 @@ function GroupCouponContent() {
     fetchData();
   }, [roundId]);
 
+  const matchInputs = useMemo(
+    () =>
+      (suggestion?.matches ?? []).map((m) => ({
+        matchNumber: m.matchNumber,
+        oddsHome: m.oddsHome,
+        oddsDraw: m.oddsDraw,
+        oddsAway: m.oddsAway,
+      })),
+    [suggestion]
+  );
+
+  // Ballots of players currently included in the coverage calculation
+  const activeBallots = useMemo(
+    () =>
+      (suggestion?.ballots ?? []).filter((b) => !excludedUserIds.has(b.userId)),
+    [suggestion, excludedUserIds]
+  );
+
   // Compute baseline fit for the selected system (no pins)
   const baseline = useMemo(() => {
     if (!selectedSystemCode || !suggestion?.suggestion || !suggestion?.matches) {
@@ -96,16 +123,7 @@ function GroupCouponContent() {
     if (!systemDef) return null;
 
     try {
-      const fit = fitSystem(
-        systemDef,
-        suggestion.matches.map((m) => ({
-          matchNumber: m.matchNumber,
-          oddsHome: m.oddsHome,
-          oddsDraw: m.oddsDraw,
-          oddsAway: m.oddsAway,
-        })),
-        suggestion.ballots || []
-      );
+      const fit = fitSystem(systemDef, matchInputs, activeBallots);
       // Convert to EditableRow format
       return fit.assignments.map((a) => ({
         matchNumber: a.matchNumber,
@@ -118,7 +136,7 @@ function GroupCouponContent() {
       console.error("Error fitting system:", err);
       return null;
     }
-  }, [selectedSystemCode, suggestion]);
+  }, [selectedSystemCode, suggestion, matchInputs, activeBallots]);
 
   // Prefill rows from baseline when needed
   useEffect(() => {
@@ -131,10 +149,10 @@ function GroupCouponContent() {
   // Compute ballot tallies for display
   const ballotTallies = useMemo(() => {
     const tallies: Record<number, { HOME: number; DRAW: number; AWAY: number; total: number }> = {};
-    if (!suggestion || !suggestion.ballots || !suggestion.matches) return tallies;
+    if (!suggestion || !suggestion.matches) return tallies;
     for (const match of suggestion.matches) {
       tallies[match.matchNumber] = { HOME: 0, DRAW: 0, AWAY: 0, total: 0 };
-      for (const ballot of suggestion.ballots) {
+      for (const ballot of activeBallots) {
         const pick = ballot.picks[match.matchNumber];
         if (pick) {
           const count = tallies[match.matchNumber];
@@ -144,7 +162,7 @@ function GroupCouponContent() {
       }
     }
     return tallies;
-  }, [suggestion]);
+  }, [suggestion, activeBallots]);
 
   // Check if any rows are edited
   const anyRowEdited = useMemo(() => {
@@ -154,6 +172,18 @@ function GroupCouponContent() {
       return baselineRow && isRowEdited(row, baselineRow);
     });
   }, [rows, baseline]);
+
+  // Sidebar ranking, recomputed without excluded players; falls back to the server ranking
+  const rankedSystems = useMemo<RankedSystem[]>(() => {
+    const fallback: RankedSystem[] = suggestion?.suggestion?.systems ?? [];
+    if (!suggestion?.suggestion || !suggestion.matches) return fallback;
+    try {
+      return rankSystems(matchInputs, activeBallots);
+    } catch (err) {
+      console.error("Error ranking systems:", err);
+      return fallback;
+    }
+  }, [suggestion, matchInputs, activeBallots]);
 
   // Early returns - all hooks must be above these
   if (loading) {
@@ -270,8 +300,7 @@ function GroupCouponContent() {
     );
   }
 
-  const systems = suggestion.suggestion.systems;
-  const selectedSystem = systems.find(
+  const selectedSystem = rankedSystems.find(
     (s) => s.system.code === selectedSystemCode
   );
 
@@ -303,9 +332,13 @@ function GroupCouponContent() {
   }
 
   // Handler: system selection with confirmation
+  // Clicking the current system restores its suggestion (rows reset to the current baseline)
   const handleSystemChange = (newCode: string) => {
-    if (newCode === selectedSystemCode) return;
-    if (anyRowEdited && !window.confirm("Skift system? Dine manuelle rettelser nulstilles.")) return;
+    const confirmMessage =
+      newCode === selectedSystemCode
+        ? "Nulstil til systemets forslag? Dine manuelle rettelser går tabt."
+        : "Skift system? Dine manuelle rettelser nulstilles.";
+    if (anyRowEdited && !window.confirm(confirmMessage)) return;
     setSelectedSystemCode(newCode);
     // R/M systems have no U-sign; clear it right away so stale U-signs never survive
     // (e.g. if the new system's baseline fit fails and the old rows stay on screen).
@@ -332,20 +365,19 @@ function GroupCouponContent() {
     setRows([...rows.slice(0, rowIdx), newRow, ...rows.slice(rowIdx + 1)]);
   };
 
-  // Handler: reset a match to its baseline
-  const handleResetMatch = (matchNumber: number) => {
-    if (!baseline) return;
-    const baselineRow = baseline.find((b) => b.matchNumber === matchNumber);
-    if (!baselineRow) return;
-
-    const rowIdx = rows.findIndex((r) => r.matchNumber === matchNumber);
-    if (rowIdx === -1) return;
-
-    setRows([
-      ...rows.slice(0, rowIdx),
-      baselineRow,
-      ...rows.slice(rowIdx + 1),
-    ]);
+  // Handler: include/exclude a player's ballot in the coverage calculation.
+  // Only the calculation changes; the working coupon (rows) is left untouched.
+  const toggleBallot = (userId: string) => {
+    if (!excludedUserIds.has(userId) && activeBallots.length <= 1) return;
+    setExcludedUserIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(userId)) {
+        next.delete(userId);
+      } else {
+        next.add(userId);
+      }
+      return next;
+    });
   };
 
   // Handler: save
@@ -503,22 +535,50 @@ function GroupCouponContent() {
           <span className="text-xs font-mono uppercase tracking-wider text-muted">
             Hvem har stemt
           </span>
-          <div className="flex items-center gap-2">
-            {ballots.map((ballot) => (
-              <div key={ballot.userId} className="flex flex-col items-center gap-1">
+          <span className="text-xs font-mono text-muted">
+            {activeBallots.length} af {ballots.length} med
+          </span>
+          <div className="flex items-start gap-2">
+            {ballots.map((ballot) => {
+              const included = !excludedUserIds.has(ballot.userId);
+              const isLastIncluded = included && activeBallots.length <= 1;
+              return (
                 <div
-                  className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white bg-brand"
-                  title={ballot.displayName}
+                  key={ballot.userId}
+                  className={`flex flex-col items-center gap-1 transition-opacity ${
+                    included ? "" : "opacity-40"
+                  }`}
                 >
-                  {ballot.displayName.charAt(0).toUpperCase()}
-                </div>
-                {ballot.source === "carried" && (
-                  <div className="text-xs text-muted text-center whitespace-nowrap">
-                    kupon fra runde {ballot.sourceRoundNumber}
+                  <button
+                    type="button"
+                    onClick={() => toggleBallot(ballot.userId)}
+                    aria-label={ballot.displayName}
+                    aria-pressed={included}
+                    disabled={isLastIncluded}
+                    title={
+                      isLastIncluded
+                        ? "Mindst én spiller skal være med"
+                        : included
+                          ? `Klik for at udelade ${ballot.displayName}`
+                          : `Klik for at medtage ${ballot.displayName}`
+                    }
+                    className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${
+                      included ? "bg-brand text-white" : "bg-line-card text-muted"
+                    }`}
+                  >
+                    {ballot.displayName.charAt(0).toUpperCase()}
+                  </button>
+                  <div className="text-xs text-ink-secondary text-center truncate max-w-[5rem]">
+                    {ballot.displayName}
                   </div>
-                )}
-              </div>
-            ))}
+                  {ballot.source === "carried" && (
+                    <div className="text-xs text-muted text-center whitespace-nowrap">
+                      kupon fra runde {ballot.sourceRoundNumber}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
@@ -531,7 +591,7 @@ function GroupCouponContent() {
             <h2 className="text-xs font-mono uppercase tracking-wider text-muted mb-3">
               13 Systemer · Sorteret efter dækning
             </h2>
-            {systems.map((fit) => (
+            {rankedSystems.map((fit) => (
               <button
                 key={fit.system.code}
                 onClick={() => handleSystemChange(fit.system.code)}
@@ -575,10 +635,6 @@ function GroupCouponContent() {
               const matchDetails = suggestion.matches?.find(
                 (m) => m.matchNumber === row.matchNumber
               );
-              const baselineRow = baseline?.find(
-                (b) => b.matchNumber === row.matchNumber
-              );
-              const edited = baselineRow ? isRowEdited(row, baselineRow) : false;
               const tally = ballotTallies[row.matchNumber] || {
                 HOME: 0,
                 DRAW: 0,
@@ -601,9 +657,7 @@ function GroupCouponContent() {
               return (
                 <div
                   key={row.matchNumber}
-                  className={`border-b border-line-card py-3 px-4 ${
-                    edited ? "bg-surface-edited" : ""
-                  }`}
+                  className="border-b border-line-card py-3 px-4"
                 >
                   {/* Top line: match number, teams, vote bar, buttons, U-sign, controls */}
                   <div className="flex items-start gap-4 text-sm mb-2">
@@ -707,20 +761,6 @@ function GroupCouponContent() {
                       })}
                     </div>
 
-                    {/* Edit badge and reset */}
-                    {edited && (
-                      <div className="shrink-0 flex items-center gap-2">
-                        <span className="px-2 py-1 rounded-sm text-xs font-medium bg-gold text-white">
-                          redigeret
-                        </span>
-                        <button
-                          onClick={() => handleResetMatch(row.matchNumber)}
-                          className="text-xs text-signal hover:underline"
-                        >
-                          nulstil
-                        </button>
-                      </div>
-                    )}
                   </div>
 
                   {/* Bottom line: Reasoning text (full width) */}

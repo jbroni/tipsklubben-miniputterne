@@ -1721,4 +1721,57 @@ describe("rankSystems", () => {
       }
     });
   });
+
+  describe("recomputes coverage when a ballot is dropped", () => {
+    function makeBallot(
+      userId: string,
+      pick: PickValue,
+      source: "current" | "carried" = "current"
+    ): Ballot {
+      const picks: Record<number, PickValue> = {};
+      for (let m = 1; m <= 13; m++) picks[m] = pick;
+      return { userId, displayName: userId, source, sourceRoundNumber: 1, picks };
+    }
+
+    it("raises coverage and lowers missedOutcomes for at least one system when a stray ballot is filtered out", () => {
+      const matches = make13Matches();
+      // Four players unanimously pick HOME; one carried ballot casts stray AWAY votes.
+      const unanimous = [
+        makeBallot("alice", "HOME"),
+        makeBallot("bob", "HOME"),
+        makeBallot("charlie", "HOME"),
+        makeBallot("diana", "HOME"),
+      ];
+      const stray = makeBallot("eve", "AWAY", "carried");
+      const allBallots = [...unanimous, stray];
+      const filteredBallots = allBallots.filter((b) => b.userId !== "eve");
+
+      const snapshotBefore = structuredClone(allBallots);
+
+      const withStray = rankSystems(matches, allBallots);
+      const withoutStray = rankSystems(matches, filteredBallots);
+
+      // Input ballots must not be mutated by ranking.
+      expect(allBallots).toEqual(snapshotBefore);
+
+      const missedWith = new Map(withStray.map((f) => [f.system.code, f.missedOutcomes]));
+      const missedWithout = new Map(withoutStray.map((f) => [f.system.code, f.missedOutcomes]));
+      const coverageWithout = new Map(withoutStray.map((f) => [f.system.code, f.coverage]));
+
+      // Dropping the stray ballot never increases missed outcomes for any system...
+      for (const [code, missed] of missedWithout) {
+        expect(missed).toBeLessThanOrEqual(missedWith.get(code)!);
+      }
+      // ...and strictly improves at least one system.
+      const improved = [...missedWithout.keys()].filter(
+        (code) => missedWithout.get(code)! < missedWith.get(code)!
+      );
+      expect(improved.length).toBeGreaterThan(0);
+
+      // With only unanimous HOME picks nothing is missed, so coverage is 100 everywhere.
+      for (const code of coverageWithout.keys()) {
+        expect(coverageWithout.get(code)).toBe(100);
+      }
+    });
+  });
 });
