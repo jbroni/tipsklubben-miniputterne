@@ -154,6 +154,11 @@ export async function mergeUsers(input: {
           data: { couponDelegateId: input.targetUserId },
         });
 
+        await tx.groupCoupon.updateMany({
+          where: { submittedById: input.sourceUserId },
+          data: { submittedById: input.targetUserId },
+        });
+
         await tx.userIdentity.updateMany({
           where: { userId: input.sourceUserId },
           data: { userId: input.targetUserId },

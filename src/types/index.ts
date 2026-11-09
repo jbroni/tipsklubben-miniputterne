@@ -133,9 +133,25 @@ export interface SerializedGroupCouponMatchDetails {
   oddsAway: number;
 }
 
+// Submission status of the saved coupon to the official tournament site (managers only)
+export interface GroupCouponSubmissionStatus {
+  /** ISO week the coupon is submitted for (from the round deadline) */
+  week: number;
+  /** ISO-8601 time of the last successful submission */
+  submittedAt: string | null;
+  submissionHttpStatus: number | null;
+  /** Plain-text-friendly stored reply; render as text only */
+  submissionResponse: string | null;
+  /** True when the coupon has changed since the last successful submission */
+  isStale: boolean;
+  /** True when the submission endpoint is configured on the server */
+  configured: boolean;
+}
+
 // Suggestion response types (imported engine types are already JSON-serializable)
 export interface GroupCouponSuggestionResponse {
   coupon: SerializedGroupCoupon | null;
+  submission?: GroupCouponSubmissionStatus;
   suggestion?: {
     systems: Array<{
       system: {

@@ -4,6 +4,7 @@ import { requireUser, canManageGroupCoupon } from "@/lib/auth";
 import { buildBallots, rankSystems } from "@/lib/group-coupon";
 import { getSystem, COUPON_SIZE } from "@/lib/coupon-systems";
 import { carryOverMissingCoupons } from "@/lib/services/carry-over";
+import { getSubmissionStatus } from "@/lib/services/group-coupon-submission";
 import type { Prisma, User } from "@prisma/client";
 import type {
   SerializedGroupCoupon,
@@ -107,6 +108,11 @@ export async function GET(
       oddsAway: Number(m.oddsAway),
     })),
   };
+
+  // Submission status is for managers only
+  if (savedCoupon) {
+    couponResponse.submission = getSubmissionStatus(savedCoupon, round.deadline);
+  }
 
   // Only compute suggestion if deadline has passed
   const now = new Date();

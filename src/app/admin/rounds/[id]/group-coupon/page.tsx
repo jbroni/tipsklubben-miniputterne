@@ -15,6 +15,8 @@ import {
   type EditableRow,
 } from "@/lib/group-coupon-editor";
 import { GroupCouponCard } from "@/components/GroupCouponCard";
+import { submissionResponseText } from "@/lib/coupon-submission";
+import { formatInAppZone } from "@/lib/time";
 import type { GroupCouponSuggestionResponse } from "@/types";
 
 // Structural shape shared by rankSystems results and the server-provided ranking
@@ -42,6 +44,10 @@ function GroupCouponContent() {
   const [isSaving, setIsSaving] = useState(false);
   // Players whose ballots are left out of the system coverage calculation (in-memory only)
   const [excludedUserIds, setExcludedUserIds] = useState<Set<string>>(new Set());
+  // Tournament submission state
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   // Load suggestion on mount
   useEffect(() => {
@@ -172,6 +178,29 @@ function GroupCouponContent() {
       return baselineRow && isRowEdited(row, baselineRow);
     });
   }, [rows, baseline]);
+
+  // Check if the working coupon differs from the last saved coupon (mirrors the save payload)
+  const hasUnsavedChanges = useMemo(() => {
+    const saved = suggestion?.coupon;
+    if (!saved) return true;
+    if (selectedSystemCode !== saved.systemCode) return true;
+    const requiresBaseRow = Boolean(getSystem(saved.systemCode)?.requiresBaseRow);
+    if (rows.length !== saved.matches.length) return true;
+    return rows.some((row) => {
+      const savedRow = saved.matches.find((m) => m.matchNumber === row.matchNumber);
+      if (!savedRow) return true;
+      const baseOutcome =
+        requiresBaseRow && row.coverage !== "single" ? row.baseOutcome : null;
+      const sameOutcomes =
+        row.outcomes.length === savedRow.outcomes.length &&
+        row.outcomes.every((o) => savedRow.outcomes.includes(o));
+      return (
+        row.coverage !== savedRow.coverage ||
+        !sameOutcomes ||
+        baseOutcome !== savedRow.baseOutcome
+      );
+    });
+  }, [suggestion, rows, selectedSystemCode]);
 
   // Sidebar ranking, recomputed without excluded players; falls back to the server ranking
   const rankedSystems = useMemo<RankedSystem[]>(() => {
@@ -339,6 +368,7 @@ function GroupCouponContent() {
         ? "Nulstil til systemets forslag? Dine manuelle rettelser går tabt."
         : "Skift system? Dine manuelle rettelser nulstilles.";
     if (anyRowEdited && !window.confirm(confirmMessage)) return;
+    setSubmitError("");
     setSelectedSystemCode(newCode);
     // R/M systems have no U-sign; clear it right away so stale U-signs never survive
     // (e.g. if the new system's baseline fit fails and the old rows stay on screen).
@@ -362,6 +392,7 @@ function GroupCouponContent() {
       return;
     }
 
+    setSubmitError("");
     setRows([...rows.slice(0, rowIdx), newRow, ...rows.slice(rowIdx + 1)]);
   };
 
@@ -434,12 +465,45 @@ function GroupCouponContent() {
       const couponRes = await fetch(`/api/rounds/${roundId}/group-coupon`);
       const updatedData = (await couponRes.json()) as GroupCouponSuggestionResponse;
       setSuggestion(updatedData);
+      setSubmitError("");
     } catch (err) {
       setActionError(
         err instanceof Error ? err.message : "Fejl ved gemning af fælleskupon"
       );
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  // Handler: submit the saved final coupon to the tournament site
+  const handleSubmitToTournament = async () => {
+    setIsSubmitting(true);
+    setSubmitError("");
+
+    try {
+      const res = await fetch(`/api/rounds/${roundId}/group-coupon/submit`, {
+        method: "POST",
+      });
+
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        setSubmitError(data.error || "Fejl ved indsendelse til turneringen");
+        return;
+      }
+
+      // Refetch to show the stored submission and its staleness
+      const couponRes = await fetch(`/api/rounds/${roundId}/group-coupon`);
+      if (couponRes.ok) {
+        const updatedData = (await couponRes.json()) as GroupCouponSuggestionResponse;
+        setSuggestion(updatedData);
+      }
+    } catch (err) {
+      setSubmitError(
+        err instanceof Error ? err.message : "Fejl ved indsendelse til turneringen"
+      );
+    } finally {
+      setIsSubmitting(false);
+      setShowSubmitConfirm(false);
     }
   };
 
@@ -452,6 +516,26 @@ function GroupCouponContent() {
 
   // Get ballots for member list
   const ballots = suggestion.ballots || [];
+
+  // Submission to the tournament site
+  const submission = suggestion.submission;
+  const isFinal = suggestion.coupon?.status === "final";
+  const canSubmit = Boolean(
+    isFinal &&
+      !hasUnsavedChanges &&
+      submission?.configured &&
+      !isSaving &&
+      !isSubmitting
+  );
+  const submitBlockReason = !suggestion.coupon
+    ? "Gem kuponen som endelig, før den kan indsendes."
+    : !isFinal
+      ? "Kuponen er en kladde. Gem & offentliggør den, før den kan indsendes."
+      : hasUnsavedChanges
+        ? "Gem dine ændringer, før kuponen kan indsendes."
+        : !submission?.configured
+          ? "Indsendelse er ikke sat op på serveren."
+          : null;
 
   return (
     <div className="space-y-0">
@@ -786,6 +870,139 @@ function GroupCouponContent() {
           {isSaving ? "Gemmer…" : "Gem som kladde"}
         </button>
       </div>
+
+      {/* Submit to tournament site */}
+      {suggestion.coupon && (
+        <div className="max-w-[1360px] mx-auto px-7 py-6 border-t border-line-card space-y-4">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div>
+              <h2 className="font-display text-lg font-bold text-ink">
+                Indsend til turnering
+              </h2>
+              {submission && (
+                <div className="text-sm text-muted">Uge {submission.week}</div>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowSubmitConfirm(true)}
+              className="btn-primary text-sm"
+              disabled={!canSubmit}
+            >
+              {isSubmitting ? "Sender…" : "Indsend til turnering"}
+            </button>
+          </div>
+
+          {submitBlockReason && (
+            <p className="text-sm text-muted">{submitBlockReason}</p>
+          )}
+
+          {submitError && (
+            <div className="border border-signal rounded-lg px-4 py-3 text-sm bg-signal-soft text-signal whitespace-pre-line">
+              {submitError}
+            </div>
+          )}
+
+          {submission?.submittedAt ? (
+            <div className="space-y-3">
+              <div className="text-sm text-ink-secondary">
+                Indsendt{" "}
+                {formatInAppZone(submission.submittedAt, {
+                  day: "numeric",
+                  month: "long",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+                {submission.submissionHttpStatus !== null &&
+                  ` · HTTP ${submission.submissionHttpStatus}`}
+              </div>
+
+              {submission.isStale && (
+                <div
+                  role="alert"
+                  className="border border-signal rounded-lg px-4 py-3 text-sm bg-signal-soft text-signal"
+                >
+                  Kuponen er ændret siden indsendelse. Indsend den igen for at opdatere turneringen.
+                </div>
+              )}
+
+              <div>
+                <div className="text-xs font-mono uppercase tracking-wider text-muted mb-1">
+                  Svar fra turneringssiden
+                </div>
+                <div className="max-h-64 overflow-y-auto rounded-lg border border-line-card bg-surface px-4 py-3 text-sm text-ink break-words">
+                  {submissionResponseText(submission.submissionResponse ?? "") ||
+                    "Intet svar"}
+                </div>
+                <p className="text-xs text-muted mt-1">
+                  Tjek svaret ovenfor for at se, om kuponen er accepteret. At kuponen er sendt, betyder ikke i sig selv, at den er accepteret.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-ink-secondary">
+              Kuponen er ikke indsendt endnu.
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Confirmation dialog for submission */}
+      {showSubmitConfirm && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="submit-confirm-title"
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-ink/40 px-4"
+        >
+          <div className="card max-w-md w-full space-y-4">
+            <h2
+              id="submit-confirm-title"
+              className="font-display text-lg font-bold text-ink"
+            >
+              Indsend kuponen til turneringen?
+            </h2>
+            <dl className="text-sm text-ink-secondary space-y-1">
+              <div className="flex gap-3">
+                <dt className="text-muted w-16">System</dt>
+                <dd className="font-mono">{suggestion.coupon?.systemCode}</dd>
+              </div>
+              {submission && (
+                <div className="flex gap-3">
+                  <dt className="text-muted w-16">Uge</dt>
+                  <dd className="font-mono">{submission.week}</dd>
+                </div>
+              )}
+            </dl>
+            <p className="text-sm text-ink-secondary">
+              Kuponen sendes til det officielle turneringssite.
+            </p>
+            {submission?.submittedAt && (
+              <p className="text-sm text-signal">
+                Kuponen er allerede indsendt. Den sendes igen og erstatter den forrige indsendelse.
+              </p>
+            )}
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowSubmitConfirm(false)}
+                className="btn-secondary text-sm"
+                disabled={isSubmitting}
+              >
+                Annuller
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmitToTournament}
+                className="btn-primary text-sm"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Sender…" : "Indsend"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

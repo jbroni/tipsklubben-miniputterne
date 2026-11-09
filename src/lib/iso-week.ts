@@ -1,4 +1,4 @@
-import { parseAppZonedDateTime } from "@/lib/time";
+import { APP_TIME_ZONE, parseAppZonedDateTime } from "@/lib/time";
 
 /**
  * Calculate the Saturday of a given ISO week.
@@ -41,4 +41,43 @@ export function isoWeekSaturday(year: number, week: number): Date {
   const isoString = `${isoYear}-${isoMonth}-${isoDay}T15:00`;
 
   return parseAppZonedDateTime(isoString);
+}
+
+/**
+ * Return the ISO-8601 week number of an instant, using its Europe/Copenhagen
+ * calendar date. Week 1 is the week containing January 4 (Monday-based).
+ */
+export function isoWeekOf(date: Date): number {
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: APP_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const partMap: Record<string, string> = {};
+  for (const part of formatter.formatToParts(date)) {
+    if (part.type !== "literal") {
+      partMap[part.type] = part.value;
+    }
+  }
+
+  // Work in UTC on the Copenhagen calendar date
+  const calendarDay = new Date(
+    Date.UTC(
+      parseInt(partMap.year, 10),
+      parseInt(partMap.month, 10) - 1,
+      parseInt(partMap.day, 10)
+    )
+  );
+
+  // Move to the Thursday of the same ISO week (Monday = 0 ... Sunday = 6)
+  const mondayBasedDay = (calendarDay.getUTCDay() + 6) % 7;
+  const thursday = new Date(calendarDay);
+  thursday.setUTCDate(calendarDay.getUTCDate() - mondayBasedDay + 3);
+
+  // The ISO year is the year of that Thursday; the week is its position in that year
+  const isoYear = thursday.getUTCFullYear();
+  const jan1 = Date.UTC(isoYear, 0, 1);
+  const dayOfYear = Math.round((thursday.getTime() - jan1) / 86400000);
+  return Math.floor(dayOfYear / 7) + 1;
 }

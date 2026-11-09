@@ -108,7 +108,8 @@ the reviewer flagged.
 - **Secrets:** never read, print, or commit `.env*` files. Refer to
   environment variables by name only (`DATABASE_URL`, `DIRECT_URL`,
   `SUPABASE_SECRET_KEY`, `NEXT_PUBLIC_SUPABASE_*`,
-  `FOOTBALL_DATA_API_KEY`, `NEXT_PUBLIC_APP_URL`).
+  `FOOTBALL_DATA_API_KEY`, `NEXT_PUBLIC_APP_URL`, `COUPON_SUBMIT_URL`,
+  `COUPON_SUBMIT_KLUB`, `COUPON_SUBMIT_CODE`).
 - **Database:** schema changes go through `prisma/schema.prisma`; never
   edit an existing migration in `supabase/migrations/` — add a new one.
   Do not run `db:push`, `db:migrate`, or `db:seed` unless the user asks;
