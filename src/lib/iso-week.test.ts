@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isoWeekSaturday } from "./iso-week";
+import { isoWeekOf, isoWeekSaturday } from "./iso-week";
 import { formatInAppZone } from "./time";
 
 describe("isoWeekSaturday", () => {
@@ -248,5 +248,42 @@ describe("isoWeekSaturday", () => {
       );
       expect(copenhagenHour).toBe(15);
     });
+  });
+});
+
+describe("isoWeekOf", () => {
+  it("returns 53 for 2026-12-31 (Thursday, last week of ISO 2026)", () => {
+    expect(isoWeekOf(new Date("2026-12-31T12:00:00Z"))).toBe(53);
+  });
+
+  it("returns 53 for 2027-01-03 (Sunday still belongs to ISO week 53 of 2026)", () => {
+    expect(isoWeekOf(new Date("2027-01-03T12:00:00Z"))).toBe(53);
+  });
+
+  it("returns 1 for 2027-01-04 (Monday starts ISO week 1 of 2027)", () => {
+    expect(isoWeekOf(new Date("2027-01-04T12:00:00Z"))).toBe(1);
+  });
+
+  it("uses the Copenhagen date: 2026-12-31T23:30Z is already Jan 1 in Copenhagen and stays in week 53", () => {
+    // 2026-12-31T23:30Z = 2027-01-01 00:30 CET (Friday, ISO week 53 of 2026)
+    expect(isoWeekOf(new Date("2026-12-31T23:30:00Z"))).toBe(53);
+  });
+
+  it("rolls a Sunday 23:30Z instant that is Monday in Copenhagen into the next week", () => {
+    // 2026-11-08 is a Sunday (ISO week 45); 23:30Z = 00:30 CET Monday 2026-11-09 (ISO week 46)
+    expect(isoWeekOf(new Date("2026-11-08T23:30:00Z"))).toBe(46);
+  });
+
+  it("keeps a Sunday 22:30Z instant (23:30 Copenhagen, still Sunday) in the previous week", () => {
+    expect(isoWeekOf(new Date("2026-11-08T22:30:00Z"))).toBe(45);
+  });
+
+  it("returns 46 for a normal Saturday, 2026-11-14", () => {
+    expect(isoWeekOf(new Date("2026-11-14T14:00:00Z"))).toBe(46);
+  });
+
+  it("is the inverse of isoWeekSaturday for the Saturday of a week", () => {
+    expect(isoWeekOf(isoWeekSaturday(2026, 46))).toBe(46);
+    expect(isoWeekOf(isoWeekSaturday(2026, 53))).toBe(53);
   });
 });
