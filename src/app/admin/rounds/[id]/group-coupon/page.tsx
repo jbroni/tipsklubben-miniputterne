@@ -15,6 +15,7 @@ import {
   type EditableRow,
 } from "@/lib/group-coupon-editor";
 import { GroupCouponCard } from "@/components/GroupCouponCard";
+import CancelledMatchTag from "@/components/CancelledMatchTag";
 import { submissionResponseText } from "@/lib/coupon-submission";
 import { formatInAppZone } from "@/lib/time";
 import type { GroupCouponSuggestionResponse } from "@/types";
@@ -306,6 +307,7 @@ function GroupCouponContent() {
           awayTeam: matchDetails?.awayTeam || "?",
           outcomes: row.outcomes,
           baseOutcome: row.baseOutcome,
+          cancelled: matchDetails?.cancelled,
         };
       }),
     };
@@ -741,7 +743,9 @@ function GroupCouponContent() {
               return (
                 <div
                   key={row.matchNumber}
-                  className="border-b border-line-card py-3 px-4"
+                  className={`border-b border-line-card py-3 px-4 ${
+                    matchDetails?.cancelled ? "bg-signal-soft/40" : ""
+                  }`}
                 >
                   {/* Top line: match number, teams, vote bar, buttons, U-sign, controls */}
                   <div className="flex items-start gap-4 text-sm mb-2">
@@ -763,6 +767,19 @@ function GroupCouponContent() {
                         {matchDetails?.oddsDraw.toFixed(2)} ·{" "}
                         {matchDetails?.oddsAway.toFixed(2)}
                       </div>
+                      {matchDetails?.cancelled && (
+                        <CancelledMatchTag
+                          className="mt-1"
+                          odds={{
+                            oddsHome: matchDetails.oddsHome,
+                            oddsDraw: matchDetails.oddsDraw,
+                            oddsAway: matchDetails.oddsAway,
+                            fedtHome: matchDetails.fedtHome,
+                            fedtDraw: matchDetails.fedtDraw,
+                            fedtAway: matchDetails.fedtAway,
+                          }}
+                        />
+                      )}
                     </div>
 
                     {/* Vote split bar */}

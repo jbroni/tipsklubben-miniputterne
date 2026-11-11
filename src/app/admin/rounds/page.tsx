@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { RoundStatusBadge } from "@/components/RoundStatusBadge";
+import CancelledMatchTag from "@/components/CancelledMatchTag";
 import { parseCouponText, resolveKickoff } from "@/lib/coupon-parser";
 import { parseAppZonedDateTime, toDatetimeLocalValue, formatInAppZone } from "@/lib/time";
 import { firstName } from "@/lib/display-name";
@@ -31,6 +32,15 @@ interface RoundData {
 const PICK_LABEL: Record<string, string> = { HOME: "1", DRAW: "X", AWAY: "2" };
 const LEAGUES = ["Premier League", "Superliga", "Bundesliga", "Serie A", "La Liga"];
 const API_LEAGUES = ["Premier League", "Bundesliga", "Serie A", "La Liga"];
+
+const cancelledTagOdds = (m: Match) => ({
+  oddsHome: Number(m.oddsHome),
+  oddsDraw: Number(m.oddsDraw),
+  oddsAway: Number(m.oddsAway),
+  fedtHome: m.fedtHome,
+  fedtDraw: m.fedtDraw,
+  fedtAway: m.fedtAway,
+});
 
 interface Fixture {
   externalId: string;
@@ -96,6 +106,10 @@ function AdminRoundsContent() {
   // Delegate select state
   const [savingDelegate, setSavingDelegate] = useState<Record<string, boolean>>({});
 
+  // Per-round match list (cancellation toggles)
+  const [expandedMatchLists, setExpandedMatchLists] = useState<Record<string, boolean>>({});
+  const [cancellingMatch, setCancellingMatch] = useState<Record<string, boolean>>({});
+
   // Helper functions
   const formatDeadline = (deadline: string): string => {
     return formatInAppZone(deadline, {
@@ -131,7 +145,7 @@ function AdminRoundsContent() {
 
   const fetchRounds = () => {
     const url = seasonId ? `/api/rounds?seasonId=${seasonId}` : "/api/rounds";
-    fetch(url)
+    return fetch(url)
       .then((r) => r.json())
       .then(({ data }) => {
         setRounds(data ?? []);
@@ -241,6 +255,28 @@ function AdminRoundsContent() {
       fetchRounds();
     } finally {
       setSavingDelegate((prev) => ({ ...prev, [roundId]: false }));
+    }
+  };
+
+  const toggleMatchCancelled = async (roundId: string, matchId: string, cancelled: boolean) => {
+    setActionError("");
+    setCancellingMatch((prev) => ({ ...prev, [matchId]: true }));
+    try {
+      const res = await fetch(`/api/rounds/${roundId}/matches/${matchId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cancelled }),
+      });
+      if (!res.ok) {
+        const { error } = await res.json().catch(() => ({ error: "Fejl ved opdatering" }));
+        setActionError(error ?? "Fejl ved opdatering");
+        return;
+      }
+      await fetchRounds();
+    } catch {
+      setActionError("Fejl ved opdatering");
+    } finally {
+      setCancellingMatch((prev) => ({ ...prev, [matchId]: false }));
     }
   };
 
@@ -784,9 +820,12 @@ function AdminRoundsContent() {
             .find((r) => r.id === resultsRound)
             ?.matches.map((m) => (
               <div key={m.id} className="flex items-center gap-4">
-                <span className="text-sm w-48 text-ink-secondary">
-                  {m.homeTeam} – {m.awayTeam}
-                </span>
+                <div className="w-48 flex flex-col items-start gap-1">
+                  <span className="text-sm text-ink-secondary">
+                    {m.homeTeam} – {m.awayTeam}
+                  </span>
+                  {m.cancelled && <CancelledMatchTag odds={cancelledTagOdds(m)} />}
+                </div>
                 <div className="flex gap-2">
                   {(["HOME", "DRAW", "AWAY"] as PickType[]).map((pick) => (
                     <button
@@ -986,6 +1025,47 @@ function AdminRoundsContent() {
                       </select>
                     );
                   })()}
+                </div>
+              )}
+
+              {round.matches.length > 0 && (
+                <div className="mb-3">
+                  <button
+                    onClick={() =>
+                      setExpandedMatchLists((prev) => ({ ...prev, [round.id]: !prev[round.id] }))
+                    }
+                    className="text-xs text-muted hover:text-ink transition-colors"
+                  >
+                    {expandedMatchLists[round.id] ? "Skjul kampe" : "Vis kampe og aflysninger"}
+                  </button>
+                  {expandedMatchLists[round.id] && actionError && (
+                    <p className="mt-2 text-xs text-red-600">{actionError}</p>
+                  )}
+                  {expandedMatchLists[round.id] && (
+                    <ul className="mt-2 space-y-2">
+                      {[...round.matches]
+                        .sort((a, b) => a.matchNumber - b.matchNumber)
+                        .map((m) => (
+                          <li
+                            key={m.id}
+                            className="flex flex-wrap items-center justify-between gap-2 text-sm"
+                          >
+                            <span className="flex flex-wrap items-center gap-2 text-ink-secondary">
+                              <span className="font-mono text-xs text-muted">{m.matchNumber}.</span>
+                              {m.homeTeam} – {m.awayTeam}
+                              {m.cancelled && <CancelledMatchTag odds={cancelledTagOdds(m)} />}
+                            </span>
+                            <button
+                              onClick={() => toggleMatchCancelled(round.id, m.id, !m.cancelled)}
+                              disabled={cancellingMatch[m.id] ?? false}
+                              className="btn-secondary px-3! py-1.5! text-xs"
+                            >
+                              {m.cancelled ? "Fortryd aflysning" : "Aflys"}
+                            </button>
+                          </li>
+                        ))}
+                    </ul>
+                  )}
                 </div>
               )}
 

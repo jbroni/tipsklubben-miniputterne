@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { calcRoundFedt } from "./fedt";
+import { calcRoundFedt, tendensProbabilities } from "./fedt";
 
 type Pick = "HOME" | "DRAW" | "AWAY";
 const H: Pick = "HOME", D: Pick = "DRAW", A: Pick = "AWAY";
@@ -358,5 +358,96 @@ describe("fedt percentages (fedtHome/fedtDraw/fedtAway)", () => {
     // The expected value in the brief is 88.66498740554157, rounded to 2dp = 88.66
     // So my calculation must be off. Let me trust the test case data in the brief.
     expect(fedt).toBeCloseTo(88.66, 2);
+  });
+});
+
+describe("tendensProbabilities", () => {
+  const sum = (p: { home: number; draw: number; away: number }) => p.home + p.draw + p.away;
+
+  it("derives normalised percentages from odds (2/3/4 gives 46/31/23)", () => {
+    expect(tendensProbabilities({ oddsHome: 2, oddsDraw: 3, oddsAway: 4 })).toEqual({
+      home: 46,
+      draw: 31,
+      away: 23,
+    });
+  });
+
+  it("accepts Decimal-like odds passed as strings or numbers equivalently", () => {
+    const numeric = tendensProbabilities({ oddsHome: 2, oddsDraw: 3, oddsAway: 4 });
+    const stringy = tendensProbabilities({
+      oddsHome: "2" as unknown as number,
+      oddsDraw: "3" as unknown as number,
+      oddsAway: "4" as unknown as number,
+    });
+    expect(stringy).toEqual(numeric);
+  });
+
+  it("returns integers", () => {
+    const p = tendensProbabilities({ oddsHome: 1.7, oddsDraw: 3.4, oddsAway: 5.1 });
+    for (const v of [p.home, p.draw, p.away]) {
+      expect(Number.isInteger(v)).toBe(true);
+    }
+  });
+
+  it("always sums to exactly 100, including awkward odds that need rounding", () => {
+    const oddsSets = [
+      { oddsHome: 3, oddsDraw: 3, oddsAway: 3 }, // 33.3% each
+      { oddsHome: 2, oddsDraw: 3, oddsAway: 4 }, // 46.15 / 30.77 / 23.08
+      { oddsHome: 1.01, oddsDraw: 15, oddsAway: 40 },
+      { oddsHome: 2.37, oddsDraw: 3.19, oddsAway: 3.45 },
+      { oddsHome: 6.5, oddsDraw: 4.2, oddsAway: 1.62 },
+      { oddsHome: 1.91, oddsDraw: 3.6, oddsAway: 4.33 },
+      { oddsHome: 9, oddsDraw: 9, oddsAway: 9 },
+      { oddsHome: 2.1, oddsDraw: 2.1, oddsAway: 2.1 },
+    ];
+    for (const odds of oddsSets) {
+      expect(sum(tendensProbabilities(odds))).toBe(100);
+    }
+  });
+
+  it("rounds equal odds 3/3/3 to 34/33/33 in some order", () => {
+    const p = tendensProbabilities({ oddsHome: 3, oddsDraw: 3, oddsAway: 3 });
+    expect([p.home, p.draw, p.away].sort((a, b) => a - b)).toEqual([33, 33, 34]);
+    expect(sum(p)).toBe(100);
+  });
+
+  it("each value is within one point of its exact (unrounded) share", () => {
+    const odds = { oddsHome: 2.37, oddsDraw: 3.19, oddsAway: 3.45 };
+    const h = 1 / odds.oddsHome;
+    const d = 1 / odds.oddsDraw;
+    const a = 1 / odds.oddsAway;
+    const total = h + d + a;
+    const exact = [h / total * 100, d / total * 100, a / total * 100];
+    const p = tendensProbabilities(odds);
+    const rounded = [p.home, p.draw, p.away];
+    exact.forEach((e, i) => {
+      expect(Math.abs(rounded[i] - e)).toBeLessThan(1);
+    });
+  });
+
+  it("uses fedt overrides verbatim when all three are set, ignoring odds", () => {
+    // Odds alone would give 46/31/23; the overrides must win.
+    const p = tendensProbabilities({
+      oddsHome: 2,
+      oddsDraw: 3,
+      oddsAway: 4,
+      fedtHome: 50,
+      fedtDraw: 20,
+      fedtAway: 30,
+    });
+    expect(p).toEqual({ home: 50, draw: 20, away: 30 });
+  });
+
+  it("falls back to odds when only some fedt overrides are set", () => {
+    const partials = [
+      { fedtHome: 50, fedtDraw: null, fedtAway: 30 },
+      { fedtHome: null, fedtDraw: 20, fedtAway: null },
+      { fedtHome: 50, fedtDraw: 20, fedtAway: null },
+    ];
+    for (const partial of partials) {
+      expect(
+        tendensProbabilities({ oddsHome: 2, oddsDraw: 3, oddsAway: 4, ...partial }),
+      ).toEqual({ home: 46, draw: 31, away: 23 });
+    }
   });
 });

@@ -1,4 +1,4 @@
-import { Decimal } from "@prisma/client/runtime/library";
+import type { Decimal } from "@prisma/client/runtime/library";
 
 interface MatchOdds {
   oddsHome: Decimal | number;
@@ -46,6 +46,32 @@ function oddsToProb(match: MatchOdds): { home: number; draw: number; away: numbe
 export function calcMatchFedt(match: MatchOdds, pick: PickType): number {
   const probs = oddsToProb(match);
   return pick === "HOME" ? probs.home : pick === "DRAW" ? probs.draw : probs.away;
+}
+
+/**
+ * Danske Spil "tendenslodtrækning" probabilities for a cancelled match.
+ *
+ * Uses the same probabilities as oddsToProb (fedt overrides first, otherwise
+ * normalised implied odds), rounded to whole percents with largest-remainder
+ * so the three values sum to exactly 100.
+ */
+export function tendensProbabilities(match: MatchOdds): { home: number; draw: number; away: number } {
+  const probs = oddsToProb(match);
+  const values = [probs.home, probs.draw, probs.away];
+  const total = values[0] + values[1] + values[2];
+  const scaled = values.map((v) => (v / total) * 100);
+
+  const floors = scaled.map((v) => Math.floor(v));
+  let remainder = 100 - floors.reduce((a, b) => a + b, 0);
+
+  const order = [0, 1, 2].sort((i, j) => scaled[j] - floors[j] - (scaled[i] - floors[i]));
+  for (const idx of order) {
+    if (remainder <= 0) break;
+    floors[idx] += 1;
+    remainder -= 1;
+  }
+
+  return { home: floors[0], draw: floors[1], away: floors[2] };
 }
 
 /**

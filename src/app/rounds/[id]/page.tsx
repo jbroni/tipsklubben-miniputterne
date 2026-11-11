@@ -62,6 +62,7 @@ export default async function RoundDetailPage({
           outcomes: m.outcomes as ("HOME" | "DRAW" | "AWAY")[],
           baseOutcome: m.baseOutcome as ("HOME" | "DRAW" | "AWAY") | null,
           result: m.match.result as ("HOME" | "DRAW" | "AWAY") | null,
+          cancelled: m.match.cancelled,
         })),
       }
     : null;
@@ -124,6 +125,7 @@ export default async function RoundDetailPage({
           homeTeam: m.homeTeam,
           awayTeam: m.awayTeam,
           result: m.result,
+          cancelled: m.cancelled,
           predictions: m.predictions.map((p) => ({
             userId: p.userId,
             pick: p.pick,

@@ -106,6 +106,10 @@ export async function GET(
       oddsHome: Number(m.oddsHome),
       oddsDraw: Number(m.oddsDraw),
       oddsAway: Number(m.oddsAway),
+      cancelled: m.cancelled,
+      fedtHome: m.fedtHome,
+      fedtDraw: m.fedtDraw,
+      fedtAway: m.fedtAway,
     })),
   };
 
@@ -602,6 +606,7 @@ function serializeGroupCoupon(
       baseOutcome: (m.baseOutcome as "HOME" | "DRAW" | "AWAY") || null,
       reasoning: m.reasoning,
       isOverridden: m.isOverridden,
+      cancelled: m.match.cancelled,
     } as SerializedGroupCouponMatch)),
   };
 }

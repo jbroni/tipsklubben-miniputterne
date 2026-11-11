@@ -110,6 +110,7 @@ export interface SerializedGroupCouponMatch {
   reasoning: string;
   isOverridden: boolean;
   result?: ("HOME" | "DRAW" | "AWAY") | null;
+  cancelled?: boolean;
 }
 
 export interface SerializedGroupCoupon {
@@ -131,6 +132,11 @@ export interface SerializedGroupCouponMatchDetails {
   oddsHome: number;
   oddsDraw: number;
   oddsAway: number;
+  // Cancelled matches are decided by the tendenslodtrækning (odds-weighted draw)
+  cancelled: boolean;
+  fedtHome: number | null;
+  fedtDraw: number | null;
+  fedtAway: number | null;
 }
 
 // Submission status of the saved coupon to the official tournament site (managers only)
