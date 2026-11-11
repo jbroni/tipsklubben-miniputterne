@@ -116,6 +116,7 @@ model Match {
   fedtHome           Int?               @map("fedt_home")
   fedtDraw           Int?               @map("fedt_draw")
   fedtAway           Int?               @map("fedt_away")
+  cancelled          Boolean            @default(false)
   round              Round              @relation(fields: [roundId], references: [id], onDelete: Cascade)
   predictions        Prediction[]
   groupCouponMatches GroupCouponMatch[]

@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { createRound, updateRound } from "@/lib/services/rounds";
 import {
   addMatches,
+  setMatchCancelled,
   setMatchFedt,
   setResults,
   resolveResultsAuto,
@@ -200,6 +201,39 @@ export function registerAdminTools(server: McpServer): void {
           fedtHome: input.fedtHome,
           fedtDraw: input.fedtDraw,
           fedtAway: input.fedtAway,
+        });
+
+        return fromService(result);
+      } catch (err) {
+        if (err instanceof Error && err.message.includes("Admin role required")) {
+          return errorResult("Admin authorization required");
+        }
+        return errorResult(`${err instanceof Error ? err.message : "Unknown error"}`);
+      }
+    }
+  );
+
+  server.registerTool(
+    "set_match_cancelled",
+    {
+      title: "Set Match Cancelled",
+      description:
+        "Mark a match as cancelled (or clear the flag). A cancelled match is decided by Danske Spil's tendenslodtrækning, an odds-weighted random draw, so it is skipped by resolve_results_auto. After the draw, enter the drawn outcome with set_results. Match IDs come from get_round.",
+      inputSchema: z.object({
+        roundId: z.string(),
+        matchId: z.string(),
+        cancelled: z.boolean(),
+      }),
+      annotations: { destructiveHint: true },
+    },
+    async (input, ctx) => {
+      try {
+        requireAdminCaller(ctx);
+
+        const result = await setMatchCancelled({
+          roundId: input.roundId,
+          matchId: input.matchId,
+          cancelled: input.cancelled,
         });
 
         return fromService(result);

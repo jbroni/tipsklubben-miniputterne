@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { parseAppZonedDateTime } from "@/lib/time";
 import { fetchResults } from "@/lib/football-api";
-import type { Pick } from "@prisma/client";
+import type { Match, Pick } from "@prisma/client";
 import type { ServiceResult } from "./result";
 
 export async function addMatches(input: {
@@ -116,6 +116,43 @@ export async function setMatchFedt(input: {
   };
 }
 
+export async function setMatchCancelled(input: {
+  roundId: string;
+  matchId: string;
+  cancelled: boolean;
+}): Promise<ServiceResult<Match>> {
+  if (typeof input.cancelled !== "boolean") {
+    return {
+      ok: false,
+      code: "VALIDATION",
+      message: "cancelled must be a boolean",
+    };
+  }
+
+  // Ensure the match belongs to the given round (any round status is allowed)
+  const match = await prisma.match.findFirst({
+    where: { id: input.matchId, roundId: input.roundId },
+  });
+
+  if (!match) {
+    return {
+      ok: false,
+      code: "UNKNOWN_MATCH",
+      message: `Match ${input.matchId} does not belong to this round`,
+    };
+  }
+
+  const updated = await prisma.match.update({
+    where: { id: match.id },
+    data: { cancelled: input.cancelled },
+  });
+
+  return {
+    ok: true,
+    data: updated,
+  };
+}
+
 export async function setResults(input: {
   roundId: string;
   results: Array<{ matchId: string; result: string }>;
@@ -191,6 +228,7 @@ export async function resolveResultsAuto(input: {
       roundId: input.roundId,
       externalId: { not: null },
       result: null,
+      cancelled: false,
     },
   });
 
@@ -225,7 +263,7 @@ export async function resolveResultsAuto(input: {
 
   // Find any unresolved matches
   const stillUnresolved = await prisma.match.findMany({
-    where: { roundId: input.roundId, result: null },
+    where: { roundId: input.roundId, result: null, cancelled: false },
   });
 
   return {

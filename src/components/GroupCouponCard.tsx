@@ -3,6 +3,7 @@ import { PICK_LABEL, type PickValue, PICK_ORDER } from "@/lib/picks";
 import { getSystem } from "@/lib/coupon-systems";
 import type { SettlementResult } from "@/lib/group-coupon-settlement";
 import { GroupCouponResult } from "./GroupCouponResult";
+import CancelledMatchTag from "./CancelledMatchTag";
 
 interface SerializedCouponMatch {
   id: string;
@@ -12,6 +13,7 @@ interface SerializedCouponMatch {
   outcomes: ("HOME" | "DRAW" | "AWAY")[];
   baseOutcome: ("HOME" | "DRAW" | "AWAY") | null;
   result?: ("HOME" | "DRAW" | "AWAY") | null;
+  cancelled?: boolean;
 }
 
 interface GroupCouponCardProps {
@@ -80,7 +82,9 @@ export function GroupCouponCard({
             {sortedMatches.map((couponMatch) => (
               <div
                 key={couponMatch.id}
-                className="flex items-center gap-2.5 py-1.5"
+                className={`flex items-center gap-2.5 py-1.5 ${
+                  couponMatch.cancelled ? "bg-signal-soft/40 rounded-md" : ""
+                }`}
               >
                 {/* Match number */}
                 <span className="font-mono text-[10px] text-muted-ghost w-4 text-right shrink-0">
@@ -91,6 +95,9 @@ export function GroupCouponCard({
                 <span className="text-sm text-ink flex-1 min-w-0 whitespace-nowrap overflow-hidden text-ellipsis">
                   {couponMatch.homeTeam}–{couponMatch.awayTeam}
                 </span>
+
+                {/* Cancelled match marker (no odds on the card) */}
+                {couponMatch.cancelled && <CancelledMatchTag className="shrink-0" />}
 
                 {/* Outcome chips */}
                 <div className="flex gap-1 shrink-0">

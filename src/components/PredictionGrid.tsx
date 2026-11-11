@@ -11,6 +11,7 @@ interface PredictionGridProps {
     homeTeam: string;
     awayTeam: string;
     result: "HOME" | "DRAW" | "AWAY" | null;
+    cancelled: boolean;
     predictions: Array<{
       userId: string;
       pick: "HOME" | "DRAW" | "AWAY";
@@ -117,9 +118,19 @@ export function PredictionGrid({
           style={{ gridTemplateColumns: gridCols }}
         >
           <span className="text-[9.5px] text-muted-ghost">{match.matchNumber}</span>
-          <span className="text-left font-body text-xs text-ink-secondary whitespace-nowrap overflow-hidden text-ellipsis">
-            {match.homeTeam}–{match.awayTeam}
-          </span>
+          <div className="text-left flex items-center gap-1 min-w-0">
+            <span className="font-body text-xs text-ink-secondary whitespace-nowrap overflow-hidden text-ellipsis min-w-0">
+              {match.homeTeam}–{match.awayTeam}
+            </span>
+            {match.cancelled && (
+              <span
+                className="shrink-0 px-1 py-px rounded-full bg-signal-soft text-signal font-bold text-[8px]"
+                title="Kampen er aflyst. Udfaldet afgøres ved tendenslodtrækning vægtet efter odds."
+              >
+                AFLYST
+              </span>
+            )}
+          </div>
           {usersWithPredictions.map((u) => {
             const pred = match.predictions.find((p) => p.userId === u.id);
             if (!pred) return <span key={u.id} className="text-muted-ghost">—</span>;
@@ -135,8 +146,19 @@ export function PredictionGrid({
           })}
           <span className="flex justify-center">
             {match.result ? (
-              <span className="w-5 h-5 rounded-[5px] bg-result-ink text-white text-[11px] font-bold flex items-center justify-center">
-                {PICK_LABEL[match.result as PickValue]}
+              <span className="inline-flex items-center gap-0.5">
+                <span className="w-5 h-5 rounded-[5px] bg-result-ink text-white text-[11px] font-bold flex items-center justify-center">
+                  {PICK_LABEL[match.result as PickValue]}
+                </span>
+                {match.cancelled && (
+                  <span
+                    className="text-[9px] leading-none"
+                    title="Lodtrukket"
+                    aria-label="Lodtrukket"
+                  >
+                    🎲
+                  </span>
+                )}
               </span>
             ) : (
               <span className="text-muted-ghost">—</span>

@@ -2,6 +2,7 @@
 
 import type { Match, Pick as PickType } from "@prisma/client";
 import { PickButton } from "./PickButton";
+import CancelledMatchTag from "./CancelledMatchTag";
 
 interface MatchRowProps {
   match: Match;
@@ -43,6 +44,19 @@ export function MatchRow({
             </span>
           )}
         </div>
+        {match.cancelled && (
+          <CancelledMatchTag
+            className="mt-0.5"
+            odds={{
+              oddsHome: Number(match.oddsHome),
+              oddsDraw: Number(match.oddsDraw),
+              oddsAway: Number(match.oddsAway),
+              fedtHome: match.fedtHome,
+              fedtDraw: match.fedtDraw,
+              fedtAway: match.fedtAway,
+            }}
+          />
+        )}
       </div>
 
       {(["HOME", "DRAW", "AWAY"] as PickType[]).map((pick) => (
